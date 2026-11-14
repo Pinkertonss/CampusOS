@@ -672,26 +672,44 @@ def test_attendance_sessions_enhanced_lifecycle():
     assert len(res_bulk.json()) == 2
     assert all(r["status"] == "present" for r in res_bulk.json())
 
-    # Verify session stats updated
+    # Verify session stats updated and sessions ordered latest dates 1st
+    client.post(
+        f"/api/academic/offerings/{off_id}/attendance/sessions",
+        json={"session_date": "2026-02-15", "slot_type": "Lecture", "topic": "Later Session"},
+        headers=PROF_A_HEADERS,
+    )
+    client.post(
+        f"/api/academic/offerings/{off_id}/attendance/sessions",
+        json={"session_date": "2026-02-01", "slot_type": "Lecture", "topic": "Earlier Session"},
+        headers=PROF_A_HEADERS,
+    )
+
     res_list = client.get(f"/api/academic/offerings/{off_id}/attendance/sessions", headers=PROF_A_HEADERS)
     assert res_list.status_code == 200
+    session_dates = [s["session_date"] for s in res_list.json()]
+    assert session_dates == sorted(session_dates, reverse=True), "Sessions must be returned latest dates 1st"
+    assert session_dates[0] == "2026-02-15"
+    assert session_dates[-1] == "2026-02-01"
+
     updated_sess = next(s for s in res_list.json() if s["id"] == sess_id)
     assert updated_sess["records_count"] == 2
     assert updated_sess["present_count"] == 2
     assert updated_sess["absent_count"] == 0
     assert updated_sess["attendance_rate_percent"] == 100.0
 
-    # 4. Student views their session attendance breakdown
+    # 4. Student views their session attendance breakdown (latest dates 1st)
     res_my_sess = client.get(f"/api/academic/offerings/{off_id}/attendance/my-sessions", headers=STUDENT_1_HEADERS)
     assert res_my_sess.status_code == 200
     my_data = res_my_sess.json()
     assert my_data["total_held_sessions"] == 1
     assert my_data["attended_sessions"] == 1
     assert my_data["attendance_percentage"] == 100.0
-    assert len(my_data["sessions"]) == 1
-    assert my_data["sessions"][0]["status"] == "present"
-    assert my_data["sessions"][0]["topic"] == "Dynamic Programming: Knapsack Problem"
-    assert my_data["sessions"][0]["room"] == "LP-102"
+    assert len(my_data["sessions"]) == 3
+    assert [s["session_date"] for s in my_data["sessions"]] == ["2026-02-15", "2026-02-10", "2026-02-01"]
+    knapsack_item = next(s for s in my_data["sessions"] if s["session_id"] == sess_id)
+    assert knapsack_item["status"] == "present"
+    assert knapsack_item["topic"] == "Dynamic Programming: Knapsack Problem"
+    assert knapsack_item["room"] == "LP-102"
 
     # 5. Cancel session (e.g. holiday or sports day)
     res_cancel = client.patch(

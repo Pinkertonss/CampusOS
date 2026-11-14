@@ -334,14 +334,16 @@ export default function AdminConsolePage() {
     }
   }, [activeOpsOffering]);
 
+  // Load Sessions (Latest dates 1st)
   const loadOpsSessions = useCallback(async () => {
     if (!activeOpsOffering) return;
     try {
       setOpsLoading(true);
       const data = await fetchAttendanceSessions(activeOpsOffering.id);
-      setOpsSessions(data);
-      if (data.length > 0 && !opsSelectedSessionId) {
-        setOpsSelectedSessionId(data[0].id);
+      const sorted = [...data].sort((a, b) => (b.session_date || "").localeCompare(a.session_date || ""));
+      setOpsSessions(sorted);
+      if (sorted.length > 0 && (!opsSelectedSessionId || !sorted.some((s) => s.id === opsSelectedSessionId))) {
+        setOpsSelectedSessionId(sorted[0].id);
       }
     } catch (err: any) {
       setFeedbackMessage({ type: "error", text: err.message || "Failed to load sessions." });

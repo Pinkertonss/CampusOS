@@ -1112,7 +1112,8 @@ class AcademicRBACEngine:
         sessions = self.attendance_sessions.get(offering_id, [])
         for s in sessions:
             self._populate_session_stats(offering_id, s)
-        return sessions
+        # Always return latest dates first (descending by session_date, then created_at)
+        return sorted(sessions, key=lambda s: (s.session_date or "", s.created_at or ""), reverse=True)
 
     def create_attendance_session(
         self,
@@ -1475,6 +1476,9 @@ class AcademicRBACEngine:
                     updated_at=upd,
                 )
             )
+
+        # Sort latest sessions first
+        items.sort(key=lambda s: s.session_date or "", reverse=True)
 
         pct = round((attended / total_held) * 100, 1) if total_held > 0 else 100.0
         return StudentSessionAttendanceResponse(

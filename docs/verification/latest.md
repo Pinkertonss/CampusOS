@@ -28,6 +28,8 @@ This implementation fulfills comprehensive improvements to **Attendance Sessions
    - Attendance sessions now compute and expose live summary metrics: `present_count`, `absent_count`, `late_count`, `excused_count`, `total_enrolled`, and `attendance_rate_percent`.
 7. **Student Session-by-Session History**:
    - Added `GET /api/academic/offerings/{offering_id}/attendance/my-sessions` returning complete session breakdown, topics covered, and attendance statuses for authenticated students.
+8. **Chronological Sorting (Latest Dates 1st)**:
+   - Both backend session listings (`list_attendance_sessions`, `get_student_session_attendance`) and frontend interfaces (`/professor`, `/admin`) return and display sessions sorted descending by date (`session_date` descending, then `created_at` descending), ensuring instructors and students always see the most recent sessions first.
 
 ---
 

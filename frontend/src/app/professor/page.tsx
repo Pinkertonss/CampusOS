@@ -194,14 +194,15 @@ export default function ProfessorDashboardPage() {
     }
   }, [selectedOfferingId, searchQuery, supportFilter, statusFilter, sortBy, sortOrder, currentPage]);
 
-  // Load Sessions
+  // Load Sessions (Latest dates 1st)
   const loadSessions = useCallback(async () => {
     if (!selectedOfferingId) return;
     try {
       const data = await fetchAttendanceSessions(selectedOfferingId);
-      setSessions(data);
-      if (data.length > 0 && !selectedSessionId) {
-        setSelectedSessionId(data[0].id);
+      const sorted = [...data].sort((a, b) => (b.session_date || "").localeCompare(a.session_date || ""));
+      setSessions(sorted);
+      if (sorted.length > 0 && (!selectedSessionId || !sorted.some((s) => s.id === selectedSessionId))) {
+        setSelectedSessionId(sorted[0].id);
       }
     } catch (err: any) {
       setActionMessage({ type: "error", text: err.message || "Failed to load attendance sessions." });
