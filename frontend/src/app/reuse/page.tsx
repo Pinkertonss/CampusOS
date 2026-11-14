@@ -732,15 +732,28 @@ export default function CampusReusePage() {
                               )}
 
                               {req.status === "accepted" && (
-                                <Button
-                                  variant="primary"
-                                  size="sm"
-                                  onClick={() => handleConfirmCompletion(req.id)}
-                                  className="bg-emerald-600 hover:bg-emerald-500 text-white"
-                                  leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                                >
-                                  Confirm Handover Complete
-                                </Button>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                  {req.owner_confirmed ? (
+                                    <Badge variant="warning" size="sm">
+                                      Handover Confirmed · Awaiting Student
+                                    </Badge>
+                                  ) : (
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => handleConfirmCompletion(req.id)}
+                                      className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                                      leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                                    >
+                                      Confirm Handover Complete
+                                    </Button>
+                                  )}
+                                  {req.requester_confirmed && !req.owner_confirmed && (
+                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                                      Student confirmed receipt!
+                                    </span>
+                                  )}
+                                </div>
                               )}
 
                               {req.status === "completed" && (
@@ -826,15 +839,28 @@ export default function CampusReusePage() {
 
                     <div className="flex items-center gap-2">
                       {req.status === "accepted" && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleConfirmCompletion(req.id)}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white"
-                          leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                        >
-                          Confirm Received / Complete
-                        </Button>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                          {req.requester_confirmed ? (
+                            <Badge variant="warning" size="sm">
+                              Receipt Confirmed · Awaiting Owner
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleConfirmCompletion(req.id)}
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                              leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                            >
+                              Confirm Received / Complete
+                            </Button>
+                          )}
+                          {req.owner_confirmed && !req.requester_confirmed && (
+                            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              Owner confirmed handover!
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       {req.status === "completed" && (
@@ -1223,7 +1249,7 @@ export default function CampusReusePage() {
               </p>
             </div>
 
-            {selectedListing.contact_info && (
+            {selectedListing.contact_info ? (
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Campus Location & Handover Note
@@ -1232,7 +1258,12 @@ export default function CampusReusePage() {
                   {selectedListing.contact_info}
                 </p>
               </div>
-            )}
+            ) : !selectedListing.owner_name.includes("You") ? (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 shrink-0 text-teal-500" />
+                <span>Hostel room & contact details are shielded until your exchange request is accepted by the owner.</span>
+              </div>
+            ) : null}
 
             {selectedListing.owner_name.includes("You") && (
               <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-200 flex items-center gap-2">

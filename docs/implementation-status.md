@@ -17,7 +17,7 @@
 | **Digital Vault** | **COMPLETED (Phase 3)** | `/api/vault/items`, `/upload-url`, `/items/{id}/download-url`, `/raw/{id}` | Supabase Storage `vault` + PostgreSQL `vault_items` | Real signed URLs & streaming; safe filenames; owner isolation; rollback of orphan storage; no blob: fallbacks; 10MB limit; 500MB quota | 14 tests in `test_vault.py` & `test_security.py` |
 | **Campus Copilot RAG** | **COMPLETED (Phase 4)** | `/api/copilot/ask`, `/copilot/documents` | Ingests PDF/DOCX/TXT into `document_chunks` (768-dim Vectors / Local Lexical Fallback) | Source-grounded answers; strict refusal on unsupported questions; document governance metadata & freshness status; prompt injection defense; server-side personalized attendance calculations | 12 tests in `test_copilot.py` |
 | **Actionable Copilot Task Confirmation** | **COMPLETED (Phase 4)** | `/api/copilot/confirm-task` | PostgreSQL `tasks` + `CampusOSDatabase.user_deadlines` | Secured with student auth (`get_current_user_id`); preview title/due date/reason before saving; persists user-owned task | Tested in `test_copilot.py` & `test_api.py` |
-| **Campus Reuse Marketplace** | **COMPLETED (Phase 1 Security)** | `/reuse/listings`, `/requests`, `/impact` | PostgreSQL `listings`, `exchange_requests`, `impact_events` | 2-party confirmation flow (request -> accept -> complete) updates SDG 12 metrics; non-owner actions blocked | 7 tests in `test_reuse.py` and `test_security.py` |
+| **Campus Reuse Marketplace** | **COMPLETED (Phase 5)** | `/reuse/listings`, `/requests`, `/impact` | PostgreSQL `listings`, `exchange_requests`, `impact_events` | 2-party bilateral confirmation flow (request -> accept -> mutual confirm) updates verified SDG 12 metrics; non-owner actions blocked | 7 tests in `test_reuse.py` and `test_security.py` |
 | **Contact Privacy in Reuse** | **COMPLETED (Phase 1)** | Public `/reuse/listings`, `/reuse/listings/{id}` | Sanitized response schemas | Contact details (phone, hostel room) masked on public feed; visible only to owner or accepted partner | Tested in `test_security.py` |
 | **Cross-Module Student Decision Workflow** | **Missing (Phase 6)** | Dashboard Priorities Integration | Academic risk + calendar conflict + task planning | Not yet synthesized across academic calendar and copilot | Scheduled for Phase 6 |
 | **Opportunity Matching** | **Missing (Phase 7)** | Opportunity recommendation engine | Opt-in skill tags, schedule compatibility | Post-MVP / Phase 7 | Scheduled for Phase 7 |
@@ -70,7 +70,7 @@
    - Secured actionable task confirmation (`POST /api/copilot/confirm-task`) requiring student Bearer auth and persisting to user deadlines.
    - Replaced false "pgvector RAG" badge with truthful "Citation-Grounded Verified Search · 768-dim Embeddings".
    - 12 comprehensive tests in `backend/tests/test_copilot.py` including a curated multi-domain evaluation set (90/90 suite passing).
-5. **Phase 5 (P1) - NEXT**: Campus Reuse Marketplace complete two-party lifecycle (offer -> request -> accept -> handoff confirmation) and verified SDG impact calculation.
-6. **Phase 6**: Integrated cross-module student decision intelligence.
+5. **Phase 5 (P1) - COMPLETED**: Campus Reuse Marketplace complete two-party lifecycle (offer -> request -> accept -> bilateral handoff confirmation) and verified SDG 12 impact calculation.
+6. **Phase 6 - NEXT**: Integrated cross-module student decision intelligence.
 7. **Phase 7**: Opportunity matching and calendar conflict detection.
 8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.

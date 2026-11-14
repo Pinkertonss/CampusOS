@@ -124,15 +124,40 @@ def test_exchange_request_flow_and_automated_impact():
     assert listing_res.status_code == 200
     assert listing_res.json()["status"] in ("reserved", "completed")
 
-    # 3. Confirm completion
-    complete_res = client.post(f"/reuse/requests/{req_id}/confirm", headers=AUTH_HEADER)
+    # 3. Bilateral Two-Party Confirmation Flow
+    # 3a. Unauthorized third party cannot confirm handover (403 Forbidden)
+    third_party_headers = {"Authorization": "Bearer dev-third-party-user"}
+    unauth_confirm = client.post(f"/reuse/requests/{req_id}/confirm", headers=third_party_headers)
+    assert unauth_confirm.status_code == 403
+
+    # 3b. Requester confirms receipt first (status remains 'accepted', awaiting owner)
+    req_confirm = client.post(f"/reuse/requests/{req_id}/confirm", headers=AUTH_HEADER)
+    assert req_confirm.status_code == 200
+    req_confirm_data = req_confirm.json()
+    assert req_confirm_data["requester_confirmed"] is True
+    assert req_confirm_data["owner_confirmed"] is False
+    assert req_confirm_data["status"] == "accepted"
+
+    # 3c. Owner confirms handover second -> both confirmed -> status transitions to 'completed'
+    complete_res = client.post(f"/reuse/requests/{req_id}/confirm", headers=PEER_AUTH_HEADER)
     assert complete_res.status_code == 200
     completed_req = complete_res.json()
     assert completed_req["status"] == "completed"
+    assert completed_req["owner_confirmed"] is True
+    assert completed_req["requester_confirmed"] is True
 
-    # Verify listing is now completed
+    # 3d. Verify listing is now marked completed
     listing_after = client.get("/reuse/listings/list-1", headers=AUTH_HEADER)
     assert listing_after.json()["status"] == "completed"
+
+    # 3e. Invariant: Cannot request a completed listing (400 Bad Request)
+    cannot_request_completed = client.post(
+        "/reuse/listings/list-1/request",
+        json={"message": "Is this still available?"},
+        headers={"Authorization": "Bearer dev-third-party-user"},
+    )
+    assert cannot_request_completed.status_code == 400
+    assert "already been completed" in cannot_request_completed.json()["detail"]
 
 
 def test_get_reuse_impact_endpoint():

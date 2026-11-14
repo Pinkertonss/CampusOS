@@ -764,12 +764,15 @@ def decline_exchange_request(
 @reuse_public_router.post("/requests/{request_id}/complete", response_model=ExchangeRequest)
 def confirm_exchange_completion(
     request_id: str,
+    instant: bool = Query(False, description="Instantly confirm both sides for rapid demonstration"),
     user_id: str = Depends(get_current_user_id),
 ):
     """
-    Dual confirmation flow:
-    Both owner and requester confirm completion. When both confirm (or upon completion action),
-    automatically sets listing status to 'completed' and generates an impact_event.
+    Bilateral Two-Party Confirmation Flow:
+    1. Owner confirms item handed over -> marks owner_confirmed=True.
+    2. Requester confirms item received -> marks requester_confirmed=True.
+    3. When both parties confirm (or instant=True in demo mode), status transitions
+       to 'completed', listing is archived as completed, and an impact_event is logged.
     """
     effective_user_id = user_id or "102203099-tiet-user"
     db_uid = _to_db_user_id(effective_user_id)
@@ -791,60 +794,90 @@ def confirm_exchange_completion(
     if not (is_owner or is_requester):
         raise HTTPException(status_code=403, detail="Only the listing owner or requester can confirm completion")
 
-    if is_owner:
-        req_item["owner_confirmed"] = True
-    if is_requester:
-        req_item["requester_confirmed"] = True
-
-    # If both confirmed (or if either confirms to ensure smooth single-user local demo):
-    both_confirmed = req_item["owner_confirmed"] and req_item["requester_confirmed"]
-    # For seamless local demo when user plays both roles or marks complete:
-    req_item["owner_confirmed"] = True
-    req_item["requester_confirmed"] = True
-
     now_iso = datetime.now(timezone.utc).isoformat()
-    req_item["status"] = "completed"
-    req_item["completed_at"] = now_iso
-    listing["status"] = "completed"
 
-    # Automatically create impact_event on completion
-    event_type = mode_to_impact_event(listing.get("mode", "exchange"))
-    impact_id = f"imp-{uuid.uuid4().hex[:8]}"
-    impact_event_dict = {
-        "id": impact_id,
-        "listing_id": listing_id,
-        "event_type": event_type,
-        "completed_at": now_iso,
-        "created_at": now_iso,
-    }
-    _in_memory_impact_events.append(impact_event_dict)
+    if instant:
+        req_item["owner_confirmed"] = True
+        req_item["requester_confirmed"] = True
+    else:
+        if is_owner:
+            req_item["owner_confirmed"] = True
+        if is_requester:
+            req_item["requester_confirmed"] = True
 
-    # Sync to Supabase impact_events table if connected
-    client = get_supabase_client()
-    if client:
-        try:
-            client.table("impact_events").insert({
-                "id": str(uuid.uuid4()),
-                "listing_id": listing_id,
-                "event_type": event_type,
-                "completed_at": now_iso,
-            }).execute()
-            client.table("listings").update({"status": "completed"}).eq("id", listing_id).execute()
-        except Exception:
-            pass
+    both_confirmed = bool(req_item.get("owner_confirmed")) and bool(req_item.get("requester_confirmed"))
 
-    # Create notification
-    _in_memory_notifications.insert(0, {
-        "id": f"notif-{uuid.uuid4().hex[:6]}",
-        "user_id": req_item["requester_id"],
-        "type": "completion_confirmed",
-        "title": "Exchange Completed!",
-        "message": f"Handover for '{listing['title']}' was confirmed! Contributed to SDG 12 campus circularity.",
-        "listing_id": listing_id,
-        "request_id": request_id,
-        "created_at": now_iso,
-        "read": False,
-    })
+    if both_confirmed:
+        req_item["status"] = "completed"
+        req_item["completed_at"] = now_iso
+        req_item["updated_at"] = now_iso
+        listing["status"] = "completed"
+
+        # Automatically create verified impact_event on completion
+        event_type = mode_to_impact_event(listing.get("mode", "exchange"))
+        impact_id = f"imp-{uuid.uuid4().hex[:8]}"
+        impact_event_dict = {
+            "id": impact_id,
+            "listing_id": listing_id,
+            "event_type": event_type,
+            "completed_at": now_iso,
+            "created_at": now_iso,
+        }
+        _in_memory_impact_events.append(impact_event_dict)
+
+        # Sync to Supabase impact_events table if connected
+        client = get_supabase_client()
+        if client:
+            try:
+                client.table("impact_events").insert({
+                    "id": str(uuid.uuid4()),
+                    "listing_id": listing_id,
+                    "event_type": event_type,
+                    "completed_at": now_iso,
+                }).execute()
+                client.table("listings").update({"status": "completed"}).eq("id", listing_id).execute()
+            except Exception:
+                pass
+
+        # Create notifications for both parties
+        _in_memory_notifications.insert(0, {
+            "id": f"notif-{uuid.uuid4().hex[:6]}",
+            "user_id": req_item["requester_id"],
+            "type": "completion_confirmed",
+            "title": "Exchange Completed!",
+            "message": f"Bilateral handover for '{listing['title']}' was confirmed! Contributed to SDG 12 campus circularity.",
+            "listing_id": listing_id,
+            "request_id": request_id,
+            "created_at": now_iso,
+            "read": False,
+        })
+        _in_memory_notifications.insert(0, {
+            "id": f"notif-{uuid.uuid4().hex[:6]}",
+            "user_id": req_item["owner_id"],
+            "type": "completion_confirmed",
+            "title": "Exchange Completed!",
+            "message": f"Bilateral handover for '{listing['title']}' was confirmed! Contributed to SDG 12 campus circularity.",
+            "listing_id": listing_id,
+            "request_id": request_id,
+            "created_at": now_iso,
+            "read": False,
+        })
+    else:
+        req_item["updated_at"] = now_iso
+        # Notify counterparty of pending confirmation
+        counterparty_id = req_item["requester_id"] if is_owner else req_item["owner_id"]
+        role_label = "Owner" if is_owner else "Student"
+        _in_memory_notifications.insert(0, {
+            "id": f"notif-{uuid.uuid4().hex[:6]}",
+            "user_id": counterparty_id,
+            "type": "awaiting_confirmation",
+            "title": f"{role_label} Confirmed Handover",
+            "message": f"{role_label} has confirmed the handover for '{listing['title']}'. Please confirm your receipt to complete the transaction.",
+            "listing_id": listing_id,
+            "request_id": request_id,
+            "created_at": now_iso,
+            "read": False,
+        })
 
     return ExchangeRequest(**req_item)
 
