@@ -78,17 +78,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Trigger Render Backend Deploy Hook
-        if: secrets.RENDER_BACKEND_DEPLOY_HOOK != ''
+      - name: Deploy Backend to Cloud
+        env:
+          RENDER_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
         run: |
-          echo "Triggering automated deployment webhook for CampusOS API..."
-          curl -s -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
-
-      - name: Log Deployment Action
-        if: secrets.RENDER_BACKEND_DEPLOY_HOOK == ''
-        run: |
-          echo "Notice: RENDER_BACKEND_DEPLOY_HOOK secret not configured."
-          echo "Deployment blueprint configured in render.yaml and Dockerfile ready for hosting connection."
+          if [ -n "$RENDER_HOOK" ]; then
+            echo "Triggering automated deployment webhook for CampusOS API..."
+            curl -s -X POST "$RENDER_HOOK"
+          else
+            echo "Notice: RENDER_BACKEND_DEPLOY_HOOK secret not configured."
+            echo "Deployment blueprint configured in render.yaml and Dockerfile ready for hosting connection."
+          fi
 
   deploy-frontend:
     name: Deploy Frontend Web App
@@ -98,24 +98,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        if: secrets.VERCEL_TOKEN != ''
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
-
-      - name: Trigger Render Frontend Deploy Hook
-        if: secrets.RENDER_FRONTEND_DEPLOY_HOOK != '' && secrets.VERCEL_TOKEN == ''
+      - name: Deploy Frontend to Cloud
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          RENDER_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
         run: |
-          echo "Triggering automated deployment webhook for CampusOS Web..."
-          curl -s -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
-
-      - name: Log Deployment Action
-        if: secrets.VERCEL_TOKEN == '' && secrets.RENDER_FRONTEND_DEPLOY_HOOK == ''
-        run: |
-          echo "Notice: VERCEL_TOKEN and RENDER_FRONTEND_DEPLOY_HOOK secrets not configured in repository."
-          echo "Frontend deployment configuration ready in frontend/vercel.json and render.yaml."
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "Deploying to Vercel production..."
+            npx --yes vercel --token "$VERCEL_TOKEN" --prod --yes ./frontend
+          elif [ -n "$RENDER_HOOK" ]; then
+            echo "Triggering automated deployment webhook for CampusOS Web..."
+            curl -s -X POST "$RENDER_HOOK"
+          else
+            echo "Notice: VERCEL_TOKEN and RENDER_FRONTEND_DEPLOY_HOOK secrets not configured in repository."
+            echo "Frontend deployment configuration ready in frontend/vercel.json and render.yaml."
+          fi
