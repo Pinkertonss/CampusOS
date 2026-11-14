@@ -35,6 +35,7 @@ import {
   Button,
   Badge,
 } from "../../components/ui";
+import { useAuth } from "../../context/AuthContext";
 import {
   fetchOfferings,
   fetchOfferingRoster,
@@ -73,6 +74,7 @@ import {
 } from "../../types";
 
 export default function ProfessorDashboardPage() {
+  const { isAdmin, isLoading } = useAuth();
   const [offerings, setOfferings] = useState<SubjectOffering[]>([]);
   const [selectedOfferingId, setSelectedOfferingId] = useState<string>("");
   const [loadingOfferings, setLoadingOfferings] = useState(true);
@@ -151,8 +153,9 @@ export default function ProfessorDashboardPage() {
   }, [selectedOfferingId]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     loadOfferings();
-  }, [loadOfferings]);
+  }, [isAdmin, loadOfferings]);
 
   // Load Roster
   const loadRoster = useCallback(async () => {
@@ -495,6 +498,32 @@ export default function ProfessorDashboardPage() {
     if (!selectedOfferingId) return;
     window.open(`http://localhost:8000/api/academic/offerings/${encodeURIComponent(selectedOfferingId)}/roster/export-csv`, "_blank");
   };
+
+  if (!isLoading && !isAdmin) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-6">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-800 shadow-sm">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Faculty & Administrator Access Only
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            The Faculty Management Portal is restricted to assigned academic professors and institutional administrators. Students cannot access course operations or grading tools.
+          </p>
+        </div>
+        <div className="flex justify-center gap-3 pt-2">
+          <Link href="/academic">
+            <Button variant="secondary">Go to Academic Hub</Button>
+          </Link>
+          <Link href="/">
+            <Button>Return to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

@@ -28,23 +28,36 @@ interface NavItem {
   badge?: string;
 }
 
-const navItems: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/academic", label: "Academic Hub", icon: GraduationCap },
-  { href: "/professor", label: "Faculty Portal", icon: Users, badge: "Prof" },
-  { href: "/admin", label: "Admin Console", icon: ShieldCheck, badge: "DOAA" },
-  { href: "/opportunities", label: "Opportunities", icon: Compass, badge: "Match" },
-  { href: "/copilot", label: "Campus Copilot", icon: Sparkles, badge: "AI" },
-  { href: "/vault", label: "Digital Vault", icon: ShieldCheck },
-  { href: "/reuse", label: "Campus Reuse", icon: Repeat },
-];
-
 export default function Navigation() {
   const pathname = usePathname();
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [reuseUnreadCount, setReuseUnreadCount] = useState(0);
+
+  // Faculty Portal and Admin Console are hidden from students; visible to admins only
+  const navItems: NavItem[] = React.useMemo(() => {
+    const items: NavItem[] = [
+      { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/academic", label: "Academic Hub", icon: GraduationCap },
+    ];
+
+    if (isAdmin) {
+      items.push(
+        { href: "/professor", label: "Faculty Portal", icon: Users, badge: "Prof" },
+        { href: "/admin", label: "Admin Console", icon: ShieldCheck, badge: "DOAA" }
+      );
+    }
+
+    items.push(
+      { href: "/opportunities", label: "Opportunities", icon: Compass, badge: "Match" },
+      { href: "/copilot", label: "Campus Copilot", icon: Sparkles, badge: "AI" },
+      { href: "/vault", label: "Digital Vault", icon: ShieldCheck },
+      { href: "/reuse", label: "Campus Reuse", icon: Repeat }
+    );
+
+    return items;
+  }, [isAdmin]);
 
   React.useEffect(() => {
     getReuseNotifications()
@@ -208,7 +221,7 @@ export default function Navigation() {
         aria-label="Mobile navigation"
         className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 px-3 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
-        <div className="grid grid-cols-4 gap-1">
+        <div className={`grid ${isAdmin ? "grid-cols-4" : "grid-cols-3"} gap-1`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =

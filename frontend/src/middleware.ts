@@ -19,7 +19,8 @@ export function middleware(request: NextRequest) {
 
   const authToken =
     request.cookies.get("campusos_auth_token")?.value ||
-    request.cookies.get("sb-access-token")?.value;
+    request.cookies.get("sb-access-token")?.value ||
+    "";
   const isOnboarded = request.cookies.get("campusos_onboarded")?.value === "true";
   const isLoggedOut = request.cookies.get("campusos_logged_out")?.value === "true";
 
@@ -59,6 +60,20 @@ export function middleware(request: NextRequest) {
   // If already onboarded and attempts to visit /onboarding:
   if (isOnboarded && isOnboardingRoute) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // 3. Admin-only route restriction:
+  // Hide and protect /admin and /professor from students; visible to admins only
+  if (pathname.startsWith("/admin") || pathname.startsWith("/professor")) {
+    const roleCookie = request.cookies.get("campusos_role")?.value;
+    const isExplicitAdmin =
+      roleCookie === "admin" ||
+      authToken === "dev-admin" ||
+      authToken.startsWith("admin-token-");
+
+    if (!isExplicitAdmin) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   return NextResponse.next();

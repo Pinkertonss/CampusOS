@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   ShieldCheck,
   Users,
@@ -14,6 +15,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 import {
   Card,
   CardHeader,
@@ -40,6 +42,7 @@ import {
 } from "../../types";
 
 export default function AdminConsolePage() {
+  const { isAdmin, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"roles" | "offerings" | "audit">("roles");
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -110,10 +113,11 @@ export default function AdminConsolePage() {
   }, [auditFilterOffering]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "roles") loadRoles();
     if (activeTab === "offerings") loadOfferingsAndSubjects();
     if (activeTab === "audit") loadAuditLogs();
-  }, [activeTab, loadRoles, loadOfferingsAndSubjects, loadAuditLogs]);
+  }, [isAdmin, activeTab, loadRoles, loadOfferingsAndSubjects, loadAuditLogs]);
 
   const handleUpdateRole = async (userId: string, newRole: string, statusVal: string = "active") => {
     try {
@@ -180,6 +184,32 @@ export default function AdminConsolePage() {
       setFeedbackMessage({ type: "error", text: err.message || "Failed to assign professor." });
     }
   };
+
+  if (!isLoading && !isAdmin) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-6">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-800 shadow-sm">
+          <ShieldCheck className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Administrator Access Required
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            The Academic Administration Console is restricted to authorized institutional administrators and DOAA officers. You are currently signed in with student permissions.
+          </p>
+        </div>
+        <div className="flex justify-center gap-3 pt-2">
+          <Link href="/">
+            <Button variant="secondary">Return to Dashboard</Button>
+          </Link>
+          <Link href="/login">
+            <Button>Switch Account</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

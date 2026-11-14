@@ -38,10 +38,11 @@
   - Total Pytest suite: 135/135 tests passing in 0.77s.
   - Frontend TypeScript definitions: `frontend/src/types/index.ts`.
   - Frontend API Client methods: `frontend/src/lib/api.ts` (30+ typed methods).
-  - Faculty Portal UI: `frontend/src/app/professor/page.tsx` (5 interactive tabs: Roster, Attendance, Assessments, Assignments, Announcements).
-  - Administrator Console UI: `frontend/src/app/admin/page.tsx` (Roles with last-admin protection, Offerings provisioning, Faculty assignment, Provision Admin Modal, Audit log).
-  - Navigation links: `frontend/src/components/Navigation.tsx`.
-  - Next.js 16 production build: 15/15 static and dynamic routes compiled in 1458ms with 0 type errors.
+  - Faculty Portal UI: `frontend/src/app/professor/page.tsx` (5 interactive tabs: Roster, Attendance, Assessments, Assignments, Announcements; guarded against student access).
+  - Administrator Console UI: `frontend/src/app/admin/page.tsx` (Roles with last-admin protection, Offerings provisioning, Faculty assignment, Provision Admin Modal, Audit log; guarded against student access).
+  - Navigation links: `frontend/src/components/Navigation.tsx` (Filtered navigation: Faculty Portal and Admin Console hidden from students; visible to admins only).
+  - Next.js 16 Middleware: `frontend/src/middleware.ts` (Restricts `/admin` and `/professor` routes to administrators only, redirecting non-admins to `/`).
+  - Next.js 16 production build: 15/15 static and dynamic routes compiled in 1191ms with 0 type errors.
 
 ---
 
@@ -56,12 +57,14 @@
 | `backend/app/database.py` | Integrated `AcademicRBACEngine` into central database singleton; fixed 2024 date hygiene in task persistence. |
 | `backend/app/routers/academic_rbac.py` | Registered 21 offering-scoped API endpoints under `/api/academic`. |
 | `backend/app/main.py` | Included `academic_rbac.router`. |
-| `backend/tests/test_academic_rbac.py` | 21 targeted regression tests covering all 14 required security and operational scenarios. |
+| `backend/tests/test_academic_rbac.py` | 24 targeted regression tests covering all 14 required security and operational scenarios + admin creation. |
 | `frontend/src/types/index.ts` | Added 15 TypeScript domain interfaces for academic RBAC, offerings, roster, and audit. |
 | `frontend/src/lib/api.ts` | Added 26 typed client methods for offerings, enrollments, attendance, assessments, assignments, announcements, roles, and audit. |
-| `frontend/src/app/professor/page.tsx` | Dedicated Faculty Management Portal with offering switcher, roster, attendance marking, assessment/marks editor, assignment grader, and announcement composer. |
-| `frontend/src/app/admin/page.tsx` | Dedicated Administration Console for role management, last-admin demotion protection, offering creation, teaching assignment, and audit log inspection. |
-| `frontend/src/components/Navigation.tsx` | Added navigation links to Faculty Portal (`/professor`) and Admin Console (`/admin`). |
+| `frontend/src/context/AuthContext.tsx` | Added `isAdmin` and `role` to `AuthContextType`, synchronized `campusos_role` cookie across auth flows. |
+| `frontend/src/components/Navigation.tsx` | Filtered navigation items to hide Faculty Portal (`/professor`) and Admin Console (`/admin`) from students; visible to admins only. Dynamic mobile grid layout. |
+| `frontend/src/middleware.ts` | Added route-level restriction redirecting non-admins attempting to access `/admin` or `/professor` to `/`. |
+| `frontend/src/app/professor/page.tsx` | Added client-side access guard preventing student execution and rendering Faculty & Administrator Access Only banner. |
+| `frontend/src/app/admin/page.tsx` | Added client-side access guard preventing student execution and rendering Administrator Access Required banner. |
 | `docs/verification/latest.md` | Comprehensive 8-section evidence-based verification report. |
 
 ---

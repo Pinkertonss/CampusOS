@@ -22,6 +22,8 @@ interface AuthContextType {
   profile: StudentProfile | null;
   isLoading: boolean;
   isOnboarded: boolean;
+  isAdmin: boolean;
+  role: string;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error?: string }>;
   signInWithGoogle: () => Promise<{ error?: string }>;
@@ -174,6 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (isMounted) {
           setUser(mockUser);
           setCookie("campusos_auth_token", isAdmin ? "dev-admin" : "dev-user-102203099");
+          setCookie("campusos_role", isAdmin ? "admin" : "student");
           setCookie("campusos_onboarded", "true");
           await loadProfile(uid, true);
           setIsLoading(false);
@@ -207,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } as unknown as User;
             setUser(mockUser);
             setCookie("campusos_auth_token", "dev-user-102203099");
+            setCookie("campusos_role", "student");
             setCookie("campusos_onboarded", "true");
             await loadProfile(DEMO_USER_ID, true);
           }
@@ -360,6 +364,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(DEMO_PROFILE);
     setIsOnboarded(true);
     setCookie("campusos_auth_token", "dev-user-102203099");
+    setCookie("campusos_role", "student");
     setCookie("campusos_onboarded", "true");
     setIsLoading(false);
   };
@@ -385,6 +390,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(DEMO_ADMIN_PROFILE);
     setIsOnboarded(true);
     setCookie("campusos_auth_token", "dev-admin");
+    setCookie("campusos_role", "admin");
     setCookie("campusos_onboarded", "true");
     setIsLoading(false);
   };
@@ -397,6 +403,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("campusos_auth_token");
     setCookie("campusos_logged_out", "true");
     deleteCookie("campusos_auth_token");
+    deleteCookie("campusos_role");
     deleteCookie("campusos_onboarded");
 
     try {
@@ -462,6 +469,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const role = (
+    profile?.role ||
+    user?.user_metadata?.role ||
+    user?.app_metadata?.role ||
+    (typeof window !== "undefined" ? localStorage.getItem("campusos_role") : null) ||
+    "student"
+  ).toLowerCase();
+
+  const isAdmin =
+    role === "admin" ||
+    user?.id === DEMO_ADMIN_ID ||
+    (typeof window !== "undefined" &&
+      (localStorage.getItem("campusos_auth_token") === "dev-admin" ||
+        localStorage.getItem("campusos_auth_token")?.startsWith("admin-token-") ||
+        document.cookie.includes("campusos_role=admin") ||
+        document.cookie.includes("campusos_auth_token=dev-admin") ||
+        document.cookie.includes("campusos_auth_token=admin-token-")));
+
   return (
     <AuthContext.Provider
       value={{
@@ -470,6 +495,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         isLoading,
         isOnboarded,
+        isAdmin,
+        role,
         signIn,
         signUp,
         signInWithGoogle,
