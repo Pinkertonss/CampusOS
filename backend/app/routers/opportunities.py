@@ -25,6 +25,7 @@ from ..models.opportunity import (
     CandidateDiscoveryResponse,
     OpportunityInvitationRequest,
     OpportunityInvitationResponse,
+    OpportunityUpdate,
 )
 from ..services.opportunity_engine import OpportunityEngine
 
@@ -131,6 +132,19 @@ def create_opportunity(
     creator_id = str(creator_claims.get("sub", "admin"))
     creator_role = str(creator_claims.get("role", "opportunity_manager"))
     return db.create_opportunity(creator_id=creator_id, creator_role=creator_role, opp_in=opp_in)
+
+
+@public_router.post("/preview-matching", response_model=CandidateDiscoveryResponse)
+@router.post("/preview-matching", response_model=CandidateDiscoveryResponse)
+def preview_opportunity_matching(
+    draft_opp: OpportunityCreate,
+    creator_claims: dict = Depends(require_opportunity_manager_or_admin),
+):
+    """
+    Preview candidate matching results (eligible, ineligible, incomplete-profile counts)
+    before publishing an opportunity.
+    """
+    return db.preview_matching(draft_opp)
 
 
 # ============================================================
@@ -318,23 +332,141 @@ def update_legacy_student_profile(
 # 4. Candidate Discovery & Creator Management
 # ============================================================
 
+@public_router.put("/{opportunity_id}", response_model=Opportunity)
+@router.put("/{opportunity_id}", response_model=Opportunity)
+def update_opportunity(
+    opportunity_id: str,
+    payload: OpportunityUpdate,
+    creator_claims: dict = Depends(require_opportunity_manager_or_admin),
+):
+    """
+    Owner or administrator updates opportunity details or criteria.
+    """
+    requester_id = str(creator_claims.get("sub", ""))
+    requester_role = str(creator_claims.get("role", "opportunity_manager"))
+    try:
+        return db.update_opportunity(
+            opportunity_id=opportunity_id,
+            requester_id=requester_id,
+            requester_role=requester_role,
+            opp_update=payload,
+        )
+    except PermissionError as pe:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(pe))
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+
+
+@public_router.post("/{opportunity_id}/publish", response_model=Opportunity)
+@router.post("/{opportunity_id}/publish", response_model=Opportunity)
+def publish_opportunity(
+    opportunity_id: str,
+    creator_claims: dict = Depends(require_opportunity_manager_or_admin),
+):
+    """
+    Publish/open an opportunity.
+    """
+    requester_id = str(creator_claims.get("sub", ""))
+    requester_role = str(creator_claims.get("role", "opportunity_manager"))
+    return db.update_opportunity(
+        opportunity_id=opportunity_id,
+        requester_id=requester_id,
+        requester_role=requester_role,
+        opp_update=OpportunityUpdate(status="open"),
+    )
+
+
+@public_router.post("/{opportunity_id}/close", response_model=Opportunity)
+@router.post("/{opportunity_id}/close", response_model=Opportunity)
+def close_opportunity(
+    opportunity_id: str,
+    creator_claims: dict = Depends(require_opportunity_manager_or_admin),
+):
+    """
+    Close an opportunity for applications.
+    """
+    requester_id = str(creator_claims.get("sub", ""))
+    requester_role = str(creator_claims.get("role", "opportunity_manager"))
+    return db.update_opportunity(
+        opportunity_id=opportunity_id,
+        requester_id=requester_id,
+        requester_role=requester_role,
+        opp_update=OpportunityUpdate(status="closed"),
+    )
+
+
+@public_router.post("/{opportunity_id}/archive", response_model=Opportunity)
+@router.post("/{opportunity_id}/archive", response_model=Opportunity)
+def archive_opportunity(
+    opportunity_id: str,
+    creator_claims: dict = Depends(require_opportunity_manager_or_admin),
+):
+    """
+    Archive an opportunity.
+    """
+    requester_id = str(creator_claims.get("sub", ""))
+    requester_role = str(creator_claims.get("role", "opportunity_manager"))
+    return db.update_opportunity(
+        opportunity_id=opportunity_id,
+        requester_id=requester_id,
+        requester_role=requester_role,
+        opp_update=OpportunityUpdate(status="archived"),
+    )
+
+
 @public_router.get("/{opportunity_id}/candidates", response_model=CandidateDiscoveryResponse)
 @router.get("/{opportunity_id}/candidates", response_model=CandidateDiscoveryResponse)
 def get_opportunity_candidates(
     opportunity_id: str,
+    status: Optional[str] = Query(None, description="Filter: 'ELIGIBLE', 'NOT_ELIGIBLE', 'INCOMPLETE_PROFILE'"),
+    branch: Optional[str] = Query(None),
+    query: Optional[str] = Query(None, description="Search name, roll, skills"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
     creator_claims: dict = Depends(require_opportunity_manager_or_admin),
 ):
     """
     Creator Discovery: Returns eligible matching candidates for an opportunity owned by creator.
     Respects student candidate discovery visibility setting (excludes opted-out students unless they applied).
+    Supports searching, filtering by eligibility status / branch, and pagination.
     """
     requester_id = str(creator_claims.get("sub", ""))
     requester_role = str(creator_claims.get("role", "opportunity_manager"))
     try:
-        return db.get_opportunity_candidates(
+        res = db.get_opportunity_candidates(
             opportunity_id=opportunity_id,
             requester_id=requester_id,
             requester_role=requester_role,
+        )
+
+        filtered = res.candidates
+        if status and status != "all":
+            filtered = [c for c in filtered if c.eligibility.status == status]
+        if branch and branch != "all":
+            filtered = [c for c in filtered if c.student_branch.upper() == branch.upper()]
+        if query:
+            q = query.strip().lower()
+            filtered = [
+                c for c in filtered
+                if q in c.student_name.lower()
+                or q in c.student_roll_no.lower()
+                or any(q in s.lower() for s in c.skills)
+            ]
+
+        # Paginate
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_candidates = filtered[start:end]
+
+        return CandidateDiscoveryResponse(
+            opportunity_id=res.opportunity_id,
+            opportunity_title=res.opportunity_title,
+            total_candidates_evaluated=res.total_candidates_evaluated,
+            eligible_count=res.eligible_count,
+            not_eligible_count=res.not_eligible_count,
+            incomplete_profile_count=res.incomplete_profile_count,
+            manual_review_count=res.manual_review_count,
+            candidates=paginated_candidates,
         )
     except PermissionError as pe:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(pe))

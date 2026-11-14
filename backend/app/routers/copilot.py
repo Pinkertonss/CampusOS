@@ -20,6 +20,8 @@ from ..services.rag_engine import rag_engine
 
 router = APIRouter(prefix="/api/copilot", tags=["Campus Copilot RAG"])
 copilot_public_router = APIRouter(prefix="/copilot", tags=["Campus Copilot RAG (Root Alias)"])
+guide_router = APIRouter(prefix="/api/guide", tags=["Campus Guide"])
+guide_public_router = APIRouter(prefix="/guide", tags=["Campus Guide (Root Alias)"])
 
 ALLOWED_EXTENSIONS = {"pdf", "docx", "txt"}
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB max
@@ -272,3 +274,62 @@ def confirm_actionable_task_root(
     user_id: str = Depends(get_current_user_id),
 ):
     return confirm_actionable_task(req=req, user_id=user_id)
+
+
+# ============================================================
+# Campus Guide Routers (/api/guide/* and /guide/*)
+# ============================================================
+@guide_router.post("/documents", response_model=DocumentUploadResponse)
+async def upload_campus_document_guide(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    source_label: str = Form("circular"),
+    admin: dict = Depends(require_admin_user),
+):
+    return await upload_campus_document(file=file, title=title, source_label=source_label, admin=admin)
+
+
+@guide_router.get("/documents", response_model=List[CampusDocument])
+def list_campus_documents_guide(admin: dict = Depends(require_admin_user)):
+    return list_campus_documents(admin=admin)
+
+
+@guide_router.delete("/documents/{document_id}")
+def delete_campus_document_guide(
+    document_id: str,
+    admin: dict = Depends(require_admin_user),
+):
+    return delete_campus_document(document_id=document_id, admin=admin)
+
+
+@guide_router.post("/ask", response_model=CopilotQueryResponse)
+async def ask_guide(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    return await ask_copilot(request=request, user_id=user_id)
+
+
+@guide_router.post("/ask/stream")
+async def ask_guide_stream(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    return await ask_copilot_stream(request=request, user_id=user_id)
+
+
+@guide_router.post("/confirm-task", response_model=DeadlineTask)
+def confirm_actionable_task_guide(
+    req: ConfirmTaskRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    return confirm_actionable_task(req=req, user_id=user_id)
+
+
+@guide_public_router.post("/ask", response_model=CopilotQueryResponse)
+async def ask_guide_root(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    return await ask_copilot(request=request, user_id=user_id)
+

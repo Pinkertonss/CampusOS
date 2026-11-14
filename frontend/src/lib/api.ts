@@ -60,6 +60,15 @@ import {
   UserRoleItem,
   AdminAccountCreate,
   AdminAccountResponse,
+  LostAndFoundItem,
+  LostAndFoundCreate,
+  LostAndFoundUpdate,
+  LostAndFoundClaim,
+  SupportTicket,
+  SupportTicketCreate,
+  SupportTicketUpdate,
+  AssistantChatResponse,
+  AssistantCalculateResponse,
 } from "../types";
 import {
   MOCK_COURSES,
@@ -118,6 +127,15 @@ async function getAuthHeaders(customHeaders: Record<string, string> = {}): Promi
   }
 
   return headers;
+}
+
+export async function getAuthToken(): Promise<string | null> {
+  const headers = await getAuthHeaders();
+  const auth = headers["Authorization"];
+  if (auth && auth.startsWith("Bearer ")) {
+    return auth.slice(7);
+  }
+  return null;
 }
 
 // --- Health Check API ---
@@ -2011,5 +2029,442 @@ export function getDemoAcademicData() {
     impact: MOCK_IMPACT,
   };
 }
+
+// ============================================================
+// --- Lost and Found API
+// ============================================================
+
+export async function getLostAndFoundReports(filters?: {
+  report_type?: string;
+  category?: string;
+  status?: string;
+  query?: string;
+  my_reports?: boolean;
+}): Promise<LostAndFoundItem[]> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const params = new URLSearchParams();
+  if (filters?.report_type && filters.report_type !== "all") params.append("report_type", filters.report_type);
+  if (filters?.category && filters.category !== "all") params.append("category", filters.category);
+  if (filters?.status && filters.status !== "all") params.append("status", filters.status);
+  if (filters?.query) params.append("query", filters.query);
+  if (filters?.my_reports) params.append("my_reports", "true");
+
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_BASE}/api/lost-and-found${qs}`, { headers });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Lost & Found reports: ${res.statusText}`);
+  }
+  return await res.json();
+}
+
+export async function getLostAndFoundItem(id: string): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}`, { headers });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch report ${id}`);
+  }
+  return await res.json();
+}
+
+export async function createLostAndFoundReport(data: LostAndFoundCreate): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create Lost & Found report");
+  }
+  return await res.json();
+}
+
+export async function updateLostAndFoundReport(id: string, data: LostAndFoundUpdate): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update Lost & Found report");
+  }
+  return await res.json();
+}
+
+export async function resolveLostAndFoundReport(id: string, notes?: string): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}/resolve`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ resolution_notes: notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to resolve report");
+  }
+  return await res.json();
+}
+
+export async function archiveLostAndFoundReport(id: string): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}/archive`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to archive report");
+  }
+  return await res.json();
+}
+
+export async function submitLostAndFoundClaim(itemId: string, distinguishingProof: string): Promise<LostAndFoundClaim> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${itemId}/claim`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ distinguishing_proof: distinguishingProof }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit ownership claim");
+  }
+  return await res.json();
+}
+
+export async function getLostAndFoundItemClaims(itemId: string): Promise<LostAndFoundClaim[]> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${itemId}/claims`, { headers });
+  if (!res.ok) {
+    throw new Error("Failed to load claims");
+  }
+  return await res.json();
+}
+
+export async function verifyLostAndFoundClaim(
+  itemId: string,
+  claimId: string,
+  action: "verify" | "reject",
+  notes?: string
+): Promise<LostAndFoundClaim> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${itemId}/claims/${claimId}/verify`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ action, notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to verify claim");
+  }
+  return await res.json();
+}
+
+export async function uploadLostAndFoundImage(file: File): Promise<{ image_url: string; filename: string }> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/images/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload image");
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Support Tickets API
+// ============================================================
+
+export async function getSupportTickets(statusFilter?: string): Promise<SupportTicket[]> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const qs = statusFilter && statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+  const res = await fetch(`${API_BASE}/api/support/tickets${qs}`, { headers });
+  if (!res.ok) {
+    throw new Error("Failed to load support tickets");
+  }
+  return await res.json();
+}
+
+export async function createSupportTicket(data: SupportTicketCreate): Promise<SupportTicket> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/support/tickets`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit support ticket");
+  }
+  return await res.json();
+}
+
+export async function updateSupportTicket(id: string, data: SupportTicketUpdate): Promise<SupportTicket> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/support/tickets/${id}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update support ticket");
+  }
+  return await res.json();
+}
+
+export async function uploadSupportScreenshot(file: File): Promise<{ screenshot_url: string }> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/support/upload-screenshot`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload screenshot");
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Gemini Personal Assistant API
+// ============================================================
+
+export async function chatWithPersonalAssistant(
+  message: string,
+  history?: Array<{ role: string; content: string }>
+): Promise<AssistantChatResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/assistant/chat`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ message, conversation_history: history || [] }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to get response from Personal Assistant");
+  }
+  return await res.json();
+}
+
+export async function calculateWithPersonalAssistant(expression: string): Promise<AssistantCalculateResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/assistant/calculate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ expression }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Calculation error");
+  }
+  return await res.json();
+}
+
+export async function getAssistantStatus(): Promise<{ enabled: boolean; model: string; rate_limit_rpm: number }> {
+  const res = await fetch(`${API_BASE}/api/assistant/status`);
+  if (!res.ok) {
+    return { enabled: false, model: "gemini-1.5-flash", rate_limit_rpm: 30 };
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Admin Opportunities & Matching Preview API
+// ============================================================
+
+export async function previewOpportunityMatching(
+  draftOpp: Partial<Opportunity>
+): Promise<CandidateDiscoveryResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/preview-matching`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(draftOpp),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to preview matching");
+  }
+  return await res.json();
+}
+
+export async function updateOpportunity(
+  opportunityId: string,
+  data: Partial<Opportunity>
+): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update opportunity");
+  }
+  return await res.json();
+}
+
+export async function publishOpportunity(opportunityId: string): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}/publish`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to publish opportunity");
+  }
+  return await res.json();
+}
+
+export async function closeOpportunity(opportunityId: string): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}/close`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to close opportunity");
+  }
+  return await res.json();
+}
+
+export async function archiveOpportunity(opportunityId: string): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}/archive`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to archive opportunity");
+  }
+  return await res.json();
+}
+
+export async function createOpportunity(data: Partial<Opportunity>): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create opportunity");
+  }
+  return await res.json();
+}
+
+export async function getOpportunityCandidatesFiltered(
+  oppId: string,
+  filters?: { status?: string; branch?: string; query?: string; page?: number; page_size?: number }
+): Promise<CandidateDiscoveryResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const params = new URLSearchParams();
+  if (filters?.status && filters.status !== "all") params.append("status", filters.status);
+  if (filters?.branch && filters.branch !== "all") params.append("branch", filters.branch);
+  if (filters?.query) params.append("query", filters.query);
+  if (filters?.page) params.append("page", String(filters.page));
+  if (filters?.page_size) params.append("page_size", String(filters.page_size));
+
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/candidates${qs}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to discover candidates");
+  }
+  return await res.json();
+}
+
+
 
 

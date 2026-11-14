@@ -37,6 +37,7 @@ import {
   CheckCircle,
   Info,
   Lock,
+  Users,
 } from "lucide-react";
 import {
   Card,
@@ -50,6 +51,7 @@ import {
   useToast,
   EmptyState,
 } from "../../components/ui";
+import { useAuth } from "../../context/AuthContext";
 import {
   getOpportunities,
   getRecommendedOpportunities,
@@ -64,6 +66,14 @@ import {
   uploadStudentResume,
   deleteStudentResume,
   getOpportunityEligibility,
+  createOpportunity,
+  updateOpportunity,
+  publishOpportunity,
+  closeOpportunity,
+  archiveOpportunity,
+  previewOpportunityMatching,
+  getOpportunityCandidatesFiltered,
+  sendOpportunityInvitations,
 } from "../../lib/api";
 import {
   Opportunity,
@@ -77,17 +87,52 @@ import {
   WorkExperienceEntry,
   CertificationEntry,
   OpportunityEligibility,
+  CandidateDiscoveryResponse,
 } from "../../types";
 
 export default function OpportunitiesPage() {
+  const { user, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"recommended" | "explore" | "experience" | "saved" | "applied">("recommended");
+  const [activeTab, setActiveTab] = useState<"recommended" | "explore" | "experience" | "saved" | "applied" | "admin">("recommended");
   const [recommendations, setRecommendations] = useState<OpportunityRecommendation[]>([]);
   const [allOpportunities, setAllOpportunities] = useState<Opportunity[]>([]);
   const [savedOpportunities, setSavedOpportunities] = useState<Opportunity[]>([]);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [appliedList, setAppliedList] = useState<OpportunityApplication[]>([]);
   const [profile, setProfile] = useState<StudentSkillProfile | null>(null);
+
+  // Admin Opportunity Creator & Live Matching Preview State
+  const [createOppOpen, setCreateOppOpen] = useState(false);
+  const [editingOppId, setEditingOppId] = useState<string | null>(null);
+  const [oppTitle, setOppTitle] = useState("");
+  const [oppOrg, setOppOrg] = useState("");
+  const [oppCategory, setOppCategory] = useState("project");
+  const [oppRoleType, setOppRoleType] = useState("internship");
+  const [oppLocation, setOppLocation] = useState("Patiala, Punjab");
+  const [oppStipend, setOppStipend] = useState("₹15,000 / month");
+  const [oppHours, setOppHours] = useState(10);
+  const [oppDeadline, setOppDeadline] = useState("2026-12-01");
+  const [oppSkills, setOppSkills] = useState("Python, FastAPI, Next.js");
+  const [oppMinCgpa, setOppMinCgpa] = useState<number | undefined>(7.5);
+  const [oppBranches, setOppBranches] = useState("COE, CSE, ENC");
+  const [oppMaxBacklogs, setOppMaxBacklogs] = useState<number>(0);
+  const [oppMinAttendance, setOppMinAttendance] = useState<number>(75);
+  const [oppPreferred, setOppPreferred] = useState("");
+  const [oppDesc, setOppDesc] = useState("");
+  const [previewData, setPreviewData] = useState<CandidateDiscoveryResponse | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [savingOpp, setSavingOpp] = useState(false);
+
+  // Candidate Discovery Modal State
+  const [candidateModalOpen, setCandidateModalOpen] = useState(false);
+  const [selectedOppForCandidates, setSelectedOppForCandidates] = useState<Opportunity | null>(null);
+  const [candidatesList, setCandidatesList] = useState<any[]>([]);
+  const [candidateStats, setCandidateStats] = useState<{ eligible: number; not_eligible: number; incomplete: number } | null>(null);
+  const [candidateFilterStatus, setCandidateFilterStatus] = useState("all");
+  const [candidateFilterBranch, setCandidateFilterBranch] = useState("all");
+  const [candidateSearch, setCandidateSearch] = useState("");
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
+  const [invitedCandidateIds, setInvitedCandidateIds] = useState<Set<string>>(new Set());
 
   // Student Experience Profile State
   const [experienceProfile, setExperienceProfile] = useState<StudentExperienceProfile | null>(null);
@@ -440,6 +485,153 @@ export default function OpportunitiesPage() {
     handleSaveExpProfile({ achievements: currentAchs.filter((a) => a !== ach) });
   };
 
+  const handleLiveMatchingPreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const draft: any = {
+        title: oppTitle || "Draft Opportunity",
+        organization: oppOrg || "Campus Organization",
+        category: oppCategory,
+        role_type: oppRoleType,
+        location: oppLocation,
+        stipend: oppStipend,
+        time_commitment_hrs_week: Number(oppHours) || 10,
+        application_deadline: oppDeadline,
+        required_skills: oppSkills.split(",").map((s) => s.trim()).filter(Boolean),
+        preferred_qualifications: oppPreferred ? oppPreferred.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        description: oppDesc || "Draft description",
+        criteria: {
+          min_cgpa: oppMinCgpa ? Number(oppMinCgpa) : null,
+          allowed_branches: oppBranches ? oppBranches.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean) : null,
+          max_active_backlogs: Number(oppMaxBacklogs) || 0,
+          min_attendance_percentage: Number(oppMinAttendance) || 75,
+        },
+      };
+      const res = await previewOpportunityMatching(draft);
+      setPreviewData(res);
+      toast.success("Matching Preview Evaluated", {
+        description: `Found ${res.total_eligible_candidates} eligible candidates across campus pool.`,
+      });
+    } catch (err: any) {
+      toast.error("Preview Failed", { description: err.message || "Failed to preview matching." });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleSaveOpportunity = async (asPublished: boolean = true) => {
+    if (!oppTitle.trim() || !oppOrg.trim()) {
+      toast.error("Missing Fields", { description: "Please provide both title and organization." });
+      return;
+    }
+    setSavingOpp(true);
+    try {
+      const payload: any = {
+        title: oppTitle.trim(),
+        organization: oppOrg.trim(),
+        category: oppCategory,
+        role_type: oppRoleType,
+        location: oppLocation.trim(),
+        stipend: oppStipend.trim(),
+        time_commitment_hrs_week: Number(oppHours) || 10,
+        application_deadline: oppDeadline,
+        required_skills: oppSkills.split(",").map((s) => s.trim()).filter(Boolean),
+        preferred_qualifications: oppPreferred ? oppPreferred.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        description: oppDesc.trim(),
+        status: asPublished ? "open" : "draft",
+        criteria: {
+          min_cgpa: oppMinCgpa ? Number(oppMinCgpa) : null,
+          allowed_branches: oppBranches ? oppBranches.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean) : null,
+          max_active_backlogs: Number(oppMaxBacklogs) || 0,
+          min_attendance_percentage: Number(oppMinAttendance) || 75,
+        },
+      };
+
+      if (editingOppId) {
+        await updateOpportunity(editingOppId, payload);
+        toast.success("Opportunity Updated", { description: "Changes have been persisted successfully." });
+      } else {
+        await createOpportunity(payload);
+        toast.success("Opportunity Created", {
+          description: asPublished
+            ? "Opportunity published to student portal."
+            : "Opportunity saved as draft.",
+        });
+      }
+
+      setCreateOppOpen(false);
+      setEditingOppId(null);
+      setPreviewData(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error("Save Failed", { description: err.message || "Failed to save opportunity." });
+    } finally {
+      setSavingOpp(false);
+    }
+  };
+
+  const handleOpenCandidateDiscovery = async (opp: Opportunity) => {
+    setSelectedOppForCandidates(opp);
+    setCandidateModalOpen(true);
+    setCandidateFilterStatus("all");
+    setCandidateFilterBranch("all");
+    setCandidateSearch("");
+    setLoadingCandidates(true);
+    try {
+      const res = await getOpportunityCandidatesFiltered(opp.id);
+      setCandidatesList(res.candidates || []);
+      setCandidateStats({
+        eligible: res.total_eligible_candidates || 0,
+        not_eligible: res.not_eligible_count || 0,
+        incomplete: res.incomplete_profile_count || 0,
+      });
+    } catch (err: any) {
+      toast.error("Discovery Failed", { description: err.message || "Failed to load candidates." });
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  const handleFilterCandidates = async (statusVal?: string, branchVal?: string, searchVal?: string) => {
+    if (!selectedOppForCandidates) return;
+    setLoadingCandidates(true);
+    try {
+      const res = await getOpportunityCandidatesFiltered(selectedOppForCandidates.id, {
+        status: statusVal ?? candidateFilterStatus,
+        branch: branchVal ?? candidateFilterBranch,
+        query: searchVal ?? candidateSearch,
+      });
+      setCandidatesList(res.candidates || []);
+    } catch (err: any) {
+      toast.error("Filter Failed", { description: err.message || "Could not apply candidate filter." });
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  const handleSendCandidateInvitation = async (studentId: string) => {
+    if (!selectedOppForCandidates) return;
+    try {
+      await sendOpportunityInvitations(selectedOppForCandidates.id, [studentId]);
+      setInvitedCandidateIds((prev) => new Set([...prev, studentId]));
+      toast.success("Invitation Sent", { description: "In-app invitation notification sent to student." });
+    } catch (err: any) {
+      toast.error("Invitation Failed", { description: err.message || "Failed to send invitation." });
+    }
+  };
+
+  const handleOppStatusChange = async (oppId: string, action: "publish" | "close" | "archive") => {
+    try {
+      if (action === "publish") await publishOpportunity(oppId);
+      if (action === "close") await closeOpportunity(oppId);
+      if (action === "archive") await archiveOpportunity(oppId);
+      toast.success("Status Updated", { description: `Opportunity ${action}ed successfully.` });
+      await loadData();
+    } catch (err: any) {
+      toast.error("Action Failed", { description: err.message || `Failed to ${action} opportunity.` });
+    }
+  };
+
   const filteredExplore = allOpportunities.filter((opp) => {
     const matchesCat = selectedCategory === "all" || opp.category.toLowerCase() === selectedCategory.toLowerCase();
     const q = searchQuery.toLowerCase().trim();
@@ -476,6 +668,36 @@ export default function OpportunitiesPage() {
 
         {/* Skills & Availability Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setEditingOppId(null);
+                setOppTitle("");
+                setOppOrg("");
+                setOppCategory("project");
+                setOppRoleType("internship");
+                setOppLocation("Patiala, Punjab");
+                setOppStipend("₹15,000 / month");
+                setOppHours(10);
+                setOppDeadline(new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0]);
+                setOppSkills("Python, FastAPI, Next.js");
+                setOppMinCgpa(7.5);
+                setOppBranches("COE, CSE, ENC");
+                setOppMaxBacklogs(0);
+                setOppMinAttendance(75);
+                setOppPreferred("");
+                setOppDesc("");
+                setPreviewData(null);
+                setCreateOppOpen(true);
+              }}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              className="text-xs"
+            >
+              Post Opportunity (Admin)
+            </Button>
+          )}
           <Button
             variant="secondary"
             size="sm"
@@ -576,6 +798,19 @@ export default function OpportunitiesPage() {
             <Bookmark className="w-3.5 h-3.5" />
             Saved ({savedOpportunities.length})
           </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab("admin")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeTab === "admin"
+                  ? "bg-teal-500 text-slate-950 shadow-sm"
+                  : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Admin Management ({allOpportunities.length})
+            </button>
+          )}
         </div>
 
         {activeTab === "explore" && (
@@ -1487,7 +1722,597 @@ export default function OpportunitiesPage() {
             })}
           </div>
         )
+      ) : activeTab === "admin" && isAdmin ? (
+        <div className="space-y-6">
+          {/* Admin Header & Action */}
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-teal-400" />
+                Administrator Opportunity Control Center
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Manage campus opportunities, set mandatory criteria, preview live student matching, and invite candidates.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setEditingOppId(null);
+                setOppTitle("");
+                setOppOrg("");
+                setOppCategory("project");
+                setOppRoleType("internship");
+                setOppLocation("Patiala, Punjab");
+                setOppStipend("₹15,000 / month");
+                setOppHours(10);
+                setOppDeadline(new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0]);
+                setOppSkills("Python, FastAPI, Next.js");
+                setOppMinCgpa(7.5);
+                setOppBranches("COE, CSE, ENC");
+                setOppMaxBacklogs(0);
+                setOppMinAttendance(75);
+                setOppPreferred("");
+                setOppDesc("");
+                setPreviewData(null);
+                setCreateOppOpen(true);
+              }}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              className="text-xs shrink-0"
+            >
+              Create New Opportunity
+            </Button>
+          </div>
+
+          {/* Admin Opportunities List */}
+          <div className="grid grid-cols-1 gap-4">
+            {allOpportunities.map((opp) => (
+              <Card key={opp.id} className="p-5 bg-slate-900/90 border-slate-800 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-100">{opp.title}</h3>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase font-mono tracking-wider ${
+                          opp.status === "open"
+                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800"
+                            : opp.status === "draft"
+                            ? "bg-amber-950/80 text-amber-300 border border-amber-800"
+                            : "bg-slate-800 text-slate-400 border border-slate-700"
+                        }`}
+                      >
+                        {opp.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {opp.organization} · Category: <span className="capitalize">{opp.category}</span> · Role: <span className="capitalize">{opp.role_type}</span> · Stipend: {opp.stipend || "Unpaid"}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => handleOpenCandidateDiscovery(opp)}
+                      leftIcon={<Users className="w-3.5 h-3.5" />}
+                      className="text-xs"
+                    >
+                      Candidate Discovery
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingOppId(opp.id);
+                        setOppTitle(opp.title);
+                        setOppOrg(opp.organization);
+                        setOppCategory(opp.category);
+                        setOppRoleType(opp.role_type || "internship");
+                        setOppLocation(opp.location);
+                        setOppStipend(opp.stipend || "");
+                        setOppHours(opp.time_commitment_hrs_week);
+                        setOppDeadline(opp.application_deadline || opp.deadline || new Date().toISOString().split("T")[0]);
+                        setOppSkills((opp.required_skills || []).join(", "));
+                        setOppMinCgpa(opp.criteria?.min_cgpa ?? 7.5);
+                        setOppBranches((opp.criteria?.allowed_branches || ["COE", "CSE"]).join(", "));
+                        setOppMaxBacklogs(opp.criteria?.max_active_backlogs ?? 0);
+                        setOppMinAttendance(opp.criteria?.min_attendance_percentage ?? 75);
+                        setOppPreferred((opp.preferred_qualifications || []).join(", "));
+                        setOppDesc(opp.description);
+                        setPreviewData(null);
+                        setCreateOppOpen(true);
+                      }}
+                      className="text-xs"
+                    >
+                      Edit
+                    </Button>
+                    {opp.status !== "open" && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleOppStatusChange(opp.id, "publish")}
+                        className="text-xs text-emerald-400 hover:text-emerald-300"
+                      >
+                        Publish
+                      </Button>
+                    )}
+                    {opp.status === "open" && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleOppStatusChange(opp.id, "close")}
+                        className="text-xs text-amber-400 hover:text-amber-300"
+                      >
+                        Close
+                      </Button>
+                    )}
+                    {opp.status !== "archived" && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleOppStatusChange(opp.id, "archive")}
+                        className="text-xs text-slate-400 hover:text-rose-400"
+                      >
+                        Archive
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Criteria strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block">Min Verified CGPA</span>
+                    <span className="font-semibold text-teal-300">
+                      {opp.criteria?.min_cgpa ? `${opp.criteria.min_cgpa.toFixed(2)}` : "None"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Allowed Branches</span>
+                    <span className="font-semibold text-slate-200">
+                      {opp.criteria?.allowed_branches?.join(", ") || "All Branches"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Max Backlogs</span>
+                    <span className="font-semibold text-slate-200">
+                      {opp.criteria?.max_active_backlogs ?? 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Min Attendance</span>
+                    <span className="font-semibold text-slate-200">
+                      {opp.criteria?.min_attendance_percentage ? `${opp.criteria.min_attendance_percentage}%` : "75%"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="text-slate-400 text-[11px]">Required Skills:</span>
+                  {(opp.required_skills || []).map((s) => (
+                    <span key={s} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px] font-mono">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
       ) : null}
+
+      {/* ========================================================
+          ADMIN MODAL: CREATE / EDIT OPPORTUNITY WITH LIVE MATCHING PREVIEW
+      ======================================================== */}
+      {createOppOpen && (
+        <Modal
+          isOpen={createOppOpen}
+          onClose={() => {
+            setCreateOppOpen(false);
+            setEditingOppId(null);
+            setPreviewData(null);
+          }}
+          title={editingOppId ? "Edit Opportunity" : "Create Opportunity with Live Matching"}
+          size="lg"
+        >
+          <div className="space-y-4 text-xs text-slate-300 max-h-[75vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Opportunity Title *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. LLM Systems Research Fellow"
+                  value={oppTitle}
+                  onChange={(e) => setOppTitle(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Organization / Lab *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. TIET Center for AI and Data Science"
+                  value={oppOrg}
+                  onChange={(e) => setOppOrg(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Category</label>
+                <select
+                  value={oppCategory}
+                  onChange={(e) => setOppCategory(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                >
+                  <option value="project">Project</option>
+                  <option value="research">Research</option>
+                  <option value="internship">Internship</option>
+                  <option value="hackathon">Hackathon</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Role Type</label>
+                <select
+                  value={oppRoleType}
+                  onChange={(e) => setOppRoleType(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                >
+                  <option value="internship">Internship</option>
+                  <option value="research_assistant">Research Assistant</option>
+                  <option value="fellowship">Fellowship</option>
+                  <option value="competition">Competition</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Stipend</label>
+                <input
+                  type="text"
+                  placeholder="₹15,000 / month"
+                  value={oppStipend}
+                  onChange={(e) => setOppStipend(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Deadline</label>
+                <input
+                  type="date"
+                  value={oppDeadline}
+                  onChange={(e) => setOppDeadline(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                Required Skills (comma separated)
+              </label>
+              <input
+                type="text"
+                placeholder="Python, PyTorch, Next.js, FastAPI"
+                value={oppSkills}
+                onChange={(e) => setOppSkills(e.target.value)}
+                className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono"
+              />
+            </div>
+
+            {/* Mandatory Criteria Section */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-teal-300">
+                <ShieldCheck className="w-4 h-4" />
+                Mandatory Eligibility Criteria (Rule-Engine Enforced)
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Min Verified CGPA</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value={oppMinCgpa ?? ""}
+                    onChange={(e) => setOppMinCgpa(e.target.value ? Number(e.target.value) : undefined)}
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Allowed Branches</label>
+                  <input
+                    type="text"
+                    placeholder="COE, CSE, ENC"
+                    value={oppBranches}
+                    onChange={(e) => setOppBranches(e.target.value)}
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 uppercase"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Max Active Backlogs</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={oppMaxBacklogs}
+                    onChange={(e) => setOppMaxBacklogs(Number(e.target.value))}
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-1">Min Attendance %</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={oppMinAttendance}
+                    onChange={(e) => setOppMinAttendance(Number(e.target.value))}
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                Description &amp; Deliverables
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Describe project responsibilities, expected timeline, and learning outcomes..."
+                value={oppDesc}
+                onChange={(e) => setOppDesc(e.target.value)}
+                className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+              />
+            </div>
+
+            {/* LIVE MATCHING PREVIEW PANEL */}
+            <div className="p-4 rounded-xl bg-teal-950/30 border border-teal-800/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-teal-400" />
+                    Live Matching Preview (Pre-Publication Simulation)
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Evaluates criteria against verified student pool before saving.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleLiveMatchingPreview}
+                  disabled={previewLoading}
+                  className="text-xs border-teal-700 text-teal-300 hover:bg-teal-950"
+                >
+                  {previewLoading ? "Simulating..." : "Run Matching Preview"}
+                </Button>
+              </div>
+
+              {previewData && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-teal-900/40 text-center">
+                  <div className="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-800/80">
+                    <div className="text-[10px] uppercase font-bold text-emerald-300">Eligible</div>
+                    <div className="text-lg font-bold text-emerald-200">
+                      {previewData.total_eligible_candidates}
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-rose-950/60 border border-rose-800/80">
+                    <div className="text-[10px] uppercase font-bold text-rose-300">Not Eligible</div>
+                    <div className="text-lg font-bold text-rose-200">
+                      {previewData.not_eligible_count ?? 0}
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80">
+                    <div className="text-[10px] uppercase font-bold text-amber-300">Incomplete Profile</div>
+                    <div className="text-lg font-bold text-amber-200">
+                      {previewData.incomplete_profile_count ?? 0}
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Total Scanned</div>
+                    <div className="text-lg font-bold text-slate-200">
+                      {previewData.total_opted_in_students}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCreateOppOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={savingOpp}
+                onClick={() => handleSaveOpportunity(false)}
+              >
+                Save as Draft
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={savingOpp}
+                onClick={() => handleSaveOpportunity(true)}
+              >
+                {savingOpp ? "Publishing..." : "Publish Opportunity"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ========================================================
+          ADMIN MODAL: CANDIDATE DISCOVERY INSPECTOR
+      ======================================================== */}
+      {selectedOppForCandidates && (
+        <Modal
+          isOpen={candidateModalOpen}
+          onClose={() => {
+            setCandidateModalOpen(false);
+            setSelectedOppForCandidates(null);
+          }}
+          title={`Candidate Discovery: ${selectedOppForCandidates.title}`}
+          size="lg"
+        >
+          <div className="space-y-4 text-xs text-slate-300 max-h-[75vh] overflow-y-auto pr-1">
+            {/* Criteria context summary */}
+            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between text-[11px]">
+              <div>
+                <span className="text-slate-400">Required Skills: </span>
+                <span className="text-slate-200 font-mono">
+                  {(selectedOppForCandidates.required_skills || []).join(", ")}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 font-bold">
+                  {candidateStats?.eligible ?? 0} Eligible
+                </span>
+                <span className="px-2 py-0.5 rounded bg-rose-950 border border-rose-800 text-rose-300 font-bold">
+                  {candidateStats?.not_eligible ?? 0} Ineligible
+                </span>
+              </div>
+            </div>
+
+            {/* Filter controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="text"
+                placeholder="Search candidate name, roll, skill..."
+                value={candidateSearch}
+                onChange={(e) => {
+                  setCandidateSearch(e.target.value);
+                  handleFilterCandidates(undefined, undefined, e.target.value);
+                }}
+                className="text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+              />
+              <select
+                value={candidateFilterStatus}
+                onChange={(e) => {
+                  setCandidateFilterStatus(e.target.value);
+                  handleFilterCandidates(e.target.value, undefined, undefined);
+                }}
+                className="text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+              >
+                <option value="all">All Statuses</option>
+                <option value="ELIGIBLE">Eligible Only</option>
+                <option value="NOT_ELIGIBLE">Not Eligible</option>
+                <option value="INCOMPLETE_PROFILE">Incomplete Profile</option>
+              </select>
+              <select
+                value={candidateFilterBranch}
+                onChange={(e) => {
+                  setCandidateFilterBranch(e.target.value);
+                  handleFilterCandidates(undefined, e.target.value, undefined);
+                }}
+                className="text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+              >
+                <option value="all">All Branches</option>
+                <option value="COE">COE</option>
+                <option value="CSE">CSE</option>
+                <option value="ENC">ENC</option>
+                <option value="ECE">ECE</option>
+              </select>
+            </div>
+
+            {/* Candidates list */}
+            {loadingCandidates ? (
+              <div className="py-8 text-center text-slate-400">Loading candidate pool...</div>
+            ) : candidatesList.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 rounded-xl bg-slate-950/40 border border-slate-800">
+                No candidates match the specified filter criteria.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {candidatesList.map((cand) => {
+                  const isInvited = invitedCandidateIds.has(cand.student_id);
+                  const isEligible = cand.eligibility?.status === "ELIGIBLE";
+
+                  return (
+                    <div
+                      key={cand.student_id}
+                      className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-100 text-xs">
+                            {cand.student_name}
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-400">
+                            ({cand.student_roll_no})
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
+                              isEligible
+                                ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                                : cand.eligibility?.status === "INCOMPLETE_PROFILE"
+                                ? "bg-amber-950 text-amber-300 border border-amber-800"
+                                : "bg-rose-950 text-rose-300 border border-rose-800"
+                            }`}
+                          >
+                            {cand.eligibility?.status || "PENDING"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          Branch: {cand.student_branch} · Verified CGPA:{" "}
+                          <strong className="text-teal-300">{cand.verified_cgpa?.toFixed(2) || "N/A"}</strong> · Match:{" "}
+                          <strong className="text-teal-300">{cand.match_score}%</strong>
+                        </p>
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {(cand.skills || []).map((sk: string) => (
+                            <span key={sk} className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">
+                              {sk}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-2">
+                        {isInvited ? (
+                          <span className="px-2.5 py-1 rounded bg-teal-950 border border-teal-800 text-teal-300 font-semibold text-[11px] flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Invited
+                          </span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => handleSendCandidateInvitation(cand.student_id)}
+                            leftIcon={<Send className="w-3 h-3" />}
+                            className="text-xs"
+                          >
+                            Send In-App Invite
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {/* ========================================================
           4. APPLY MODAL

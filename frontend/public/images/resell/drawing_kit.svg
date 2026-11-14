@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="boardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7" />
+      <stop offset="100%" stop-color="#fde68a" />
+    </linearGradient>
+    <linearGradient id="metalArm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#f0fdf4" rx="16" />
+  
+  <!-- Drawing Board -->
+  <rect x="50" y="35" width="300" height="230" rx="6" fill="url(#boardGrad)" stroke="#d97706" stroke-width="3" />
+  <!-- Paper Sheet Attached with Clips -->
+  <rect x="75" y="55" width="250" height="190" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+  
+  <!-- Board Clips (Top left & Top right) -->
+  <rect x="70" y="50" width="20" height="12" rx="2" fill="#334155" />
+  <rect x="310" y="50" width="20" height="12" rx="2" fill="#334155" />
+  
+  <!-- Isometric Technical Drawing on Paper -->
+  <g stroke="#94a3b8" stroke-width="1.5" fill="none">
+    <path d="M 120 180 L 170 205 L 220 180 L 170 155 Z" />
+    <path d="M 120 180 L 120 140 L 170 115 L 170 155 Z" />
+    <path d="M 220 180 L 220 140 L 170 115" />
+    <circle cx="170" cy="160" r="15" stroke="#38bdf8" stroke-dasharray="3,3" />
+  </g>
+  
+  <!-- Mini-Drafter Base Clamp (Top-Left corner) -->
+  <rect x="42" y="30" width="26" height="30" rx="4" fill="#0f172a" stroke="#334155" stroke-width="2" />
+  <circle cx="55" cy="45" r="5" fill="#f59e0b" />
+  
+  <!-- Mini-Drafter Pivot Arms -->
+  <g stroke="url(#metalArm)" stroke-width="6" stroke-linecap="round">
+    <line x1="55" y1="45" x2="140" y2="90" />
+    <line x1="65" y1="55" x2="150" y2="100" />
+    <line x1="145" y1="95" x2="210" y2="135" />
+    <line x1="155" y1="105" x2="220" y2="145" />
+  </g>
+  
+  <!-- Protractor Head & Clamp Knobs -->
+  <circle cx="215" cy="140" r="22" fill="#0f172a" stroke="#e2e8f0" stroke-width="2" />
+  <circle cx="215" cy="140" r="14" fill="#334155" />
+  <circle cx="215" cy="140" r="6" fill="#f59e0b" />
+  
+  <!-- Right-Angle Transparent Scales -->
+  <g fill="#38bdf8" fill-opacity="0.25" stroke="#0284c7" stroke-width="2">
+    <!-- Horizontal Scale -->
+    <rect x="215" y="132" width="105" height="16" rx="2" />
+    <!-- Vertical Scale -->
+    <rect x="207" y="140" width="16" height="85" rx="2" />
+  </g>
+  <!-- Scale Markings -->
+  <path d="M 230 132 L 230 138 M 245 132 L 245 142 M 260 132 L 260 138 M 275 132 L 275 142 M 290 132 L 290 138 M 305 132 L 305 142" stroke="#0369a1" stroke-width="1.5" />
+  <path d="M 207 155 L 213 155 M 207 170 L 217 170 M 207 185 L 213 185 M 207 200 L 217 200 M 207 215 L 213 215" stroke="#0369a1" stroke-width="1.5" />
+</svg>

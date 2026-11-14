@@ -122,10 +122,43 @@ class OpportunityCreate(BaseModel):
     required_skills: List[str] = Field(default_factory=list)
     required_skills_mode: str = "any"  # "all" | "any"
     preferred_skills: List[str] = Field(default_factory=list)
+    preferred_qualifications: List[str] = Field(default_factory=list)
     min_experience_months: Optional[int] = 0
     time_commitment_hrs_week: int = 5
     location: str = "TIET Campus"
     deadline: Optional[str] = None
+    application_deadline: Optional[str] = None
+    role_type: Optional[str] = None
+    stipend: Optional[str] = None
+    criteria: Optional[Dict[str, Any]] = None
+    application_link: Optional[str] = None
+    contact_email: Optional[str] = None
+
+
+class OpportunityUpdate(BaseModel):
+    title: Optional[str] = None
+    organization: Optional[str] = None
+    mentor_name: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    eligible_branches: Optional[List[str]] = None
+    min_semester: Optional[int] = None
+    max_semester: Optional[int] = None
+    graduation_years: Optional[List[int]] = None
+    min_cgpa: Optional[float] = None
+    required_skills: Optional[List[str]] = None
+    required_skills_mode: Optional[str] = None
+    preferred_skills: Optional[List[str]] = None
+    preferred_qualifications: Optional[List[str]] = None
+    min_experience_months: Optional[int] = None
+    time_commitment_hrs_week: Optional[int] = None
+    location: Optional[str] = None
+    deadline: Optional[str] = None
+    application_deadline: Optional[str] = None
+    role_type: Optional[str] = None
+    stipend: Optional[str] = None
+    criteria: Optional[Dict[str, Any]] = None
+    status: Optional[str] = None  # "open", "closed", "archived"
     application_link: Optional[str] = None
     contact_email: Optional[str] = None
 
@@ -145,12 +178,17 @@ class Opportunity(BaseModel):
     required_skills: List[str] = Field(default_factory=list)
     required_skills_mode: str = "any"  # "all" | "any"
     preferred_skills: List[str] = Field(default_factory=list)
+    preferred_qualifications: List[str] = Field(default_factory=list)
     min_experience_months: Optional[int] = 0
     time_commitment_hrs_week: int = 5
     location: str = "TIET Campus"
+    role_type: Optional[str] = None
+    stipend: Optional[str] = None
+    criteria: Optional[Dict[str, Any]] = None
     schedule_requirement: Optional[str] = None
     deadline: Optional[str] = None
-    status: str = "open"  # "open" | "closed"
+    application_deadline: Optional[str] = None
+    status: str = "open"  # "open" | "closed" | "archived"
     creator_id: str = "admin"
     creator_role: str = "admin"
     application_link: Optional[str] = None
@@ -249,6 +287,9 @@ class CandidateDiscoveryResponse(BaseModel):
     opportunity_title: str
     total_candidates_evaluated: int
     eligible_count: int
+    not_eligible_count: int = 0
+    incomplete_profile_count: int = 0
+    manual_review_count: int = 0
     candidates: List[CandidateMatch]
 
 

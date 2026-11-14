@@ -314,7 +314,7 @@ export default function CampusCopilotPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-              Campus Copilot
+              Campus Guide
             </h1>
             <Badge variant="primary" size="md">
               Source-Grounded RAG

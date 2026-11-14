@@ -24,6 +24,7 @@ from .models.opportunity import (
     CandidateMatch,
     CandidateDiscoveryResponse,
     OpportunityInvitationResponse,
+    OpportunityUpdate,
 )
 from .services.what_if_engine import WhatIfEngine
 from .services.academic_engine import AcademicRBACEngine
@@ -522,6 +523,127 @@ class CampusOSDatabase:
         self.opportunities[opp_id] = opp
         return opp
 
+    def update_opportunity(
+        self, opportunity_id: str, requester_id: str, requester_role: str, opp_update: OpportunityUpdate
+    ) -> Opportunity:
+        opp = self.get_opportunity(opportunity_id)
+        if not opp:
+            raise ValueError(f"Opportunity {opportunity_id} not found")
+
+        is_creator = opp.creator_id == requester_id or opp.creator_id in (requester_id, "admin")
+        is_admin = requester_role == "admin"
+        if not (is_creator or is_admin):
+            raise PermissionError("Only the opportunity creator or an administrator can edit this opportunity.")
+
+        data = opp_update.model_dump(exclude_unset=True)
+        for field, value in data.items():
+            if hasattr(opp, field) and value is not None:
+                setattr(opp, field, value)
+
+        return opp
+
+    def preview_matching(self, draft_opp: OpportunityCreate) -> CandidateDiscoveryResponse:
+        from .services.opportunity_engine import OpportunityEngine
+        dummy_opp = Opportunity(
+            id="draft-preview",
+            title=draft_opp.title,
+            organization=draft_opp.organization,
+            mentor_name=draft_opp.mentor_name,
+            category=draft_opp.category,
+            description=draft_opp.description,
+            eligible_branches=draft_opp.eligible_branches,
+            min_semester=draft_opp.min_semester,
+            max_semester=draft_opp.max_semester,
+            graduation_years=draft_opp.graduation_years,
+            min_cgpa=draft_opp.min_cgpa,
+            required_skills=draft_opp.required_skills,
+            required_skills_mode=draft_opp.required_skills_mode,
+            preferred_skills=draft_opp.preferred_skills,
+            min_experience_months=draft_opp.min_experience_months,
+            time_commitment_hrs_week=draft_opp.time_commitment_hrs_week,
+            location=draft_opp.location,
+            deadline=draft_opp.deadline,
+            status="open",
+            creator_id="preview",
+            creator_role="admin",
+            application_link=draft_opp.application_link,
+            contact_email=draft_opp.contact_email,
+            created_at=datetime.utcnow().isoformat(),
+        )
+
+        candidates: List[CandidateMatch] = []
+        eligible_count = 0
+        not_eligible_count = 0
+        incomplete_profile_count = 0
+        manual_review_count = 0
+
+        student_ids = list(self.academic_rbac.student_directory.keys())
+        for sid in (self.default_user_id, "student-user-id", "user-student-1"):
+            if sid and sid not in student_ids:
+                student_ids.append(sid)
+
+        for sid in student_ids:
+            prof = self.get_student_experience_profile(sid)
+            if not prof.discovery_opt_in:
+                continue
+
+            verified_cgpa = None
+            if prof.education and prof.education[0].cgpa_verified is not None:
+                verified_cgpa = prof.education[0].cgpa_verified
+            elif sid == self.default_user_id:
+                verified_cgpa = 8.52
+
+            eligibility = OpportunityEngine.evaluate_eligibility(
+                profile=prof,
+                opportunity=dummy_opp,
+                verified_cgpa=verified_cgpa,
+            )
+
+            if eligibility.status == "ELIGIBLE":
+                eligible_count += 1
+            elif eligibility.status == "NOT_ELIGIBLE":
+                not_eligible_count += 1
+            elif eligibility.status == "INCOMPLETE_PROFILE":
+                incomplete_profile_count += 1
+            if eligibility.manual_review_required:
+                manual_review_count += 1
+
+            has_resume = bool(prof.resume_file_name or self.get_student_resume(sid))
+            candidates.append(
+                CandidateMatch(
+                    student_id=sid,
+                    student_name=prof.full_name,
+                    student_roll_no=prof.roll_no,
+                    student_branch=prof.education[0].branch if prof.education else "COE",
+                    semester=prof.education[0].semester if prof.education else 5,
+                    graduation_year=prof.education[0].graduation_year if prof.education else 2026,
+                    cgpa_verified=verified_cgpa,
+                    skills=prof.skills,
+                    eligibility=eligibility,
+                    has_resume=has_resume,
+                    is_applicant=False,
+                )
+            )
+
+        status_rank = {"ELIGIBLE": 0, "INCOMPLETE_PROFILE": 1, "NOT_ELIGIBLE": 2}
+        candidates.sort(
+            key=lambda c: (
+                status_rank.get(c.eligibility.status, 9),
+                -c.eligibility.preference_score,
+            )
+        )
+
+        return CandidateDiscoveryResponse(
+            opportunity_id="preview",
+            opportunity_title=dummy_opp.title,
+            total_candidates_evaluated=len(candidates),
+            eligible_count=eligible_count,
+            not_eligible_count=not_eligible_count,
+            incomplete_profile_count=incomplete_profile_count,
+            manual_review_count=manual_review_count,
+            candidates=candidates,
+        )
+
     def get_opportunity_candidates(
         self, opportunity_id: str, requester_id: str, requester_role: str
     ) -> CandidateDiscoveryResponse:
@@ -540,6 +662,9 @@ class CampusOSDatabase:
         # Gather all candidates from student directory & experience profiles
         candidates: List[CandidateMatch] = []
         eligible_count = 0
+        not_eligible_count = 0
+        incomplete_profile_count = 0
+        manual_review_count = 0
 
         # Build list of student user IDs
         student_ids = list(self.academic_rbac.student_directory.keys())
@@ -583,6 +708,12 @@ class CampusOSDatabase:
 
             if eligibility.status == "ELIGIBLE":
                 eligible_count += 1
+            elif eligibility.status == "NOT_ELIGIBLE":
+                not_eligible_count += 1
+            elif eligibility.status == "INCOMPLETE_PROFILE":
+                incomplete_profile_count += 1
+            if eligibility.manual_review_required:
+                manual_review_count += 1
 
             has_resume = bool(prof.resume_file_name or self.get_student_resume(sid))
             inv_sent = sid in invited_students
@@ -627,6 +758,9 @@ class CampusOSDatabase:
             opportunity_title=opp.title,
             total_candidates_evaluated=len(candidates),
             eligible_count=eligible_count,
+            not_eligible_count=not_eligible_count,
+            incomplete_profile_count=incomplete_profile_count,
+            manual_review_count=manual_review_count,
             candidates=candidates,
         )
 

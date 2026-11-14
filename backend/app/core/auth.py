@@ -438,3 +438,15 @@ def get_optional_user_id(authorization: Optional[str] = Header(None)) -> Optiona
         return None
     token = authorization.split("Bearer ", 1)[1].strip()
     return verify_supabase_jwt(token)
+
+
+def get_optional_user_claims(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
+    """
+    Optional dependency that returns verified claims if a valid token is provided,
+    or None if the header is absent. Raises 401 if a token is present but forged/invalid.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split("Bearer ", 1)[1].strip()
+    return verify_supabase_jwt_claims(token)
+

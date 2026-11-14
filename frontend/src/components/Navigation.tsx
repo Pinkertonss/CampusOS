@@ -14,9 +14,12 @@ import {
   ChevronRight,
   Compass,
   Users,
+  SearchCheck,
+  LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useSupport } from "../context/SupportContext";
 import ProfileModal from "./ProfileModal";
 import { Badge } from "./ui";
 import { getReuseNotifications } from "../lib/api";
@@ -32,13 +35,15 @@ export default function Navigation() {
   const pathname = usePathname();
   const { user, profile, isAdmin } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { openSupport } = useSupport();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [reuseUnreadCount, setReuseUnreadCount] = useState(0);
 
-  // Faculty Portal and Admin Console are hidden from students; visible to admins only
+  // Navigation order: Dashboard, Lost & Found, Academic Hub, then Role/Feature modules
   const navItems: NavItem[] = React.useMemo(() => {
     const items: NavItem[] = [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/lost-and-found", label: "Lost & Found", icon: SearchCheck, badge: "Campus" },
       { href: "/academic", label: "Academic Hub", icon: GraduationCap },
     ];
 
@@ -51,7 +56,7 @@ export default function Navigation() {
 
     items.push(
       { href: "/opportunities", label: "Opportunities", icon: Compass, badge: "Match" },
-      { href: "/copilot", label: "Campus Copilot", icon: Sparkles, badge: "AI" },
+      { href: "/guide", label: "Campus Guide", icon: Sparkles, badge: "AI" },
       { href: "/vault", label: "Digital Vault", icon: ShieldCheck },
       { href: "/reuse", label: "Campus Reuse", icon: Repeat }
     );
@@ -115,7 +120,9 @@ export default function Navigation() {
             const Icon = item.icon;
             const isActive =
               item.href === "/"
-                ? pathname === "/" || pathname === "/academic"
+                ? pathname === "/"
+                : item.href === "/guide"
+                ? pathname.startsWith("/guide") || pathname.startsWith("/copilot")
                 : pathname.startsWith(item.href);
 
             return (
@@ -151,6 +158,23 @@ export default function Navigation() {
             );
           })}
         </nav>
+
+        {/* Help & Support Button */}
+        <div className="px-3 pt-2">
+          <button
+            type="button"
+            onClick={() => openSupport()}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/60 text-teal-800 dark:text-teal-300 font-semibold text-xs hover:bg-teal-100/80 dark:hover:bg-teal-900/60 transition group shadow-sm"
+          >
+            <div className="flex items-center gap-2.5">
+              <LifeBuoy className="w-4 h-4 text-teal-600 dark:text-teal-400 group-hover:rotate-45 transition-transform" />
+              <span>Help & Support</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-200/80 dark:bg-teal-800 text-teal-900 dark:text-teal-100 font-bold">
+              24/7
+            </span>
+          </button>
+        </div>
 
         {/* Student Profile Menu / Footer */}
         <div className="p-3 border-t border-slate-100 dark:border-slate-800">
@@ -193,7 +217,16 @@ export default function Navigation() {
           </Badge>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => openSupport()}
+            aria-label="Open Help & Support"
+            className="p-2 rounded-lg text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-slate-800 transition"
+          >
+            <LifeBuoy className="w-4 h-4" />
+          </button>
+
           <button
             type="button"
             onClick={toggleTheme}
@@ -221,12 +254,14 @@ export default function Navigation() {
         aria-label="Mobile navigation"
         className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 px-3 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
-        <div className={`grid ${isAdmin ? "grid-cols-4" : "grid-cols-3"} gap-1`}>
+        <div className="flex items-center justify-between gap-1 overflow-x-auto py-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               item.href === "/"
-                ? pathname === "/" || pathname === "/academic"
+                ? pathname === "/"
+                : item.href === "/guide"
+                ? pathname.startsWith("/guide") || pathname.startsWith("/copilot")
                 : pathname.startsWith(item.href);
 
             return (

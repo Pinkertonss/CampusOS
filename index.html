@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusOS | Thapar Institute Single-Campus Operating System</title>
+  <meta name="description" content="CampusOS is the unified single-campus digital platform for Thapar Institute of Engineering and Technology (TIET), consolidating academics, attendance, lost & found, opportunities, student reuse, and AI campus assistance.">
+  <meta name="theme-color" content="#0d9488">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 10v6M2 10l10-5 10 5-10 5z'/><path d='M6 12v5c3 3 9 3 12 0v-5'/></svg>">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --teal: #14b8a6;
+      --teal-dark: #0f766e;
+      --teal-light: #2dd4bf;
+      --sky: #0ea5e9;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a {
+      color: var(--teal-light);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    a:hover {
+      color: #5eead4;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .nav-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 4.25rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #fff;
+    }
+    .brand-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.625rem;
+      background: linear-gradient(135deg, var(--teal-dark), var(--teal), var(--sky));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-teal {
+      background: rgba(20, 184, 166, 0.15);
+      color: var(--teal-light);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+    }
+    .badge-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+    }
+    .nav-links a:hover {
+      color: #fff;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--teal), #0d9488);
+      color: #042f2e;
+      box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2dd4bf, var(--teal));
+      transform: translateY(-1px);
+      color: #042f2e;
+    }
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.8);
+      color: #f1f5f9;
+      border: 1px solid var(--card-border);
+    }
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.8);
+      color: #fff;
+    }
+    /* Hero */
+    .hero {
+      padding: 5rem 0 3.5rem;
+      text-align: center;
+      background: radial-gradient(circle at 50% 20%, rgba(20, 184, 166, 0.12) 0%, transparent 65%);
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.875rem;
+      border-radius: 9999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--teal-light);
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(180deg, #ffffff 40%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 2.25rem;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    /* Status banner */
+    .status-bar {
+      margin: 2rem 0;
+      padding: 1.25rem 1.5rem;
+      border-radius: 1rem;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .status-items {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.8125rem;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 3rem 0;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card:hover {
+      border-color: rgba(20, 184, 166, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+    .card-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 0.75rem;
+      background: rgba(20, 184, 166, 0.1);
+      color: var(--teal-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      border: 1px solid rgba(20, 184, 166, 0.2);
+    }
+    .card h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    .card p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.55;
+    }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(30, 41, 59, 0.8);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+    /* Footer */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--card-border);
+      padding: 2.5rem 0;
+      background: #0b1120;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+    .footer-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.25rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container nav-wrap">
+      <a href="/" class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span>CampusOS</span>
+        <span class="badge badge-teal">TIET</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#modules">Modules</a>
+        <a href="/lost-and-found">Lost &amp; Found</a>
+        <a href="/opportunities">Opportunities</a>
+        <a href="/guide">Campus Guide</a>
+        <a href="/academic">Academic Hub</a>
+        <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+      </nav>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="/login" class="btn btn-secondary">Sign In</a>
+        <a href="/" class="btn btn-primary">Open App &rarr;</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">
+        <span>●</span> Single-Campus Operating System · Thapar Institute Pilot
+      </div>
+      <h1>Personalized Campus Operations,<br>Unified in One System</h1>
+      <p>
+        CampusOS consolidates fragmented university systems into a high-performance operating layer: deterministic attendance risk management, private lost &amp; found claim verification, AI-driven opportunity matching, student reuse marketplace, and source-grounded policy guidance.
+      </p>
+      <div class="hero-actions">
+        <a href="/" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 0.9375rem;">
+          Launch Student Dashboard
+        </a>
+        <a href="/docs" target="_blank" rel="noopener" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.9375rem;">
+          Interactive OpenAPI Docs
+        </a>
+        <a href="https://github.com/Pinkertonss/CampusOS" target="_blank" rel="noopener" class="btn btn-secondary">
+          GitHub Repository
+        </a>
+      </div>
+
+      <!-- Live Service Status Bar -->
+      <div class="status-bar" style="margin-top: 3.5rem;">
+        <div class="status-items">
+          <div class="status-item">
+            <span class="dot"></span>
+            <span><strong>Backend API:</strong> Online (FastAPI)</span>
+          </div>
+          <div class="status-item">
+            <span class="dot"></span>
+            <span><strong>Frontend:</strong> Next.js 16 App Router</span>
+          </div>
+          <div class="status-item">
+            <span class="dot"></span>
+            <span><strong>Database:</strong> Supabase PostgreSQL RLS</span>
+          </div>
+          <div class="status-item">
+            <span class="dot"></span>
+            <span><strong>Assistant:</strong> Gemini 1.5 Powered</span>
+          </div>
+        </div>
+        <div style="font-size: 0.8125rem;">
+          <a href="/api/health" target="_blank" rel="noopener" style="color: var(--teal-light); font-weight: 700;">Health Check Endpoint &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modules Showcase -->
+  <main class="container" id="modules" style="padding-bottom: 4rem;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.02em;">
+        Core Architecture Modules
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.9375rem; margin-top: 0.25rem;">
+        Explore the 8 integrated modules powering student life, faculty grading, and administrative oversight.
+      </p>
+    </div>
+
+    <div class="grid">
+      <!-- 1. Lost & Found -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m8 11 2 2 4-4"/>
+            </svg>
+          </div>
+          <h3>Campus Lost &amp; Found</h3>
+          <p>
+            Report misplaced or recovered items. Enforces strict privacy: public listings conceal private phone numbers while authenticated claimants provide distinguishing identifying proof visible only to reporters and moderators.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Privacy Protected</span>
+          <a href="/lost-and-found">Open Section &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 2. Academic Hub & Attendance -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+          </div>
+          <h3>Academic Hub &amp; What-If Planner</h3>
+          <p>
+            Verified course registrations, session attendances, and grading. Includes the AttendanceEngine with deterministic 75% cutoff compliance and interactive hypothetical schedule simulation.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Rule Engine</span>
+          <a href="/academic">Open Academic Hub &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 3. Opportunities & Matching -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </svg>
+          </div>
+          <h3>Opportunity Engine &amp; Experience</h3>
+          <p>
+            Persistent student experience profiles, resume management, and deterministic opportunity matching. Features Admin Live Matching Previews before publishing and candidate discovery invitation dispatch.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Live Matching</span>
+          <a href="/opportunities">Explore Opportunities &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 4. Campus Guide RAG -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+            </svg>
+          </div>
+          <h3>Campus Guide (Source-Grounded AI)</h3>
+          <p>
+            Strict factual campus Q&amp;A referencing official TIET circulars, academic calendars, and hostel regulations. Strict anti-hallucination boundary declines out-of-domain queries and converts circular dates into calendar tasks.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Zero Guessing</span>
+          <a href="/guide">Ask Campus Guide &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 5. Gemini Personal Assistant -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+            </svg>
+          </div>
+          <h3>Gemini Personal Assistant</h3>
+          <p>
+            Floating study and writing companion accessible across all authenticated pages. Provides engineering concept breakdowns, draft emails, and safe math computations using restricted AST arithmetic without eval.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Gemini 1.5</span>
+          <a href="/#assistant">Study Companion &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 6. Student Reuse Marketplace -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+            </svg>
+          </div>
+          <h3>Campus Reuse Marketplace</h3>
+          <p>
+            Circular student economy for textbooks, drafters, scientific calculators, lab coats, and hostel furniture. Features verified TIET student exchanges and cumulative environmental CO₂/financial savings tracking.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Impact Tracked</span>
+          <a href="/reuse">View Marketplace &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 7. Digital Vault -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <h3>Digital Vault with RLS</h3>
+          <p>
+            Secure, encrypted document repository for marksheets, government identity proofs, and academic certificates. Strictly segregated by Supabase Row Level Security with quota management.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">Zero-Knowledge</span>
+          <a href="/vault">Open Digital Vault &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 8. Student Support & Help Desk -->
+      <div class="card">
+        <div>
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/>
+            </svg>
+          </div>
+          <h3>Support &amp; Ticketing Desk</h3>
+          <p>
+            Omnipresent help button on desktop and mobile. Allows students to search comprehensive FAQs, submit persistent bug reports with screenshots, and track official administrator resolutions.
+          </p>
+        </div>
+        <div class="card-footer">
+          <span class="badge badge-teal">24/7 Ticketing</span>
+          <a href="/#support">Support Center &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-wrap">
+      <div>
+        <span style="font-weight: 700; color: #fff;">CampusOS</span> · Thapar Institute of Engineering and Technology Pilot
+        <p style="color: #64748b; font-size: 0.75rem; margin-top: 0.25rem;">
+          Production deployment tracked on branch <code>origin/antigravity</code>. Built with FastAPI, Next.js 16, and Supabase.
+        </p>
+      </div>
+      <div style="display: flex; gap: 1.25rem;">
+        <a href="/docs">OpenAPI Docs</a>
+        <a href="/api/health">System Status</a>
+        <a href="https://github.com/Pinkertonss/CampusOS" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

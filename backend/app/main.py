@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.auth import get_current_user_id
-from .routers import academic, academic_rbac, copilot, vault, reuse, opportunities
+from .routers import academic, academic_rbac, copilot, vault, reuse, opportunities, lost_and_found, support, personal_assistant
 
 app = FastAPI(
     title=settings.app_name,
@@ -26,12 +26,17 @@ app.include_router(academic.academics_router)
 app.include_router(academic.academic_singular_router)
 app.include_router(copilot.router)
 app.include_router(copilot.copilot_public_router)
+app.include_router(copilot.guide_router)
+app.include_router(copilot.guide_public_router)
 app.include_router(vault.router)
 app.include_router(vault.vault_public_router)
 app.include_router(reuse.router)
 app.include_router(reuse.reuse_public_router)
 app.include_router(opportunities.router)
 app.include_router(opportunities.public_router)
+app.include_router(lost_and_found.router)
+app.include_router(support.router)
+app.include_router(personal_assistant.router)
 
 @app.get("/")
 def root():

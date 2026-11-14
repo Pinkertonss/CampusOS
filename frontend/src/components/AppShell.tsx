@@ -3,6 +3,8 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Navigation from "./Navigation";
+import PersonalAssistant from "./PersonalAssistant";
+import SupportModal from "./SupportModal";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -28,6 +30,8 @@ export default function AppShell({ children }: AppShellProps) {
       <main className="flex-1 min-h-[calc(100vh-4rem)] md:min-h-screen overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8">
         <div className="max-w-7xl mx-auto">{children}</div>
       </main>
+      <PersonalAssistant />
+      <SupportModal />
     </div>
   );
 }

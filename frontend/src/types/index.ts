@@ -254,15 +254,27 @@ export interface Opportunity {
   organization: string;
   mentor_name?: string;
   category: "research" | "hackathon" | "project" | "club" | "tutoring" | string;
+  role_type?: string;
+  stipend?: string;
   description: string;
   required_skills: string[];
-  preferred_branches: string[];
+  preferred_skills?: string[];
+  preferred_qualifications?: string[];
+  preferred_branches?: string[];
+  eligible_branches?: string[];
   min_cgpa?: number;
   time_commitment_hrs_week: number;
   location: string;
   schedule_requirement?: string;
   deadline?: string;
-  status: "open" | "closed";
+  application_deadline?: string;
+  status: "open" | "closed" | "draft" | "archived" | string;
+  criteria?: {
+    min_cgpa?: number | null;
+    allowed_branches?: string[] | null;
+    max_active_backlogs?: number | null;
+    min_attendance_percentage?: number | null;
+  };
   application_link?: string;
   contact_email?: string;
   created_at: string;
@@ -412,9 +424,16 @@ export interface CandidateMatch {
 
 export interface CandidateDiscoveryResponse {
   opportunity_id: string;
-  total_candidates: number;
-  eligible_count: number;
-  candidates: CandidateMatch[];
+  opportunity_title?: string;
+  total_candidates?: number;
+  total_candidates_evaluated?: number;
+  total_opted_in_students?: number;
+  eligible_count?: number;
+  total_eligible_candidates?: number;
+  not_eligible_count?: number;
+  incomplete_profile_count?: number;
+  manual_review_count?: number;
+  candidates: CandidateMatch[] | any[];
 }
 
 export interface AcademicSummaryCourse {
@@ -884,6 +903,120 @@ export interface AdminAccountResponse {
   token: string;
   message: string;
 }
+
+// --- Lost and Found Types ---
+export interface LostAndFoundClaim {
+  id: string;
+  item_id: string;
+  claimant_id: string;
+  claimant_email?: string | null;
+  distinguishing_proof: string;
+  status: "pending" | "verified" | "rejected";
+  created_at: string;
+  verified_at?: string | null;
+  verification_notes?: string | null;
+}
+
+export interface LostAndFoundItem {
+  id: string;
+  report_type: "lost" | "found";
+  title: string;
+  description: string;
+  category: "electronics" | "documents" | "books" | "clothing" | "accessories" | "keys" | "other" | string;
+  location: string;
+  event_date: string;
+  image_urls: string[];
+  status: "open" | "resolved" | "archived";
+  reporter_id: string;
+  reporter_role: string;
+  reporter_email_masked?: string | null;
+  resolved_at?: string | null;
+  resolved_by?: string | null;
+  resolution_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  claims_count?: number;
+  claims?: LostAndFoundClaim[];
+}
+
+export interface LostAndFoundCreate {
+  report_type: "lost" | "found";
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  event_date?: string;
+  image_urls?: string[];
+}
+
+export interface LostAndFoundUpdate {
+  title?: string;
+  description?: string;
+  category?: string;
+  location?: string;
+  event_date?: string;
+  image_urls?: string[];
+  status?: "open" | "resolved" | "archived";
+  resolution_notes?: string;
+}
+
+export interface LostAndFoundClaimCreate {
+  distinguishing_proof: string;
+}
+
+// --- Support Ticket Types ---
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  user_email: string;
+  category: "academic" | "technical" | "lost_found" | "opportunities" | "billing" | "general" | string;
+  subject: string;
+  description: string;
+  screenshot_url?: string | null;
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "open" | "in_progress" | "resolved" | "closed";
+  admin_response?: string | null;
+  responded_by?: string | null;
+  responded_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupportTicketCreate {
+  category: string;
+  subject: string;
+  description: string;
+  screenshot_url?: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+}
+
+export interface SupportTicketUpdate {
+  status?: "open" | "in_progress" | "resolved" | "closed";
+  admin_response?: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+}
+
+// --- Personal Assistant Types ---
+export interface AssistantChatRequest {
+  message: string;
+  conversation_history?: Array<{ role: string; content: string }>;
+}
+
+export interface AssistantChatResponse {
+  reply: string;
+  model: string;
+  timestamp: string;
+}
+
+export interface AssistantCalculateRequest {
+  expression: string;
+}
+
+export interface AssistantCalculateResponse {
+  expression: string;
+  result: number;
+}
+
 
 
 
