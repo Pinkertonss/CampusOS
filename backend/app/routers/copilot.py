@@ -4,6 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, De
 from fastapi.responses import StreamingResponse
 
 from datetime import datetime
+from ..core.config import settings
 from ..core.auth import get_current_user_id, get_optional_user_id, require_admin_user
 from ..core.supabase import get_supabase_client
 from ..database import db
