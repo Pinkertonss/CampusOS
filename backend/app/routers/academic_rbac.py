@@ -23,8 +23,11 @@ from ..models.academic_rbac import (
     StudentDirectoryItem,
     AttendanceSession,
     AttendanceSessionCreate,
+    AttendanceSessionCancelRequest,
+    BulkSessionMarkRequest,
     AttendanceMarkRequest,
     SessionAttendanceRecord,
+    StudentSessionAttendanceResponse,
     Assessment,
     AssessmentCreate,
     AssessmentUpdate,
@@ -285,6 +288,9 @@ def create_attendance_session(
         offering_id=offering_id,
         session_date=payload.session_date,
         slot_type=payload.slot_type,
+        topic=payload.topic,
+        room=payload.room,
+        start_time=payload.start_time,
     )
 
 
@@ -336,6 +342,91 @@ def mark_session_attendance(
         offering_id=offering_id,
         session_id=session_id,
         records=payload.records,
+    )
+
+
+@router.post("/offerings/{offering_id}/attendance/sessions/{session_id}/mark-all", response_model=List[SessionAttendanceRecord])
+def bulk_mark_session_attendance_all(
+    offering_id: str,
+    session_id: str,
+    payload: BulkSessionMarkRequest,
+    claims: Dict[str, Any] = Depends(require_professor_or_admin),
+):
+    """Bulk marks all enrolled students for a session (e.g. 1-click Mark All Present)."""
+    _verify_offering_access(offering_id, claims, require_manage=True)
+    sess = db.academic_rbac.get_session(offering_id, session_id)
+    if not sess:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+        )
+    actor_id = str(claims["sub"])
+    actor_role = "admin" if claims.get("is_admin") else "professor"
+    return db.academic_rbac.bulk_mark_session_attendance(
+        actor_id=actor_id,
+        actor_role=actor_role,
+        offering_id=offering_id,
+        session_id=session_id,
+        target_status=payload.status,
+        correction_reason=payload.correction_reason,
+    )
+
+
+@router.patch("/offerings/{offering_id}/attendance/sessions/{session_id}/cancel", response_model=AttendanceSession)
+def cancel_or_reopen_attendance_session(
+    offering_id: str,
+    session_id: str,
+    payload: AttendanceSessionCancelRequest,
+    claims: Dict[str, Any] = Depends(require_professor_or_admin),
+):
+    """Cancels or restores an attendance session (e.g. class cancelled due to holiday)."""
+    _verify_offering_access(offering_id, claims, require_manage=True)
+    actor_id = str(claims["sub"])
+    actor_role = "admin" if claims.get("is_admin") else "professor"
+    return db.academic_rbac.cancel_attendance_session(
+        actor_id=actor_id,
+        actor_role=actor_role,
+        offering_id=offering_id,
+        session_id=session_id,
+        is_cancelled=payload.is_cancelled,
+        reason=payload.reason,
+    )
+
+
+@router.delete("/offerings/{offering_id}/attendance/sessions/{session_id}")
+def delete_attendance_session(
+    offering_id: str,
+    session_id: str,
+    claims: Dict[str, Any] = Depends(require_professor_or_admin),
+):
+    """Deletes an attendance session and cleans up its records."""
+    _verify_offering_access(offering_id, claims, require_manage=True)
+    actor_id = str(claims["sub"])
+    actor_role = "admin" if claims.get("is_admin") else "professor"
+    return db.academic_rbac.delete_attendance_session(
+        actor_id=actor_id,
+        actor_role=actor_role,
+        offering_id=offering_id,
+        session_id=session_id,
+    )
+
+
+@router.get("/offerings/{offering_id}/attendance/my-sessions", response_model=StudentSessionAttendanceResponse)
+def get_my_session_attendance(
+    offering_id: str,
+    student_id: Optional[str] = Query(None, description="Optional target student ID for professor or admin review"),
+    claims: Dict[str, Any] = Depends(get_current_user_claims),
+):
+    """Returns detailed session-by-session attendance history for an offering."""
+    _verify_offering_access(offering_id, claims, require_manage=False)
+    is_admin = bool(claims.get("is_admin"))
+    is_prof = bool(claims.get("is_professor") or claims.get("role") == "professor")
+    actor_sub = str(claims["sub"])
+
+    target_student = student_id if (is_admin or is_prof) and student_id else actor_sub
+    return db.academic_rbac.get_student_session_attendance(
+        offering_id=offering_id,
+        student_id=target_student,
     )
 
 

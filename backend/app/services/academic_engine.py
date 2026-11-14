@@ -16,6 +16,8 @@ from ..models.academic_rbac import (
     AttendanceSession,
     SessionAttendanceRecord,
     AttendanceRecordItem,
+    StudentSessionAttendanceResponse,
+    StudentSessionAttendanceItem,
     Assessment,
     AssessmentCreate,
     AssessmentUpdate,
@@ -1071,12 +1073,57 @@ class AcademicRBACEngine:
     # Attendance Management
     # ============================================================
 
+    def _populate_session_stats(self, offering_id: str, sess: AttendanceSession) -> AttendanceSession:
+        records_map = self.session_attendance_records.get(sess.id, {})
+        active_enrollments = [
+            e for e in self.offering_enrollments.get(offering_id, {}).values()
+            if e.status == "active"
+        ]
+        total_enrolled = len(active_enrollments)
+        present = 0
+        absent = 0
+        late = 0
+        excused = 0
+        for rec in records_map.values():
+            st = (rec.status or "").lower()
+            if st == "present":
+                present += 1
+            elif st == "absent":
+                absent += 1
+            elif st == "late":
+                late += 1
+            elif st == "excused":
+                excused += 1
+
+        counted = present + absent + late
+        rate = round((present / counted) * 100, 1) if counted > 0 else None
+
+        sess.records_count = len(records_map)
+        sess.present_count = present
+        sess.absent_count = absent
+        sess.late_count = late
+        sess.excused_count = excused
+        sess.total_enrolled = total_enrolled
+        sess.attendance_rate_percent = rate
+        return sess
+
     def list_attendance_sessions(self, offering_id: str) -> List[AttendanceSession]:
         self.get_offering(offering_id)
-        return self.attendance_sessions.get(offering_id, [])
+        sessions = self.attendance_sessions.get(offering_id, [])
+        for s in sessions:
+            self._populate_session_stats(offering_id, s)
+        return sessions
 
     def create_attendance_session(
-        self, actor_id: str, actor_role: str, offering_id: str, session_date: str, slot_type: str = "Lecture"
+        self,
+        actor_id: str,
+        actor_role: str,
+        offering_id: str,
+        session_date: str,
+        slot_type: str = "Lecture",
+        topic: Optional[str] = None,
+        room: Optional[str] = None,
+        start_time: Optional[str] = None,
     ) -> AttendanceSession:
         self.get_offering(offering_id)
         if not session_date or not session_date.strip():
@@ -1087,6 +1134,9 @@ class AcademicRBACEngine:
 
         clean_date = session_date.strip()
         clean_slot = slot_type.strip() if slot_type else "Lecture"
+        clean_topic = topic.strip() if topic and topic.strip() else None
+        clean_room = room.strip() if room and room.strip() else None
+        clean_time = start_time.strip() if start_time and start_time.strip() else None
 
         if offering_id not in self.attendance_sessions:
             self.attendance_sessions[offering_id] = []
@@ -1098,6 +1148,13 @@ class AcademicRBACEngine:
                 and existing.session_date == clean_date
                 and existing.slot_type.lower() == clean_slot.lower()
             ):
+                if clean_topic and not existing.topic:
+                    existing.topic = clean_topic
+                if clean_room and not existing.room:
+                    existing.room = clean_room
+                if clean_time and not existing.start_time:
+                    existing.start_time = clean_time
+                self._populate_session_stats(offering_id, existing)
                 return existing
 
         sess = AttendanceSession(
@@ -1105,6 +1162,9 @@ class AcademicRBACEngine:
             offering_id=offering_id,
             session_date=clean_date,
             slot_type=clean_slot,
+            topic=clean_topic,
+            room=clean_room,
+            start_time=clean_time,
             is_cancelled=False,
             created_by=actor_id,
             created_at=datetime.now().isoformat(),
@@ -1119,9 +1179,10 @@ class AcademicRBACEngine:
             action="CREATE_ATTENDANCE_SESSION",
             offering_id=offering_id,
             resource_id=sess.id,
-            details={"session_date": clean_date, "slot_type": clean_slot},
-            reason=f"Created {clean_slot} session on {clean_date}",
+            details={"session_date": clean_date, "slot_type": clean_slot, "topic": clean_topic, "room": clean_room},
+            reason=f"Created {clean_slot} session on {clean_date}" + (f" ({clean_topic})" if clean_topic else ""),
         )
+        self._populate_session_stats(offering_id, sess)
         self._save_persisted_data()
         return sess
 
@@ -1130,6 +1191,7 @@ class AcademicRBACEngine:
         sessions = self.attendance_sessions.get(offering_id, [])
         for s in sessions:
             if s.id == session_id:
+                self._populate_session_stats(offering_id, s)
                 return s
         return None
 
@@ -1225,8 +1287,204 @@ class AcademicRBACEngine:
             updated_records.append(rec)
 
         target_session.records_count = len(self.session_attendance_records[session_id])
+        self._populate_session_stats(offering_id, target_session)
         self._save_persisted_data()
         return updated_records
+
+    def bulk_mark_session_attendance(
+        self,
+        actor_id: str,
+        actor_role: str,
+        offering_id: str,
+        session_id: str,
+        target_status: str = "present",
+        correction_reason: Optional[str] = None,
+    ) -> List[SessionAttendanceRecord]:
+        self.get_offering(offering_id)
+        target_session = self.get_session(offering_id, session_id)
+        if not target_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+            )
+        if target_session.is_cancelled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot mark attendance for cancelled session '{session_id}'.",
+            )
+
+        active_enrollments = [
+            e for e in self.offering_enrollments.get(offering_id, {}).values()
+            if e.status == "active"
+        ]
+        session_dt_str = target_session.session_date[:10] if target_session.session_date else None
+
+        records_to_mark = []
+        for enr in active_enrollments:
+            # Respect enrollment dates
+            if session_dt_str:
+                if enr.enrolled_at and enr.enrolled_at[:10] > session_dt_str:
+                    continue
+                if enr.disenrolled_at and enr.disenrolled_at[:10] < session_dt_str:
+                    continue
+            records_to_mark.append(
+                AttendanceRecordItem(
+                    student_id=enr.student_id,
+                    status=target_status,
+                    correction_reason=correction_reason or f"Bulk marked as {target_status}",
+                )
+            )
+
+        updated = self.mark_attendance(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            offering_id=offering_id,
+            session_id=session_id,
+            records=records_to_mark,
+        )
+
+        self.log_audit(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            action="BULK_ATTENDANCE_MARK",
+            offering_id=offering_id,
+            resource_id=session_id,
+            details={"status": target_status, "count": len(updated)},
+            reason=correction_reason or f"Bulk marked {len(updated)} students as {target_status}",
+        )
+        return updated
+
+    def cancel_attendance_session(
+        self,
+        actor_id: str,
+        actor_role: str,
+        offering_id: str,
+        session_id: str,
+        is_cancelled: bool = True,
+        reason: Optional[str] = None,
+    ) -> AttendanceSession:
+        self.get_offering(offering_id)
+        target_session = None
+        for s in self.attendance_sessions.get(offering_id, []):
+            if s.id == session_id:
+                target_session = s
+                break
+        if not target_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+            )
+
+        target_session.is_cancelled = is_cancelled
+        target_session.cancellation_reason = reason if is_cancelled else None
+
+        action_name = "CANCEL_ATTENDANCE_SESSION" if is_cancelled else "REOPEN_ATTENDANCE_SESSION"
+        self.log_audit(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            action=action_name,
+            offering_id=offering_id,
+            resource_id=session_id,
+            details={"is_cancelled": is_cancelled, "reason": reason},
+            reason=reason or ("Session cancelled by instructor" if is_cancelled else "Session reopened by instructor"),
+        )
+        self._populate_session_stats(offering_id, target_session)
+        self._save_persisted_data()
+        return target_session
+
+    def delete_attendance_session(
+        self,
+        actor_id: str,
+        actor_role: str,
+        offering_id: str,
+        session_id: str,
+    ) -> Dict[str, Any]:
+        self.get_offering(offering_id)
+        sessions = self.attendance_sessions.get(offering_id, [])
+        found_idx = None
+        for idx, s in enumerate(sessions):
+            if s.id == session_id:
+                found_idx = idx
+                break
+        if found_idx is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+            )
+
+        deleted_session = sessions.pop(found_idx)
+        removed_records_count = len(self.session_attendance_records.pop(session_id, {}))
+
+        self.log_audit(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            action="DELETE_ATTENDANCE_SESSION",
+            offering_id=offering_id,
+            resource_id=session_id,
+            details={"session_date": deleted_session.session_date, "removed_records": removed_records_count},
+            reason=f"Deleted attendance session on {deleted_session.session_date}",
+        )
+        self._save_persisted_data()
+        return {"success": True, "deleted_session_id": session_id, "removed_records": removed_records_count}
+
+    def get_student_session_attendance(
+        self,
+        offering_id: str,
+        student_id: str,
+    ) -> StudentSessionAttendanceResponse:
+        self.get_offering(offering_id)
+        enr = self.offering_enrollments.get(offering_id, {}).get(student_id)
+        enrolled_dt = enr.enrolled_at[:10] if (enr and enr.enrolled_at) else None
+        disenrolled_dt = enr.disenrolled_at[:10] if (enr and enr.disenrolled_at) else None
+
+        sessions = self.attendance_sessions.get(offering_id, [])
+        items = []
+        attended = 0
+        total_held = 0
+
+        for sess in sessions:
+            rec = self.session_attendance_records.get(sess.id, {}).get(student_id)
+            status_val = rec.status if rec else "unmarked"
+            corr_reason = rec.correction_reason if rec else None
+            upd = rec.updated_at if rec else None
+
+            # Ignore sessions prior to enrollment or post disenrollment
+            if enrolled_dt and sess.session_date < enrolled_dt:
+                continue
+            if disenrolled_dt and sess.session_date > disenrolled_dt:
+                continue
+
+            if not sess.is_cancelled and status_val != "unmarked":
+                if status_val in ("present", "late"):
+                    attended += 1
+                if status_val in ("present", "absent", "late"):
+                    total_held += 1
+
+            items.append(
+                StudentSessionAttendanceItem(
+                    session_id=sess.id,
+                    session_date=sess.session_date,
+                    slot_type=sess.slot_type,
+                    topic=sess.topic,
+                    room=sess.room,
+                    start_time=sess.start_time,
+                    status=status_val,
+                    is_cancelled=sess.is_cancelled,
+                    cancellation_reason=sess.cancellation_reason,
+                    correction_reason=corr_reason,
+                    updated_at=upd,
+                )
+            )
+
+        pct = round((attended / total_held) * 100, 1) if total_held > 0 else 100.0
+        return StudentSessionAttendanceResponse(
+            offering_id=offering_id,
+            student_id=student_id,
+            total_held_sessions=total_held,
+            attended_sessions=attended,
+            attendance_percentage=pct,
+            sessions=items,
+        )
 
     # ============================================================
     # Assessments & Marks Management

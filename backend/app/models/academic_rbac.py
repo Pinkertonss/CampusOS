@@ -90,16 +90,37 @@ class StudentDirectoryItem(BaseModel):
 class AttendanceSessionCreate(BaseModel):
     session_date: str
     slot_type: str = "Lecture"  # "Lecture" | "Lab" | "Tutorial" | "Extra"
+    topic: Optional[str] = None
+    room: Optional[str] = None
+    start_time: Optional[str] = None
 
 class AttendanceSession(BaseModel):
     id: str
     offering_id: str
     session_date: str
     slot_type: str
+    topic: Optional[str] = None
+    room: Optional[str] = None
+    start_time: Optional[str] = None
     is_cancelled: bool = False
+    cancellation_reason: Optional[str] = None
     created_by: str
     created_at: str
     records_count: int = 0
+    present_count: int = 0
+    absent_count: int = 0
+    late_count: int = 0
+    excused_count: int = 0
+    total_enrolled: int = 0
+    attendance_rate_percent: Optional[float] = None
+
+class AttendanceSessionCancelRequest(BaseModel):
+    is_cancelled: bool = True
+    reason: Optional[str] = None
+
+class BulkSessionMarkRequest(BaseModel):
+    status: str = Field(..., pattern="^(present|absent|late|excused|unmarked)$")
+    correction_reason: Optional[str] = None
 
 class AttendanceRecordItem(BaseModel):
     student_id: str
@@ -119,6 +140,27 @@ class SessionAttendanceRecord(BaseModel):
     correction_reason: Optional[str] = None
     marked_by: str
     updated_at: str
+
+class StudentSessionAttendanceItem(BaseModel):
+    session_id: str
+    session_date: str
+    slot_type: str
+    topic: Optional[str] = None
+    room: Optional[str] = None
+    start_time: Optional[str] = None
+    status: str  # "present" | "absent" | "late" | "excused" | "unmarked"
+    is_cancelled: bool = False
+    cancellation_reason: Optional[str] = None
+    correction_reason: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class StudentSessionAttendanceResponse(BaseModel):
+    offering_id: str
+    student_id: str
+    total_held_sessions: int
+    attended_sessions: int
+    attendance_percentage: float
+    sessions: List[StudentSessionAttendanceItem]
 
 # ============================================================
 # 4. Assessment & Marks Models

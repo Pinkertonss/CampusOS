@@ -49,6 +49,7 @@ import {
   StudentDirectoryItem,
   AttendanceSession,
   SessionAttendanceRecord,
+  StudentSessionAttendanceResponse,
   Assessment,
   StudentAssessmentMark,
   OfferingAssignment,
@@ -1608,7 +1609,10 @@ export async function fetchAttendanceSessions(offeringId: string): Promise<Atten
 export async function createAttendanceSession(
   offeringId: string,
   sessionDate: string,
-  slotType: string = "Lecture"
+  slotType: string = "Lecture",
+  topic?: string,
+  room?: string,
+  startTime?: string
 ): Promise<AttendanceSession> {
   const headers = await getAuthHeaders({ "Content-Type": "application/json" });
   const res = await fetch(
@@ -1616,7 +1620,13 @@ export async function createAttendanceSession(
     {
       method: "POST",
       headers,
-      body: JSON.stringify({ session_date: sessionDate, slot_type: slotType }),
+      body: JSON.stringify({
+        session_date: sessionDate,
+        slot_type: slotType,
+        topic: topic || null,
+        room: room || null,
+        start_time: startTime || null,
+      }),
     }
   );
   if (!res.ok) {
@@ -1659,6 +1669,85 @@ export async function markSessionAttendance(
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Failed to mark attendance");
+  }
+  return await res.json();
+}
+
+export async function markAllSessionAttendance(
+  offeringId: string,
+  sessionId: string,
+  status: string = "present",
+  correctionReason?: string
+): Promise<SessionAttendanceRecord[]> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}/mark-all`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ status, correction_reason: correctionReason || null }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to bulk mark attendance");
+  }
+  return await res.json();
+}
+
+export async function cancelAttendanceSession(
+  offeringId: string,
+  sessionId: string,
+  isCancelled: boolean = true,
+  reason?: string
+): Promise<AttendanceSession> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}/cancel`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ is_cancelled: isCancelled, reason: reason || null }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update session cancellation status");
+  }
+  return await res.json();
+}
+
+export async function deleteAttendanceSession(
+  offeringId: string,
+  sessionId: string
+): Promise<{ success: boolean; deleted_session_id: string; removed_records: number }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: "DELETE",
+      headers,
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to delete attendance session");
+  }
+  return await res.json();
+}
+
+export async function fetchMySessionAttendance(
+  offeringId: string,
+  studentId?: string
+): Promise<StudentSessionAttendanceResponse> {
+  const headers = await getAuthHeaders();
+  const url = studentId
+    ? `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/my-sessions?student_id=${encodeURIComponent(studentId)}`
+    : `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/my-sessions`;
+  const res = await fetch(url, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch session attendance history");
   }
   return await res.json();
 }

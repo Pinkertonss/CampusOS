@@ -26,6 +26,11 @@ import {
   EyeOff,
   Award,
   Key,
+  Trash2,
+  Ban,
+  CheckCheck,
+  MapPin,
+  XCircle,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -54,6 +59,9 @@ import {
   createAttendanceSession,
   fetchSessionAttendanceRecords,
   markSessionAttendance,
+  markAllSessionAttendance,
+  cancelAttendanceSession,
+  deleteAttendanceSession,
   fetchOfferingAssessments,
   createOfferingAssessment,
   updateOfferingAssessment,
@@ -143,6 +151,9 @@ export default function AdminConsolePage() {
   const [showOpsNewSessionModal, setShowOpsNewSessionModal] = useState(false);
   const [opsNewSessionDate, setOpsNewSessionDate] = useState("2026-02-15");
   const [opsNewSessionSlot, setOpsNewSessionSlot] = useState("Lecture");
+  const [opsNewSessionTopic, setOpsNewSessionTopic] = useState("");
+  const [opsNewSessionRoom, setOpsNewSessionRoom] = useState("");
+  const [opsNewSessionStartTime, setOpsNewSessionStartTime] = useState("");
   const [isOpsSubmittingSession, setIsOpsSubmittingSession] = useState(false);
 
   // Operations: Assessments
@@ -447,8 +458,19 @@ export default function AdminConsolePage() {
     if (!activeOpsOffering || isOpsSubmittingSession) return;
     try {
       setIsOpsSubmittingSession(true);
-      await createAttendanceSession(activeOpsOffering.id, opsNewSessionDate, opsNewSessionSlot);
+      await createAttendanceSession(
+        activeOpsOffering.id,
+        opsNewSessionDate,
+        opsNewSessionSlot,
+        opsNewSessionTopic || undefined,
+        opsNewSessionRoom || undefined,
+        opsNewSessionStartTime || undefined
+      );
       setShowOpsNewSessionModal(false);
+      setOpsNewSessionDate(new Date().toISOString().split("T")[0]);
+      setOpsNewSessionTopic("");
+      setOpsNewSessionRoom("");
+      setOpsNewSessionStartTime("");
       setFeedbackMessage({ type: "success", text: `Session created for ${opsNewSessionDate}` });
       loadOpsSessions();
     } catch (err: any) {
@@ -465,9 +487,52 @@ export default function AdminConsolePage() {
         { student_id: studentId, status: newStatus, correction_reason: reason },
       ]);
       loadOpsSessionRecords();
+      loadOpsSessions();
       setFeedbackMessage({ type: "success", text: `Attendance updated to ${newStatus}` });
     } catch (err: any) {
       setFeedbackMessage({ type: "error", text: err.message || "Failed to update attendance." });
+    }
+  };
+
+  const handleOpsMarkAllStatus = async (status: string) => {
+    if (!activeOpsOffering || !opsSelectedSessionId) return;
+    try {
+      await markAllSessionAttendance(activeOpsOffering.id, opsSelectedSessionId, status);
+      await loadOpsSessionRecords();
+      await loadOpsSessions();
+      setFeedbackMessage({ type: "success", text: `All students marked as ${status}` });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to bulk mark attendance." });
+    }
+  };
+
+  const handleOpsToggleCancelSession = async (session: AttendanceSession) => {
+    if (!activeOpsOffering) return;
+    const newCancelled = !session.is_cancelled;
+    const reason = newCancelled
+      ? prompt("Reason for cancelling session (optional):") || "Class Suspended"
+      : undefined;
+    try {
+      await cancelAttendanceSession(activeOpsOffering.id, session.id, newCancelled, reason);
+      await loadOpsSessions();
+      setFeedbackMessage({ type: "success", text: newCancelled ? "Session cancelled" : "Session reopened" });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to update session." });
+    }
+  };
+
+  const handleOpsDeleteSession = async (sessionId: string) => {
+    if (!activeOpsOffering) return;
+    if (!confirm("Are you sure you want to delete this session? This action cannot be undone.")) return;
+    try {
+      await deleteAttendanceSession(activeOpsOffering.id, sessionId);
+      if (opsSelectedSessionId === sessionId) {
+        setOpsSelectedSessionId("");
+      }
+      await loadOpsSessions();
+      setFeedbackMessage({ type: "success", text: "Session deleted successfully." });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to delete session." });
     }
   };
 
@@ -1529,7 +1594,7 @@ export default function AdminConsolePage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Session Selector List */}
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
                       {!opsSessions.length ? (
                         <div className="py-6 text-center text-xs text-slate-500">No attendance sessions.</div>
                       ) : (
@@ -1545,10 +1610,55 @@ export default function AdminConsolePage() {
                           >
                             <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white">
                               <span>{sess.session_date}</span>
-                              <Badge variant="default" size="sm">{sess.slot_type}</Badge>
+                              <div className="flex items-center gap-1.5">
+                                {sess.is_cancelled && (
+                                  <Badge variant="danger" size="sm">Cancelled</Badge>
+                                )}
+                                <Badge variant="default" size="sm">{sess.slot_type}</Badge>
+                              </div>
                             </div>
-                            <div className="text-[11px] text-slate-500 mt-1">
-                              {sess.records_count} records recorded
+                            {sess.topic && (
+                              <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mt-1 line-clamp-1">
+                                {sess.topic}
+                              </div>
+                            )}
+                            {(sess.room || sess.start_time) && (
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
+                                <MapPin className="w-2.5 h-2.5" />
+                                <span>{[sess.room, sess.start_time].filter(Boolean).join(" • ")}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+                              <span className="text-slate-500">
+                                {sess.attendance_rate_percent !== null && sess.attendance_rate_percent !== undefined
+                                  ? `${sess.present_count}/${sess.total_enrolled || sess.records_count} present (${sess.attendance_rate_percent}%)`
+                                  : `${sess.records_count} marked`}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpsToggleCancelSession(sess);
+                                  }}
+                                  className={`hover:underline font-medium ${
+                                    sess.is_cancelled ? "text-teal-600" : "text-amber-600"
+                                  }`}
+                                >
+                                  {sess.is_cancelled ? "Reopen" : "Cancel"}
+                                </button>
+                                <span className="text-slate-300 dark:text-slate-700">•</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpsDeleteSession(sess.id);
+                                  }}
+                                  className="text-rose-600 hover:underline font-medium"
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))
@@ -1557,50 +1667,100 @@ export default function AdminConsolePage() {
 
                     {/* Attendance Marking Sheet */}
                     <div className="md:col-span-2 border border-slate-200 dark:border-slate-800 rounded-lg p-3 space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                        Session Attendance Sheet
-                      </h4>
-                      {!opsSelectedSessionId ? (
-                        <div className="py-8 text-center text-xs text-slate-400">Select a session to view or record attendance.</div>
-                      ) : (
-                        <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-                          {opsRoster?.students
-                            .filter((st) => st.enrollment_status === "active")
-                            .map((st) => {
-                              const rec = opsSessionRecords.find((r) => r.student_id === st.student_id);
-                              const currentStatus = rec?.status || "unmarked";
-                              return (
-                                <div key={st.student_id} className="py-2 flex items-center justify-between text-xs">
-                                  <div>
-                                    <div className="font-semibold text-slate-900 dark:text-white">{st.student_name}</div>
-                                    <div className="text-[11px] text-slate-500 font-mono">{st.student_roll_no}</div>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    {["present", "absent", "late", "excused"].map((stOption) => (
-                                      <button
-                                        key={stOption}
-                                        onClick={() => handleOpsMarkStatus(st.student_id, stOption)}
-                                        className={`px-2 py-1 rounded text-[11px] font-semibold transition ${
-                                          currentStatus === stOption
-                                            ? stOption === "present"
-                                              ? "bg-teal-600 text-white"
-                                              : stOption === "absent"
-                                              ? "bg-rose-600 text-white"
-                                              : stOption === "late"
-                                              ? "bg-amber-500 text-white"
-                                              : "bg-blue-600 text-white"
-                                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-                                        }`}
-                                      >
-                                        {stOption.charAt(0).toUpperCase() + stOption.slice(1)}
-                                      </button>
-                                    ))}
-                                  </div>
+                      {(() => {
+                        const currentSession = opsSessions.find((s) => s.id === opsSelectedSessionId);
+                        const activeStudents = opsRoster?.students?.filter((st) => st.enrollment_status === "active") || [];
+
+                        return (
+                          <div>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 mb-2 gap-2">
+                              <div>
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                  <span>
+                                    {currentSession ? `Session: ${currentSession.session_date} (${currentSession.slot_type})` : "Session Attendance Sheet"}
+                                  </span>
+                                  {currentSession?.is_cancelled && (
+                                    <Badge variant="danger" size="sm">Cancelled</Badge>
+                                  )}
                                 </div>
-                              );
-                            })}
-                        </div>
-                      )}
+                                {currentSession?.topic && (
+                                  <div className="text-[11px] text-slate-500 mt-0.5">Topic: {currentSession.topic}</div>
+                                )}
+                              </div>
+
+                              {currentSession && !currentSession.is_cancelled && activeStudents.length > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpsMarkAllStatus("present")}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition"
+                                  >
+                                    <CheckCheck className="w-3 h-3 mr-1" />
+                                    All Present
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpsMarkAllStatus("absent")}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition"
+                                  >
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    All Absent
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {currentSession?.is_cancelled && (
+                              <div className="p-2 mb-2 rounded bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-[11px] text-rose-800 dark:text-rose-200">
+                                This session is cancelled ({currentSession.cancellation_reason || "Class Suspended"}). Reopen to edit attendance.
+                              </div>
+                            )}
+
+                            {!opsSelectedSessionId ? (
+                              <div className="py-8 text-center text-xs text-slate-400">Select a session to view or record attendance.</div>
+                            ) : !activeStudents.length ? (
+                              <div className="py-8 text-center text-xs text-slate-400">No active students enrolled in this offering.</div>
+                            ) : (
+                              <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                {activeStudents.map((st) => {
+                                  const rec = opsSessionRecords.find((r) => r.student_id === st.student_id);
+                                  const currentStatus = rec?.status || "unmarked";
+                                  return (
+                                    <div key={st.student_id} className="py-2 flex items-center justify-between text-xs">
+                                      <div>
+                                        <div className="font-semibold text-slate-900 dark:text-white">{st.student_name}</div>
+                                        <div className="text-[11px] text-slate-500 font-mono">{st.student_roll_no}</div>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        {["present", "absent", "late", "excused"].map((stOption) => (
+                                          <button
+                                            key={stOption}
+                                            disabled={currentSession?.is_cancelled}
+                                            onClick={() => handleOpsMarkStatus(st.student_id, stOption)}
+                                            className={`px-2 py-1 rounded text-[11px] font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                                              currentStatus === stOption
+                                                ? stOption === "present"
+                                                  ? "bg-teal-600 text-white"
+                                                  : stOption === "absent"
+                                                  ? "bg-rose-600 text-white"
+                                                  : stOption === "late"
+                                                  ? "bg-amber-500 text-white"
+                                                  : "bg-blue-600 text-white"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                                            }`}
+                                          >
+                                            {stOption.charAt(0).toUpperCase() + stOption.slice(1)}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1918,6 +2078,38 @@ export default function AdminConsolePage() {
                   <option value="Lab">Lab Practical</option>
                   <option value="Extra">Extra Session</option>
                 </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Topic / Syllabus (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Memory Management & Paging"
+                  value={opsNewSessionTopic}
+                  onChange={(e) => setOpsNewSessionTopic(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Room / Hall</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. LP-102"
+                    value={opsNewSessionRoom}
+                    onChange={(e) => setOpsNewSessionRoom(e.target.value)}
+                    className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Start Time</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 10:00 AM"
+                    value={opsNewSessionStartTime}
+                    onChange={(e) => setOpsNewSessionStartTime(e.target.value)}
+                    className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">

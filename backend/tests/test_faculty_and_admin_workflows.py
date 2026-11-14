@@ -605,3 +605,135 @@ def test_admin_universal_academic_operations():
     )
     assert res_grade.status_code == 200
     assert res_grade.json()["score"] == 49.0
+
+
+def test_attendance_sessions_enhanced_lifecycle():
+    """
+    Validates improved attendance session capabilities:
+    1. Topic, room, and start_time metadata persistence.
+    2. Real-time aggregated session stats (present_count, attendance_rate_percent, total_enrolled).
+    3. Bulk 1-click 'mark-all' attendance.
+    4. Session cancellation with reason and restoration (reopening).
+    5. Student session breakdown endpoint (my-sessions).
+    6. Authorized session deletion.
+    """
+    # 1. Create offering and enroll 2 students
+    code = f"SES{uuid.uuid4().hex[:3].upper()}"
+    res_off = client.post(
+        "/api/academic/offerings",
+        json={
+            "subject_code": code,
+            "subject_name": "Advanced Algorithms",
+            "term": "Even 2026",
+            "section": "L1",
+            "professor_ids": [PROF_A_ID],
+        },
+        headers=ADMIN_HEADERS,
+    )
+    assert res_off.status_code == 201
+    off_id = res_off.json()["id"]
+
+    res_enr = client.post(
+        f"/api/academic/offerings/{off_id}/enroll-bulk",
+        json={"student_ids": [STUDENT_1_ID, STUDENT_2_ID], "effective_date": "2026-01-01"},
+        headers=PROF_A_HEADERS,
+    )
+    assert res_enr.status_code == 201
+
+    # 2. Create session with topic, room, and start time
+    res_sess = client.post(
+        f"/api/academic/offerings/{off_id}/attendance/sessions",
+        json={
+            "session_date": "2026-02-10",
+            "slot_type": "Lecture",
+            "topic": "Dynamic Programming: Knapsack Problem",
+            "room": "LP-102",
+            "start_time": "09:00 AM",
+        },
+        headers=PROF_A_HEADERS,
+    )
+    assert res_sess.status_code == 201
+    sess_data = res_sess.json()
+    assert sess_data["topic"] == "Dynamic Programming: Knapsack Problem"
+    assert sess_data["room"] == "LP-102"
+    assert sess_data["start_time"] == "09:00 AM"
+    assert sess_data["total_enrolled"] == 2
+    assert sess_data["records_count"] == 0
+    assert sess_data["present_count"] == 0
+    sess_id = sess_data["id"]
+
+    # 3. 1-Click Bulk Mark All as Present
+    res_bulk = client.post(
+        f"/api/academic/offerings/{off_id}/attendance/sessions/{sess_id}/mark-all",
+        json={"status": "present", "correction_reason": "Entire class present"},
+        headers=PROF_A_HEADERS,
+    )
+    assert res_bulk.status_code == 200
+    assert len(res_bulk.json()) == 2
+    assert all(r["status"] == "present" for r in res_bulk.json())
+
+    # Verify session stats updated
+    res_list = client.get(f"/api/academic/offerings/{off_id}/attendance/sessions", headers=PROF_A_HEADERS)
+    assert res_list.status_code == 200
+    updated_sess = next(s for s in res_list.json() if s["id"] == sess_id)
+    assert updated_sess["records_count"] == 2
+    assert updated_sess["present_count"] == 2
+    assert updated_sess["absent_count"] == 0
+    assert updated_sess["attendance_rate_percent"] == 100.0
+
+    # 4. Student views their session attendance breakdown
+    res_my_sess = client.get(f"/api/academic/offerings/{off_id}/attendance/my-sessions", headers=STUDENT_1_HEADERS)
+    assert res_my_sess.status_code == 200
+    my_data = res_my_sess.json()
+    assert my_data["total_held_sessions"] == 1
+    assert my_data["attended_sessions"] == 1
+    assert my_data["attendance_percentage"] == 100.0
+    assert len(my_data["sessions"]) == 1
+    assert my_data["sessions"][0]["status"] == "present"
+    assert my_data["sessions"][0]["topic"] == "Dynamic Programming: Knapsack Problem"
+    assert my_data["sessions"][0]["room"] == "LP-102"
+
+    # 5. Cancel session (e.g. holiday or sports day)
+    res_cancel = client.patch(
+        f"/api/academic/offerings/{off_id}/attendance/sessions/{sess_id}/cancel",
+        json={"is_cancelled": True, "reason": "Campus Sports Day - Class Suspended"},
+        headers=PROF_A_HEADERS,
+    )
+    assert res_cancel.status_code == 200
+    assert res_cancel.json()["is_cancelled"] is True
+    assert res_cancel.json()["cancellation_reason"] == "Campus Sports Day - Class Suspended"
+
+    # Marking on cancelled session is rejected with 400
+    res_mark_fail = client.post(
+        f"/api/academic/offerings/{off_id}/attendance/sessions/{sess_id}/mark",
+        json={"records": [{"student_id": STUDENT_1_ID, "status": "absent"}]},
+        headers=PROF_A_HEADERS,
+    )
+    assert res_mark_fail.status_code == 400
+    assert "cancelled" in res_mark_fail.json()["detail"].lower()
+
+    # Cancelled session doesn't count against student
+    res_my_after_cancel = client.get(f"/api/academic/offerings/{off_id}/attendance/my-sessions", headers=STUDENT_1_HEADERS)
+    assert res_my_after_cancel.status_code == 200
+    assert res_my_after_cancel.json()["total_held_sessions"] == 0
+
+    # 6. Reopen session
+    res_reopen = client.patch(
+        f"/api/academic/offerings/{off_id}/attendance/sessions/{sess_id}/cancel",
+        json={"is_cancelled": False},
+        headers=PROF_A_HEADERS,
+    )
+    assert res_reopen.status_code == 200
+    assert res_reopen.json()["is_cancelled"] is False
+
+    # 7. Delete session
+    res_del = client.delete(
+        f"/api/academic/offerings/{off_id}/attendance/sessions/{sess_id}",
+        headers=PROF_A_HEADERS,
+    )
+    assert res_del.status_code == 200
+    assert res_del.json()["success"] is True
+
+    # Confirm session is deleted from listing
+    res_list_after_del = client.get(f"/api/academic/offerings/{off_id}/attendance/sessions", headers=PROF_A_HEADERS)
+    assert not any(s["id"] == sess_id for s in res_list_after_del.json())

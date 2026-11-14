@@ -737,10 +737,43 @@ export interface AttendanceSession {
   offering_id: string;
   session_date: string;
   slot_type: string;
+  topic?: string | null;
+  room?: string | null;
+  start_time?: string | null;
   is_cancelled: boolean;
+  cancellation_reason?: string | null;
   created_by: string;
   created_at: string;
   records_count: number;
+  present_count?: number;
+  absent_count?: number;
+  late_count?: number;
+  excused_count?: number;
+  total_enrolled?: number;
+  attendance_rate_percent?: number | null;
+}
+
+export interface StudentSessionAttendanceItem {
+  session_id: string;
+  session_date: string;
+  slot_type: string;
+  topic?: string | null;
+  room?: string | null;
+  start_time?: string | null;
+  status: "present" | "absent" | "late" | "excused" | "unmarked";
+  is_cancelled: boolean;
+  cancellation_reason?: string | null;
+  correction_reason?: string | null;
+  updated_at?: string | null;
+}
+
+export interface StudentSessionAttendanceResponse {
+  offering_id: string;
+  student_id: string;
+  total_held_sessions: number;
+  attended_sessions: number;
+  attendance_percentage: number;
+  sessions: StudentSessionAttendanceItem[];
 }
 
 export interface SessionAttendanceRecord {
