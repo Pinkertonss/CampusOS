@@ -1,10 +1,10 @@
-# CampusOS Verification Report: New Capabilities, Support Desk, Lost & Found, Gemini Assistant, and Dynamic Env Loading
+# CampusOS Verification Report: Gemini Assistant Model Migration and Dynamic Fallback
 
-**Generated**: 2026-11-14T22:36:00+05:30  
+**Generated**: 2026-11-14T22:42:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & Pre-Commit Verification Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `cf2b9b41a32b94a161cdd7174af7b23902a746f2`  
-**Tested Source Revision**: Current `antigravity` branch with dynamic environment loading resilience  
+**Baseline Commit**: `11610777010d6b3e1f35f86cf9fc351c44d0c5c0`  
+**Tested Source Revision**: Current `antigravity` branch with Gemini model migration and 404 auto-fallback  
 
 ---
 
@@ -32,10 +32,11 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 4. **Campus Guide Renaming**:
    - Renamed user-facing "Campus Copilot" to "Campus Guide" across navigation, headers, descriptions, buttons, tooltips, and empty states.
    - Preserved backward compatibility with `/copilot` and `/api/copilot` while introducing canonical `/guide` and `/api/guide` routes.
-5. **Gemini-Powered Personal Assistant with Dynamic Env Discovery**:
+5. **Gemini-Powered Personal Assistant with Dynamic Env Discovery & Model Fallback**:
    - Floating chat bubble (`PersonalAssistant.tsx`) docked on all authenticated pages, separate from the institutional Campus Guide.
    - Restful proxy service (`/api/assistant/chat`, `/api/assistant/calculate`) with sliding-window rate limiting, timeout handling, and graceful error handling.
-   - **Dynamic Environment Discovery**: Implemented `get_api_key()` to inspect runtime environment and auto-reload `backend/.env` or `./.env` on-demand with `override=True`, ensuring running servers immediately recognize newly configured keys without requiring manual process restarts.
+   - **Model Migration**: Migrated default Gemini model to `gemini-3.5-flash-lite` resolving HTTP 404 deprecation errors returned by Google AI Studio API for sunset `gemini-1.5-flash` models.
+   - **Automatic Candidate Fallback Sequence**: Added multi-model fallback chain (`gemini-3.5-flash-lite` -> `gemini-3.8-flash` -> `gemini-flash-latest`) with dynamic caching of the working model.
    - Safe arithmetic evaluation via Python `ast` syntax inspection (supporting Python 3.14 without deprecated `ast.Num`) preventing any use of `eval()`.
    - Clear institutional boundary disclaimer directing official policy and academic queries to Campus Guide.
 6. **Student Resale Marketplace Visual Assets**:
