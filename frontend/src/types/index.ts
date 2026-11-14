@@ -149,3 +149,169 @@ export interface ImpactMetrics {
   active_listings_count: number;
   categories: Record<string, CategoryImpact>;
 }
+
+
+// ============================================================
+// Academic Planner & Dashboard Types
+// ============================================================
+
+export interface DailyActionItem {
+  id: string;
+  category: "attendance" | "deadline" | "task" | string;
+  priority: "urgent" | "high" | "medium" | "low";
+  title: string;
+  course_code?: string;
+  current_percent?: number;
+  due_date?: string;
+  reason: string;
+  action_required?: string;
+}
+
+export interface DailyPlanResponse {
+  date: string;
+  total_actions: number;
+  urgent_count: number;
+  high_count: number;
+  actions: DailyActionItem[];
+}
+
+export interface AcademicSummaryCourse {
+  id: string;
+  code: string;
+  name: string;
+  credits: number;
+  attended: number;
+  total_held: number;
+  percentage: number;
+  status: "safe" | "warning" | "critical";
+  safe_bunks_remaining: number;
+  classes_needed_for_75: number | null;
+}
+
+export interface AcademicSummaryResponse {
+  student_name: string;
+  roll_no: string;
+  branch: string;
+  semester: number;
+  overall_attendance_percent: number;
+  courses_at_risk_count: number;
+  total_courses: number;
+  courses: AcademicSummaryCourse[];
+  assessments_summary: {
+    current_weighted_score: number;
+    completed_weight: number;
+    remaining_weight: number;
+    total_planned_weight: number;
+  };
+}
+
+export interface AttendanceWhatIfPlannerRequest {
+  course_code?: string;
+  attended: number;
+  total_held: number;
+  attend_next_n: number;
+  skip_next_m: number;
+  target_percent?: number;
+}
+
+export interface AttendanceWhatIfPlannerResponse {
+  course_code?: string;
+  current_attended: number;
+  current_total_held: number;
+  current_percent: number;
+  current_status: string;
+  current_safe_bunks: number;
+  current_classes_needed: number | null;
+  attend_next_n: number;
+  skip_next_m: number;
+  projected_attended: number;
+  projected_total_held: number;
+  projected_percent: number;
+  projected_status: string;
+  projected_safe_bunks: number;
+  projected_classes_needed: number | null;
+  target_percent: number;
+  message: string;
+}
+
+export interface AssessmentItem {
+  id?: string;
+  name: string;
+  weight_percent: number;
+  max_marks: number;
+  obtained_marks?: number | null;
+  due_date?: string;
+}
+
+export interface GradeWhatIfPlannerRequest {
+  course_code?: string;
+  assessments?: AssessmentItem[];
+  target_total_percent?: number;
+  hypothetical_scores?: Record<string, number>;
+}
+
+export interface GradeWhatIfPlannerResponse {
+  current_weighted_score: number;
+  completed_weight: number;
+  remaining_weight: number;
+  target_total_percent?: number;
+  required_percent_on_remaining?: number | null;
+  is_achievable?: boolean | null;
+  projected_total_score?: number | null;
+  projected_letter_grade?: string | null;
+  message: string;
+}
+
+// --- Digital Vault End-to-End API Types ---
+
+export type VaultCategory = "notes" | "certificate" | "academic" | "other";
+
+export interface VaultItem {
+  id: string;
+  user_id?: string;
+  title: string;
+  category: VaultCategory | string;
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number;
+  created_at: string;
+  download_url?: string;
+}
+
+export interface VaultListResponse {
+  items: VaultItem[];
+  total_count: number;
+  total_storage_bytes: number;
+  storage_limit_bytes: number;
+}
+
+export interface UploadUrlRequest {
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+}
+
+export interface UploadUrlResponse {
+  upload_url: string;
+  storage_path: string;
+  expires_in_seconds: number;
+}
+
+export interface VaultItemCreate {
+  title: string;
+  category: VaultCategory | string;
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number;
+}
+
+export interface VaultItemUpdate {
+  title?: string;
+  category?: VaultCategory | string;
+}
+
+export interface DownloadUrlResponse {
+  download_url: string;
+  expires_in_seconds: number;
+  title: string;
+}

@@ -61,3 +61,66 @@ export const MOCK_IMPACT: ImpactMetrics = {
     hostel_essentials: { count: 1, money_saved_inr: 4500.0, weight_kg: 14.5 },
   },
 };
+
+
+export const MOCK_DAILY_PLAN = {
+  date: "2024-11-14",
+  total_actions: 3,
+  urgent_count: 1,
+  high_count: 2,
+  actions: [
+    {
+      id: "att-crit-UMA010",
+      category: "attendance",
+      priority: "urgent" as const,
+      title: "Critical Attendance Alert in UMA010",
+      course_code: "UMA010",
+      current_percent: 60.7,
+      reason: "Attendance in UMA010 (Mathematics - III) is 60.7% (below 65% detention threshold). Attend the next 16 classes consecutively to reach 75%.",
+      action_required: "Attend next 16 classes",
+    },
+    {
+      id: "att-warn-UCS405",
+      category: "attendance",
+      priority: "high" as const,
+      title: "Attendance Shortage in UCS405",
+      course_code: "UCS405",
+      current_percent: 72.0,
+      reason: "Attendance in UCS405 is 72.0%. Attend the next 3 classes to reach 75%.",
+      action_required: "Attend next 3 classes",
+    },
+    {
+      id: "assess-UCS301-A3",
+      category: "deadline",
+      priority: "high" as const,
+      title: "Upcoming Assessment: UCS301 Assignment 3",
+      course_code: "UCS301",
+      due_date: "2024-11-20",
+      reason: "UCS301 Assignment 3 (5% weight) is due in 6 day(s).",
+      action_required: "Prepare and submit",
+    },
+  ],
+};
+
+export const MOCK_ACADEMIC_SUMMARY = {
+  student_name: "Arjun Mehta",
+  roll_no: "102203099",
+  branch: "COE",
+  semester: 5,
+  overall_attendance_percent: 79.2,
+  courses_at_risk_count: 2,
+  total_courses: 5,
+  courses: [
+    { id: "c1", code: "UCS301", name: "Data Structures & Algorithms", credits: 4.5, attended: 36, total_held: 40, percentage: 90.0, status: "safe" as const, safe_bunks_remaining: 8, classes_needed_for_75: 0 },
+    { id: "c2", code: "UCS310", name: "Database Management Systems", credits: 4.0, attended: 25, total_held: 32, percentage: 78.1, status: "safe" as const, safe_bunks_remaining: 1, classes_needed_for_75: 0 },
+    { id: "c3", code: "UCS405", name: "Operating Systems", credits: 4.0, attended: 18, total_held: 25, percentage: 72.0, status: "warning" as const, safe_bunks_remaining: 0, classes_needed_for_75: 3 },
+    { id: "c4", code: "UMA010", name: "Mathematics - III", credits: 3.5, attended: 17, total_held: 28, percentage: 60.7, status: "critical" as const, safe_bunks_remaining: 0, classes_needed_for_75: 16 },
+    { id: "c5", code: "UED101", name: "Engineering Design Project - I", credits: 3.0, attended: 19, total_held: 20, percentage: 95.0, status: "safe" as const, safe_bunks_remaining: 5, classes_needed_for_75: 0 },
+  ],
+  assessments_summary: {
+    current_weighted_score: 31.5,
+    completed_weight: 40.0,
+    remaining_weight: 60.0,
+    total_planned_weight: 100.0,
+  },
+};

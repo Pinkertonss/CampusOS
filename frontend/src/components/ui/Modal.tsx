@@ -1,0 +1,155 @@
+"use client";
+
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  actions?: React.ReactNode;
+  footer?: React.ReactNode;
+  size?: ModalSize;
+  children?: React.ReactNode;
+  closeOnEscape?: boolean;
+  closeOnBackdropClick?: boolean;
+  showCloseButton?: boolean;
+  className?: string;
+}
+
+const sizeClasses: Record<ModalSize, string> = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-2xl",
+  full: "max-w-4xl",
+};
+
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  description,
+  actions,
+  footer,
+  size = "md",
+  children,
+  closeOnEscape = true,
+  closeOnBackdropClick = true,
+  showCloseButton = true,
+  className = "",
+}) => {
+  const [mounted, setMounted] = React.useState(false);
+  const modalRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Handle escape key
+  React.useEffect(() => {
+    if (!isOpen || !closeOnEscape) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, closeOnEscape, onClose]);
+
+  // Handle body scroll lock
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
+  if (!mounted || !isOpen) {
+    return null;
+  }
+
+  const actionButtons = actions || footer;
+
+  const content = (
+    <div
+      role="presentation"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-950/60 backdrop-blur-sm transition-opacity duration-200"
+      onClick={(e) => {
+        if (closeOnBackdropClick && e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? "modal-title" : undefined}
+        aria-describedby={description ? "modal-description" : undefined}
+        className={`w-full ${sizeClasses[size]} bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xl overflow-hidden transition-all duration-200 animate-in fade-in zoom-in-95 my-auto ${className}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        {(title || showCloseButton) && (
+          <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100 dark:border-slate-700/60">
+            <div className="flex-1 min-w-0">
+              {title && (
+                <h2
+                  id="modal-title"
+                  className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100"
+                >
+                  {title}
+                </h2>
+              )}
+              {description && (
+                <p
+                  id="modal-description"
+                  className="mt-1 text-sm text-slate-500 dark:text-slate-400"
+                >
+                  {description}
+                </p>
+              )}
+            </div>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close dialog"
+                className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Modal Body */}
+        {children && <div className="px-6 py-5">{children}</div>}
+
+        {/* Modal Actions / Footer */}
+        {actionButtons && (
+          <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-4 bg-slate-50/60 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/60">
+            {actionButtons}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return createPortal(content, document.body);
+};
+
+export default Modal;

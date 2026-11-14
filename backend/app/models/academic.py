@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 # Thapar 10-point Letter Grade Scale
@@ -110,3 +110,92 @@ class CSVImportResult(BaseModel):
     records_imported: int
     errors: List[str] = []
     message: str
+
+
+# ============================================================
+# Academic Planning Engine Models
+# ============================================================
+
+class AttendanceWhatIfRequest(BaseModel):
+    course_code: Optional[str] = None
+    attended: int = Field(..., ge=0)
+    total_held: int = Field(..., ge=0)
+    attend_next_n: int = Field(0, ge=0)
+    skip_next_m: int = Field(0, ge=0)
+    target_percent: float = Field(75.0, ge=1.0, le=100.0)
+
+class AttendanceWhatIfResponse(BaseModel):
+    course_code: Optional[str] = None
+    current_attended: int
+    current_total_held: int
+    current_percent: float
+    current_status: str
+    current_safe_bunks: int
+    current_classes_needed: Optional[int] = None
+    attend_next_n: int
+    skip_next_m: int
+    projected_attended: int
+    projected_total_held: int
+    projected_percent: float
+    projected_status: str
+    projected_safe_bunks: int
+    projected_classes_needed: Optional[int] = None
+    target_percent: float
+    message: str
+
+class AssessmentItem(BaseModel):
+    id: Optional[str] = None
+    name: str
+    weight_percent: float = Field(..., ge=0.0, le=100.0)
+    max_marks: float = Field(100.0, gt=0.0)
+    obtained_marks: Optional[float] = None
+    due_date: Optional[str] = None
+
+class GradeWhatIfRequest(BaseModel):
+    course_id: Optional[str] = None
+    course_code: Optional[str] = None
+    assessments: Optional[List[AssessmentItem]] = None
+    target_total_percent: Optional[float] = Field(None, ge=0.0, le=100.0)
+    hypothetical_scores: Optional[Dict[str, float]] = None
+    grading_scale: Optional[Dict[str, float]] = None
+
+class GradeWhatIfResponse(BaseModel):
+    course_code: Optional[str] = None
+    current_weighted_score: float
+    completed_weight: float
+    remaining_weight: float
+    target_total_percent: Optional[float] = None
+    required_percent_on_remaining: Optional[float] = None
+    is_achievable: Optional[bool] = None
+    projected_total_score: Optional[float] = None
+    projected_letter_grade: Optional[str] = None
+    message: str
+
+class DailyActionItem(BaseModel):
+    id: str
+    category: str  # 'attendance' | 'deadline' | 'task'
+    priority: str  # 'urgent' | 'high' | 'medium' | 'low'
+    title: str
+    course_code: Optional[str] = None
+    current_percent: Optional[float] = None
+    due_date: Optional[str] = None
+    reason: str
+    action_required: Optional[str] = None
+
+class DailyPlanResponse(BaseModel):
+    date: str
+    total_actions: int
+    urgent_count: int
+    high_count: int
+    actions: List[DailyActionItem]
+
+class AcademicSummaryResponse(BaseModel):
+    student_name: str
+    roll_no: str
+    branch: str
+    semester: int
+    overall_attendance_percent: float
+    courses_at_risk_count: int
+    total_courses: int
+    courses: List[Dict[str, Any]]
+    assessments_summary: Dict[str, Any]
