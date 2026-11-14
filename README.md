@@ -1,159 +1,141 @@
-# CampusOS (TIET Pilot)
+# CampusOS Monorepo
 
-> **One personalized platform that fixes fragmented campus information for Thapar Institute of Engineering & Technology (Patiala).**
+> **One personalized platform that fixes fragmented campus information for Thapar Institute of Engineering & Technology (TIET).**
 
-CampusOS eliminates fragmented campus portals (Webkiosk, Moodle LMS, disparate WhatsApp circulars, hostel notices, and unofficial groups) by uniting academic intelligence, grounded campus policies, privacy-first vaults, and circular campus economics into a single unified operating system.
-
----
-
-## 🎯 The 4 Core Modules
-
-### 1. Academic Dashboard & What-If Planner
-- **Grades & Timetable**: Real-time view of registered semester courses, credits, letter grades, and weekly classroom schedules (e.g., LT202, LP105, C-Hall labs).
-- **Thapar 75% Attendance Guard**:
-  - Automatically assesses courses against **TIET Section 6.2 Attendance Regulations**:
-    - **Safe ($\ge 75\%$)**: Calculates exact number of consecutive lectures you can safely bunk without falling below 75%.
-    - **Medical Warning ($65\% - 74.9\%$)**: Flags courses where you need medical dispensary condonation or DOAA approval to avoid being debarred from End-Semester Tests (EST).
-    - **Critical ($< 65\%$)**: Flags automatic attendance detention / 'F' grade risk.
-- **Dynamic What-If Simulator**:
-  - **Attendance Slider**: Test scenarios such as *"If I attend 6 out of the next 8 classes, will I cross 75%?"*
-  - **Grade & CGPA Predictor**: Set desired target grades across your courses to see projected SGPA and cumulative CGPA.
-- **Manual Entry & CSV Import**: Import attendance and course rosters via `.csv` file uploads.
-
-### 2. Campus Copilot (Grounded RAG with Actionable AI)
-- **Zero-Hallucination RAG**: Grounded exclusively on official Thapar Institute documentation:
-  - TIET Academic Regulations 2024-25 (Attendance, Grading, Exam Makeup)
-  - Official Academic Calendar 2024-2025 (MST, EST, Breaks)
-  - Hostel Regulations & Code of Conduct (10:30 PM curfew, high-wattage heater penalties)
-  - Central Library Regulations (borrowing limits, overdue fines)
-  - Official Circulars (Fee payment deadlines, minor degree allocations)
-- **Strict Citation Guarantee**: Every claim cites the official document, section, and page number. Unsupported or out-of-scope questions are categorically declined.
-- **Actionable AI**: Detects deadlines inside official circulars (e.g. Even Sem fee payment by Dec 20, 2024) and prompts the student with a 1-click **"Confirm & Add to Tasks"** action. Tasks are only created after explicit confirmation.
-
-### 3. Digital Vault
-- **Zero-Knowledge Privacy**: Private storage for transcripts, grade cards, tuition fee receipts, certificates, and student ID cards.
-- **Strict Row Level Security (RLS)**: Enforced via PostgreSQL policies (`auth.uid() = user_id`) and private storage buckets (`vault-private`).
-- **Explicit Consent**: Requires student authorization acknowledging data sovereignty before document uploads are permitted.
-
-### 4. Campus Reuse & Impact Tracking
-- **Circular Campus Economy**: Exchange, donate, or borrow calculators (Casio FX-991EX), lab coats, mini drafters, kettle/mattresses, and textbooks.
-- **Real-Time Impact Engine**:
-  - **₹ Saved**: Cumulative student money saved from avoided retail purchases.
-  - **kg Waste Diverted**: Landfill waste diverted from campus disposal.
-  - **CO₂ Avoided**: Calculated equivalent emissions avoided from circular reuse.
+CampusOS combines academic intelligence, grounded campus policies, zero-knowledge privacy vaults, and circular campus economics into a unified monorepo.
 
 ---
 
-## 🛠 Tech Stack
+## 📁 Monorepo Structure
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | Next.js (App Router, TypeScript) + Tailwind CSS + Lucide Icons |
-| **Backend** | Python 3.14 + FastAPI (Academic calculations, RAG, Vault, Reuse services) |
-| **Database & Auth** | Supabase PostgreSQL + Supabase Auth + Row Level Security (RLS) |
-| **Storage** | Supabase Storage (Private `vault-private` bucket) |
-| **Vector Engine** | Supabase `pgvector` (`vector(768)`) + Grounded Citation Pipeline |
+```
+CampusOS/
+├── frontend/               # Next.js 14+ (App Router, TypeScript, Tailwind CSS, ESLint)
+│   ├── src/
+│   │   ├── app/            # App Router pages (/academic, /copilot, /vault, /reuse)
+│   │   ├── components/     # UI components and Navigation sidebar
+│   │   ├── lib/            # Typed API client (lib/api.ts) & Supabase client (lib/supabase.ts)
+│   │   └── types/          # Shared TypeScript interfaces
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── eslint.config.mjs
+│   └── .env.example
+├── backend/                # FastAPI (Python 3.14)
+│   ├── app/
+│   │   ├── main.py         # App entrypoint, CORS for localhost:3000, /health endpoint
+│   │   ├── core/           # App settings, Supabase client, JWT auth dependency
+│   │   ├── models/         # Typed Pydantic schemas (Academic, Copilot, Vault, Reuse)
+│   │   ├── routers/        # Feature routers (academic, copilot, vault, reuse)
+│   │   └── services/       # What-if engine, grounded RAG engine, impact engine
+│   ├── data/               # Authentic TIET corpus (regulations, hostel rules, calendars)
+│   ├── tests/              # 22 automated pytest tests (health, auth, what-if, RAG, impact)
+│   ├── requirements.txt
+│   └── .env.example
+├── supabase/
+│   └── migrations/         # SQL migration scripts (PostgreSQL, pgvector, RLS policies)
+│       └── 20240101_initial_schema.sql
+├── docs/                   # Developer documentation & architecture notes
+│   ├── README.md
+│   ├── architecture.md
+│   └── auth_flow.md
+├── scripts/
+│   └── dev.sh              # Concurrent startup script for development
+├── Makefile                # Unified monorepo commands
+├── .env.example            # Monorepo environment template
+└── pytest.ini
+```
 
 ---
 
 ## 🚀 Quickstart & Setup Guide
 
 ### 1. Prerequisites
-- Node.js $\ge 18$ (Tested on v26)
-- Python $\ge 3.10$ (Tested on v3.14)
+- **Node.js**: $\ge 18$ (Tested on v26)
+- **Python**: $\ge 3.10$ (Tested on v3.14)
 
-### 2. Clone and Configure Secrets
+### 2. Environment Configuration
+Copy `.env.example` into each respective directory:
 ```bash
-git clone https://github.com/your-username/CampusOS.git
-cd CampusOS
-
-# Copy example environment file
+# Monorepo root
 cp .env.example .env
-cp .env.example backend/.env
-cp .env.example frontend/.env.local
+
+# Backend
+cp backend/.env.example backend/.env
+
+# Frontend
+cp frontend/.env.example frontend/.env.local
 ```
 
-### 3. Run Backend (FastAPI)
+### 3. Install Dependencies
 ```bash
-# Set up Python virtual environment
+# Using Makefile
+make install
+
+# Or manually:
 python3 -m venv backend/venv
-source backend/venv/bin/activate
-
-# Install dependencies
-pip install -r backend/requirements.txt
-
-# Run test suite
-pytest -v
-
-# Start FastAPI server (runs on http://localhost:8000)
-uvicorn app.main:app --app-dir backend --reload --port 8000
+./backend/venv/bin/pip install -r backend/requirements.txt
+cd frontend && npm install && cd ..
 ```
 
-### 4. Run Frontend (Next.js)
+### 4. Run Development Servers
+You can start both servers concurrently with a single command:
 ```bash
-# In a separate terminal tab:
-cd frontend
-npm install
-npm run dev
-# App available at http://localhost:3000
+make dev
+# Or execute: ./scripts/dev.sh
 ```
+
+Or start each server independently in separate terminal windows:
+
+#### Terminal 1 — Backend (FastAPI)
+```bash
+make dev-backend
+# Or: ./backend/venv/bin/uvicorn app.main:app --app-dir backend --reload --port 8000
+```
+- Server URL: **http://localhost:8000**
+- Health Check: **http://localhost:8000/health**
+- Interactive Swagger Docs: **http://localhost:8000/docs**
+
+#### Terminal 2 — Frontend (Next.js)
+```bash
+make dev-frontend
+# Or: cd frontend && npm run dev
+```
+- Web Application: **http://localhost:3000**
 
 ---
 
-## 🧪 Testing Verification
+## 🔐 Authentication & Security Architecture
 
-Run the automated backend test suite:
-```bash
-./backend/venv/bin/pytest -v
-```
-Tests cover:
-- What-if attendance calculations & 75% TIET threshold
-- Safe bunk and makeup attendance class math
-- SGPA & CGPA feasibility projections
-- RAG strict citation retrieval and rejection of unsupported queries
-- Actionable AI fee deadline extraction
-- Reuse environmental and economic impact calculations
-- API endpoints (courses, attendance, what-if, copilot, vault consent, reuse)
+1. **Supabase JWT Verification**:
+   The backend provides a dependency `get_current_user_id` in `backend/app/core/auth.py`. It inspects the `Authorization: Bearer <token>` header, verifies the signature against `SUPABASE_JWT_SECRET` or via the Supabase Auth API, and returns the authenticated `user_id`.
+2. **Typed Frontend API Client**:
+   `frontend/src/lib/api.ts` automatically attaches the active Supabase session token to all outgoing requests.
+3. **Row Level Security (RLS)**:
+   Every table in `supabase/migrations/20240101_initial_schema.sql` enforces `auth.uid() = user_id`.
 
 ---
 
-## 📁 Repository Structure
+## 🧪 Testing & Verification
+
+Run the test suite across both frontend and backend:
+```bash
+make test
 ```
-CampusOS/
-├── backend/
-│   ├── app/
-│   │   ├── config.py             # App settings & env loading
-│   │   ├── database.py           # In-memory repo & Supabase sync
-│   │   ├── main.py               # FastAPI entrypoint & CORS
-│   │   ├── models/               # Pydantic schemas (academic, copilot, vault, reuse)
-│   │   ├── routers/              # API endpoints for each module
-│   │   └── services/             # What-if math, RAG citation engine, Impact metrics
-│   ├── data/
-│   │   └── thapar_campus_corpus.json # Authentic TIET regulations & circulars
-│   ├── tests/                    # Comprehensive pytest test suite
-│   ├── requirements.txt
-│   └── seed_data.py
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx        # Shell layout with Navigation
-│   │   │   ├── page.tsx          # Overview dashboard with alerts & schedule
-│   │   │   ├── academic/         # Academic dashboard & What-if sliders
-│   │   │   ├── copilot/          # RAG Copilot with citations & task confirmation
-│   │   │   ├── vault/            # Private vault with RLS & consent
-│   │   │   └── reuse/            # Reuse marketplace & live impact tracking
-│   │   ├── components/
-│   │   ├── lib/                  # API client, Supabase client, mock fallback
-│   │   └── types/
-│   ├── package.json
-│   └── tsconfig.json
-├── data/
-│   ├── sample_attendance.csv     # Sample attendance roster for CSV import
-│   └── sample_courses.csv        # Sample course roster for CSV import
-├── supabase/
-│   └── migrations/
-│       └── 20240101_initial_schema.sql # PostgreSQL schema, pgvector, and RLS policies
-├── .env.example
-├── pytest.ini
-└── README.md
+
+### Backend (`pytest`):
+```bash
+./backend/venv/bin/pytest -v -W ignore::DeprecationWarning
 ```
+Verifies:
+- Root `/health` endpoint returns `{"status": "ok"}`
+- JWT verification dependency and `/api/auth/me` security
+- Thapar 75% attendance rule and safe bunk math
+- Grounded RAG citation verification and out-of-scope question rejection
+- Actionable AI fee notice extraction
+- Reuse marketplace circular economy impact metrics
+
+### Frontend Build (`next build`):
+```bash
+make build
+```
+Compiles Next.js with TypeScript and verifies all App Router pages: `/`, `/academic`, `/copilot`, `/vault`, `/reuse`.

@@ -7,7 +7,7 @@ client = TestClient(app)
 def test_health_endpoint():
     res = client.get("/api/health")
     assert res.status_code == 200
-    assert res.json()["status"] == "healthy"
+    assert res.json()["status"] == "ok"
 
 def test_get_courses():
     res = client.get("/api/academic/courses")

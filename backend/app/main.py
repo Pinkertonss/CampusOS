@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from .config import settings
+from .core.config import settings
+from .core.auth import get_current_user_id
 from .routers import academic, copilot, vault, reuse
 
 app = FastAPI(
@@ -9,21 +10,16 @@ app = FastAPI(
     version=settings.version,
 )
 
-# Enable CORS for Next.js frontend
+# CORS configured for localhost:3000
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "*"
-    ],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include module routers
+# Include feature routers
 app.include_router(academic.router)
 app.include_router(copilot.router)
 app.include_router(vault.router)
@@ -44,10 +40,36 @@ def root():
         ]
     }
 
-@app.get("/api/health")
-def health_check():
+@app.get("/health")
+def health():
+    """
+    Standard health check endpoint.
+    """
     return {
-        "status": "healthy",
+        "status": "ok",
+        "app": settings.app_name,
+        "campus": settings.campus_short,
         "environment": settings.environment,
+    }
+
+@app.get("/api/health")
+def api_health():
+    """
+    API health check endpoint.
+    """
+    return {
+        "status": "ok",
+        "environment": settings.environment,
+        "campus": settings.campus_short,
+    }
+
+@app.get("/api/auth/me")
+def get_authenticated_user(user_id: str = Depends(get_current_user_id)):
+    """
+    Endpoint protected by Supabase JWT verification dependency.
+    """
+    return {
+        "authenticated": True,
+        "user_id": user_id,
         "campus": settings.campus_short,
     }
