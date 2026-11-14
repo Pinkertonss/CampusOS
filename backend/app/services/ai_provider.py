@@ -157,9 +157,17 @@ class GeminiProvider(BaseEmbeddingProvider, BaseLLMProvider):
                 if res.status_code == 200:
                     data = res.json()
                     return [item["values"] for item in data.get("embeddings", [])]
-        except Exception:
-            pass
-        return await self.fallback_embedder.embed_texts(texts)
+                raise RuntimeError(
+                    f"Gemini embedding API returned status {res.status_code}: {res.text}. "
+                    f"Refusing silent fallback to local model to prevent vector space contamination."
+                )
+        except Exception as e:
+            if isinstance(e, RuntimeError):
+                raise
+            raise RuntimeError(
+                f"Gemini embedding API request failed ({e}). "
+                f"Refusing silent fallback to local model to prevent vector space contamination."
+            ) from e
 
     async def generate_response(
         self,
@@ -226,9 +234,17 @@ class OpenAIProvider(BaseEmbeddingProvider, BaseLLMProvider):
                 if res.status_code == 200:
                     data = res.json()
                     return [item["embedding"] for item in data["data"]]
-        except Exception:
-            pass
-        return await self.fallback_embedder.embed_texts(texts)
+                raise RuntimeError(
+                    f"OpenAI embedding API returned status {res.status_code}: {res.text}. "
+                    f"Refusing silent fallback to local model to prevent vector space contamination."
+                )
+        except Exception as e:
+            if isinstance(e, RuntimeError):
+                raise
+            raise RuntimeError(
+                f"OpenAI embedding API request failed ({e}). "
+                f"Refusing silent fallback to local model to prevent vector space contamination."
+            ) from e
 
     async def generate_response(
         self,

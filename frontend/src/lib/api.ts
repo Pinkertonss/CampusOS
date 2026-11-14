@@ -98,15 +98,13 @@ export async function checkHealth(): Promise<{ status: string; app?: string; cam
 // --- Academic API ---
 
 export async function getCourses(): Promise<Course[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/courses`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch courses");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback courses data:", e);
-    return MOCK_COURSES;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/courses`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch courses (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function addCourse(course: {
@@ -136,15 +134,13 @@ export async function deleteCourse(courseId: string): Promise<void> {
 }
 
 export async function getAttendance(): Promise<AttendanceRecord[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/attendance`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch attendance");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback attendance data:", e);
-    return MOCK_ATTENDANCE;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/attendance`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch attendance (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function updateAttendance(
@@ -192,57 +188,44 @@ export async function simulateGrades(
 // --- Official Academic Planning Engine API ---
 
 export async function getDailyPlan(referenceDate?: string): Promise<DailyPlanResponse> {
-  try {
-    const headers = await getAuthHeaders();
-    const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
-    const res = await fetch(`${API_BASE}/academics/daily-plan${query}`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch daily plan");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback daily plan:", e);
-    return MOCK_DAILY_PLAN as DailyPlanResponse;
+  const headers = await getAuthHeaders();
+  const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
+  const res = await fetch(`${API_BASE}/academics/daily-plan${query}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch daily plan (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function getDecisionMatrix(referenceDate?: string): Promise<DecisionMatrixResponse> {
-  try {
-    const headers = await getAuthHeaders();
-    const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
-    const res = await fetch(`${API_BASE}/academics/decision-matrix${query}`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch decision matrix");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback decision matrix:", e);
-    return {
-      date: new Date().toISOString().split("T")[0],
-      recommended_focus: "Maintain regular attendance and prepare for upcoming assessments.",
-      conflicts: [],
-      today_schedule: [],
-      priorities: (MOCK_DAILY_PLAN as DailyPlanResponse).actions,
-      academic_standing_summary: { safe: 4, warning: 1, critical: 1 },
-    };
+  const headers = await getAuthHeaders();
+  const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
+  const res = await fetch(`${API_BASE}/academics/decision-matrix${query}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch decision matrix (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function getAcademicSummary(): Promise<AcademicSummaryResponse> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/academics/summary`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch academic summary");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback academic summary:", e);
-    return MOCK_ACADEMIC_SUMMARY as AcademicSummaryResponse;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/academics/summary`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch academic summary (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function postAttendanceWhatIf(
@@ -272,27 +255,23 @@ export async function postGradeWhatIf(
 }
 
 export async function getTimetable(): Promise<TimetableSlot[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/timetable`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch timetable");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback timetable data:", e);
-    return MOCK_TIMETABLE;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/timetable`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch timetable (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function getDeadlines(): Promise<DeadlineTask[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/deadlines`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch deadlines");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback deadlines data:", e);
-    return MOCK_DEADLINES;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/deadlines`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch deadlines (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function createDeadline(task: {
@@ -501,18 +480,16 @@ export async function setVaultConsent(consentGiven: boolean) {
 }
 
 export async function getVaultDocuments(category?: string): Promise<VaultDocument[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = category && category !== "all"
-      ? `${API_BASE}/api/vault/documents?category=${category}`
-      : `${API_BASE}/api/vault/documents`;
-    const res = await fetch(url, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch vault documents");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback vault documents:", e);
-    return MOCK_VAULT_DOCS;
+  const headers = await getAuthHeaders();
+  const url = category && category !== "all"
+    ? `${API_BASE}/api/vault/documents?category=${category}`
+    : `${API_BASE}/api/vault/documents`;
+  const res = await fetch(url, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch vault documents (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function uploadVaultDocument(formData: FormData): Promise<VaultDocument> {
@@ -858,20 +835,18 @@ export async function getReuseItems(params?: {
   listing_type?: string;
   status?: string;
 }): Promise<ReuseItem[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const query = new URLSearchParams();
-    if (params?.category && params.category !== "all") query.set("category", params.category);
-    if (params?.listing_type && params.listing_type !== "all") query.set("listing_type", params.listing_type);
-    if (params?.status && params.status !== "all") query.set("status", params.status);
+  const headers = await getAuthHeaders();
+  const query = new URLSearchParams();
+  if (params?.category && params.category !== "all") query.set("category", params.category);
+  if (params?.listing_type && params.listing_type !== "all") query.set("listing_type", params.listing_type);
+  if (params?.status && params.status !== "all") query.set("status", params.status);
 
-    const res = await fetch(`${API_BASE}/api/reuse/items?${query.toString()}`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch reuse items");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback reuse items:", e);
-    return MOCK_REUSE_ITEMS;
+  const res = await fetch(`${API_BASE}/api/reuse/items?${query.toString()}`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch reuse items (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function createReuseItem(item: {
@@ -916,15 +891,13 @@ export async function completeReuseItem(itemId: string): Promise<ReuseItem> {
 }
 
 export async function getImpactMetrics(): Promise<ImpactMetrics> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/reuse/impact`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch impact metrics");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback impact metrics:", e);
-    return MOCK_IMPACT;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/reuse/impact`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch impact metrics (${res.status})`);
   }
+  return await res.json();
 }
 
 // ============================================================
@@ -1309,4 +1282,35 @@ export async function getAppliedOpportunities(): Promise<OpportunityApplication[
   if (!res.ok) throw new Error("Failed to fetch applied opportunities");
   return await res.json();
 }
+
+// ============================================================
+// --- Explicit Demo Mode Controls (No Silent Production Fallback)
+// ============================================================
+
+export function isDemoModeActive(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem("campusos_demo_mode") === "true";
+}
+
+export function setDemoModeActive(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  if (enabled) {
+    window.localStorage.setItem("campusos_demo_mode", "true");
+  } else {
+    window.localStorage.removeItem("campusos_demo_mode");
+  }
+}
+
+export function getDemoAcademicData() {
+  return {
+    courses: MOCK_COURSES,
+    attendance: MOCK_ATTENDANCE,
+    timetable: MOCK_TIMETABLE,
+    deadlines: MOCK_DEADLINES,
+    summary: MOCK_ACADEMIC_SUMMARY,
+    dailyPlan: MOCK_DAILY_PLAN,
+    impact: MOCK_IMPACT,
+  };
+}
+
 

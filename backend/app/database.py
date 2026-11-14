@@ -1,4 +1,6 @@
 import uuid
+import json
+from pathlib import Path
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Optional
 from .models.academic import Course, AttendanceRecord, TimetableSlot, DeadlineTask
@@ -35,7 +37,41 @@ class CampusOSDatabase:
         self.user_attendance: Dict[str, Dict[str, AttendanceRecord]] = {}
         self.user_deadlines: Dict[str, List[DeadlineTask]] = {}
         self.user_timetable: Dict[str, List[TimetableSlot]] = {}
+        self._tasks_file = Path(__file__).resolve().parent.parent / "storage" / "tasks_persistence.json"
         self._seed_sample_data()
+        self._load_persisted_tasks()
+
+    def _save_persisted_tasks(self):
+        try:
+            self._tasks_file.parent.mkdir(parents=True, exist_ok=True)
+            data = {}
+            for uid, tasks in self.user_deadlines.items():
+                data[uid] = [t.model_dump() if hasattr(t, "model_dump") else t.dict() for t in tasks]
+            with open(self._tasks_file, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+        except Exception:
+            pass
+
+    def _load_persisted_tasks(self):
+        if not self._tasks_file.exists():
+            return
+        try:
+            with open(self._tasks_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for uid, task_dicts in data.items():
+                tasks = [DeadlineTask(**td) for td in task_dicts]
+                if uid == self.default_user_id:
+                    existing_ids = {t.id for t in self.deadlines}
+                    for t in tasks:
+                        if t.id not in existing_ids:
+                            self.deadlines.append(t)
+                    self.user_deadlines[uid] = list(self.deadlines)
+                else:
+                    self.user_deadlines[uid] = tasks
+        except Exception:
+            pass
+        except Exception:
+            pass
 
     def _canonical_uid(self, uid: str) -> str:
         if not uid or uid in ("102203099-tiet-user", "dev-user-102203099", "dev-user", "mock-token"):
@@ -143,9 +179,15 @@ class CampusOSDatabase:
         uid = self._canonical_uid(user_id)
         if uid not in self.user_deadlines:
             self.user_deadlines[uid] = []
+        # Idempotent deduplication check
+        for existing in self.user_deadlines[uid]:
+            if existing.title == task.title and existing.due_date.split("T")[0] == task.due_date.split("T")[0]:
+                return existing
+
         self.user_deadlines[uid].append(task)
-        if uid == self.default_user_id:
+        if uid == self.default_user_id and task not in self.deadlines:
             self.deadlines.append(task)
+        self._save_persisted_tasks()
         return task
 
     def toggle_deadline(self, user_id: str, task_id: str) -> Optional[DeadlineTask]:
@@ -154,6 +196,7 @@ class CampusOSDatabase:
         for t in task_list:
             if t.id == task_id:
                 t.status = "completed" if t.status == "pending" else "pending"
+                self._save_persisted_tasks()
                 return t
         return None
 

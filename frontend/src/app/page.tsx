@@ -69,9 +69,11 @@ export default function DashboardPage() {
       setSummary(sumRes);
       setTimetable(ttRes);
       setDeadlines(dlRes);
+      setError(null);
     } catch (err: unknown) {
       console.error("Dashboard data load error:", err);
-      setError("Failed to connect to backend services. Using local cached academic records.");
+      const msg = err instanceof Error ? err.message : "Failed to connect to backend services.";
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

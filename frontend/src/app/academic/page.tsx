@@ -61,6 +61,7 @@ export default function AcademicPlannerPage() {
   // Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<"attendance" | "grades">("grades");
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -70,8 +71,10 @@ export default function AcademicPlannerPage() {
       if (data.courses && data.courses.length > 0) {
         setSelectedCourseCode(data.courses[0].code);
       }
-    } catch (err) {
+      setError(null);
+    } catch (err: unknown) {
       console.error("Failed to load academic summary:", err);
+      setError(err instanceof Error ? err.message : "Failed to load academic records");
     } finally {
       setLoading(false);
     }
@@ -186,6 +189,18 @@ export default function AcademicPlannerPage() {
           </Link>
         </div>
       </div>
+
+      {error && (
+        <div className="p-4 rounded-xl bg-red-950/40 border border-red-800/60 flex items-center justify-between gap-4 text-red-200">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold">Academic Service Error:</span>
+            <span>{error}</span>
+          </div>
+          <Button size="sm" variant="secondary" onClick={loadData}>
+            Retry Connection
+          </Button>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-4">

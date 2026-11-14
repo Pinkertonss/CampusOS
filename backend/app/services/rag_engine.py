@@ -26,6 +26,7 @@ from .ingestion import DocumentIngestionService
 
 CORPUS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "thapar_campus_corpus.json"
 STORAGE_DIR = Path(__file__).resolve().parent.parent.parent / "storage" / "campus-docs"
+INDEX_PATH = STORAGE_DIR / "corpus_index.json"
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 REFUSAL_MESSAGE = "I couldn't find this in the approved campus documents"
@@ -40,13 +41,78 @@ class RagEngine:
         self.llm_provider: BaseLLMProvider = get_llm_provider()
         self.documents: Dict[str, CampusDocument] = {}
         self.chunks: List[Dict[str, Any]] = []
+        self.dimension: int = 768
+        self.index_metadata: Dict[str, Any] = {
+            "provider": "local",
+            "model": "deterministic-768",
+            "dimension": 768,
+            "version": "1.0",
+        }
         self.similarity_threshold: float = float(os.getenv("COPILOT_SIMILARITY_THRESHOLD", "0.45"))
         self._initialize_corpus()
 
+    def get_status(self) -> Dict[str, Any]:
+        """Exposes operational mode, provider configuration, and index integrity honestly."""
+        prov_name = os.getenv("EMBEDDING_PROVIDER", "local").lower()
+        return {
+            "mode": "external_neural" if prov_name in ("gemini", "openai") else "local_deterministic",
+            "provider": prov_name,
+            "dimension": self.dimension,
+            "index_metadata": self.index_metadata,
+            "document_count": len(self.documents),
+            "chunk_count": len(self.chunks),
+            "honest_description": (
+                "External neural embeddings via API"
+                if prov_name in ("gemini", "openai")
+                else "Local deterministic 768-dimensional normalized keyword/n-gram projection. Not an external neural model."
+            ),
+        }
+
+    def _save_index(self):
+        """Durable persistence for documents and chunks across backend restarts."""
+        try:
+            doc_list = []
+            for d in self.documents.values():
+                if hasattr(d, "model_dump"):
+                    doc_list.append(d.model_dump())
+                elif hasattr(d, "dict"):
+                    doc_list.append(d.dict())
+            data = {
+                "index_metadata": self.index_metadata,
+                "documents": doc_list,
+                "chunks": self.chunks,
+            }
+            with open(INDEX_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+        except Exception:
+            pass
+
+    def _load_index(self) -> bool:
+        """Loads persisted vector index from disk if available."""
+        if not INDEX_PATH.exists():
+            return False
+        try:
+            with open(INDEX_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.index_metadata = data.get("index_metadata", self.index_metadata)
+            self.dimension = self.index_metadata.get("dimension", 768)
+            docs = data.get("documents", [])
+            for d in docs:
+                cd = CampusDocument(**d)
+                self.documents[cd.id] = cd
+            self.chunks = data.get("chunks", [])
+            return len(self.documents) > 0 and len(self.chunks) > 0
+        except Exception:
+            return False
+
     def _initialize_corpus(self):
         """
-        Loads pre-approved campus corpus and computes embeddings into memory store.
+        Loads pre-approved campus corpus and computes embeddings into memory & persistent store.
+        Restores from durable index if previously saved.
         """
+        if self._load_index():
+            return
+
         if not CORPUS_PATH.exists():
             return
 
@@ -120,6 +186,8 @@ class RagEngine:
                     "embedding": vec,
                 })
 
+        self._save_index()
+
     def list_documents(self) -> List[CampusDocument]:
         return list(self.documents.values())
 
@@ -128,8 +196,19 @@ class RagEngine:
 
     def delete_document(self, document_id: str) -> bool:
         if document_id in self.documents:
+            doc = self.documents[document_id]
+            # Purge underlying storage file from disk
+            if doc.storage_path:
+                rel = doc.storage_path.replace("campus-docs/", "")
+                file_path = STORAGE_DIR / rel
+                if file_path.exists():
+                    try:
+                        file_path.unlink()
+                    except Exception:
+                        pass
             del self.documents[document_id]
             self.chunks = [c for c in self.chunks if c.get("document_id") != document_id]
+            self._save_index()
             return True
         return False
 
@@ -201,6 +280,7 @@ class RagEngine:
             created_at=datetime.now().isoformat(),
         )
         self.documents[doc_id] = camp_doc
+        self._save_index()
 
         return DocumentUploadResponse(
             document=camp_doc,
@@ -211,6 +291,11 @@ class RagEngine:
     def _cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
         if not vec_a or not vec_b:
             return 0.0
+        if len(vec_a) != len(vec_b):
+            raise ValueError(
+                f"Cannot compute cosine similarity across incompatible vector spaces: "
+                f"len(vec_a)={len(vec_a)} vs len(vec_b)={len(vec_b)}."
+            )
         dot = sum(a * b for a, b in zip(vec_a, vec_b))
         norm_a = math.sqrt(sum(a * a for a in vec_a))
         norm_b = math.sqrt(sum(b * b for b in vec_b))
@@ -224,10 +309,17 @@ class RagEngine:
         """
         Embeds the query, runs cosine similarity search over approved chunks,
         and applies the similarity threshold.
+        Validates embedding dimensions strictly before comparing vectors.
         """
         thresh = threshold if threshold is not None else self.similarity_threshold
         self.embedding_provider = get_embedding_provider()
         query_emb = await self.embedding_provider.embed_query(query)
+
+        if len(query_emb) != self.dimension:
+            raise ValueError(
+                f"Incompatible embedding model dimensions: query vector has {len(query_emb)} dimensions, "
+                f"but corpus index requires {self.dimension}. Refusing to compare incompatible vector spaces."
+            )
 
         scored_chunks: List[Tuple[Dict[str, Any], float]] = []
         for chunk in self.chunks:
@@ -244,35 +336,68 @@ class RagEngine:
     def _detect_actionable_event(self, text: str, query: str) -> Optional[ActionableSuggestion]:
         """
         Extracts verified actionable deadlines for student confirmation.
+        Distinguishes historical reference dates from current active recommendations.
         """
         text_lower = text.lower()
+        now = datetime.now()
+
         if "fee" in text_lower and ("december 20, 2024" in text_lower or "due" in text_lower):
+            due = "2024-12-20T23:59:00"
+            due_dt = datetime.fromisoformat(due)
+            is_past = due_dt < now
             return ActionableSuggestion(
                 has_action=True,
                 title="Pay Even Semester Tuition & Hostel Fees",
-                due_date="2024-12-20T23:59:00",
+                due_date=due,
                 priority="high",
                 course_code="CAMPUS-FEES",
-                reason="Official notice states fee must be paid by Dec 20, 2024 to avoid ₹2,000 late surcharge."
+                reason=(
+                    "Official circular deadline (Dec 20, 2024) has passed. Retained for historical record."
+                    if is_past
+                    else "Official notice states fee must be paid by Dec 20, 2024 to avoid ₹2,000 late surcharge."
+                ),
+                is_expired=is_past,
+                is_historical=is_past,
             )
+
         if "minor degree" in text_lower and "november 30, 2024" in text_lower:
+            due = "2024-11-30T17:00:00"
+            due_dt = datetime.fromisoformat(due)
+            is_past = due_dt < now
             return ActionableSuggestion(
                 has_action=True,
                 title="Submit Minor Degree Application (AI/ML, Data, Finance)",
-                due_date="2024-11-30T17:00:00",
+                due_date=due,
                 priority="medium",
                 course_code="DOAA-MINOR",
-                reason="Minor degree allocation closes on November 30, 2024 for students with CGPA >= 7.00."
+                reason=(
+                    "Minor degree allocation closed on November 30, 2024 (Historical Circular - Past Due)."
+                    if is_past
+                    else "Minor degree allocation closes on November 30, 2024 for students with CGPA >= 7.00."
+                ),
+                is_expired=is_past,
+                is_historical=is_past,
             )
+
         if ("est" in text_lower or "end semester" in text_lower) and "december 2" in text_lower:
+            due = "2024-12-02T09:00:00"
+            due_dt = datetime.fromisoformat(due)
+            is_past = due_dt < now
             return ActionableSuggestion(
                 has_action=True,
                 title="Prepare for End-Semester Tests (EST)",
-                due_date="2024-12-02T09:00:00",
+                due_date=due,
                 priority="high",
                 course_code="ACAD-EST",
-                reason="TIET Official Academic Calendar lists EST commencement on December 2, 2024."
+                reason=(
+                    "TIET Academic Calendar listed EST commencement on December 2, 2024 (Historical Academic Term)."
+                    if is_past
+                    else "TIET Official Academic Calendar lists EST commencement on December 2, 2024."
+                ),
+                is_expired=is_past,
+                is_historical=is_past,
             )
+
         return None
 
     async def _handle_personalized_attendance(
@@ -329,11 +454,8 @@ class RagEngine:
                 grounded=True,
             )
 
-        # Pull student's real registered courses and attendance
+        # Pull student's real registered courses and attendance strictly scoped to authenticated user
         records = db.get_attendance(user_id)
-        if not records:
-            # Check default demo user if in local dev
-            records = db.get_attendance("102203099-tiet-user")
 
         if not records:
             answer = (

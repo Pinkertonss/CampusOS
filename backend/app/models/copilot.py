@@ -43,6 +43,8 @@ class ActionableSuggestion(BaseModel):
     priority: str = "medium"
     course_code: Optional[str] = None
     reason: str = ""
+    is_expired: bool = False
+    is_historical: bool = False
 
 
 class CopilotQueryRequest(BaseModel):
