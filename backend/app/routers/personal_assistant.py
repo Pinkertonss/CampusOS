@@ -20,6 +20,8 @@ class ChatResponse(BaseModel):
     reply: str
     status: str
     model: Optional[str] = None
+    error_code: Optional[str] = None
+    correlation_id: Optional[str] = None
 
 class CalculateRequest(BaseModel):
     expression: str = Field(..., min_length=1, max_length=200)
@@ -29,6 +31,7 @@ class CalculateResponse(BaseModel):
     expression: str
     result: Optional[float] = None
     error: Optional[str] = None
+    error_code: Optional[str] = None
 
 
 @router.get("/status")

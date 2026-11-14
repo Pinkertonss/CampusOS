@@ -1,58 +1,34 @@
-# CampusOS Verification Report: Gemini Assistant Model Migration and Dynamic Fallback
+# CampusOS Verification Report: Root-Cause Remediation of Security, Academic Invariants, Calculator Bounds, Durable Storage, and Archive Privacy
 
-**Generated**: 2026-11-14T22:42:00+05:30  
+**Generated**: 2026-11-14T23:52:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & Pre-Commit Verification Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `11610777010d6b3e1f35f86cf9fc351c44d0c5c0`  
-**Tested Source Revision**: Current `antigravity` branch with Gemini model migration and 404 auto-fallback  
+**Baseline Commit**: `da62086a8abfea1665590116178b0db46a9b81db`  
+**Tested Source Revision**: Current working tree on `antigravity`  
 
 ---
 
 ## 1. Scope and Source
 
-This implementation addresses and verifies the 7 core feature, design, and infrastructure requirements for CampusOS, along with dynamic environment loading resilience for the Gemini Personal Assistant:
+This remediation represents a root-cause architectural remediation across CampusOS core backend services, routers, and data stores. Rather than shallow patches at isolated route lines, this work enforces six system-wide invariants across every entry point:
 
-1. **Lost & Found Section**:
-   - Prominent navigation item positioned immediately after Dashboard on desktop sidebar and mobile header.
-   - Dedicated page (`/lost-and-found`) with tabs for All, Lost, Found, and My Reports; category, status, and date filters; search; detail modal; and report creation modal.
-   - Strict privacy guarantees: phone numbers and private emails are never exposed publicly. Email addresses are masked (`g***s@t***u`) on listings.
-   - Authenticated claim workflow: claimants submit private distinguishing proof (e.g. serial numbers, stickers, lockscreen wallpaper description) visible **only** to the claimant, original reporter, and administrators.
-   - Owner resolution and administrator moderation with durable state storage.
-2. **Support Button & Persistent Tickets**:
-   - Prominent Support trigger in desktop navigation sidebar (with 24/7 indicator badge) and mobile navigation bar.
-   - Global interactive slide-over/modal (`SupportModal.tsx` via `SupportContext.tsx`) accessible on all authenticated pages.
-   - Includes Quick Help & FAQs, Bug Reporting, Assistance Requests, and My Tickets tabs.
-   - Persistent tickets with category, subject, description, priority, optional screenshot upload, status workflow (`open` -> `in_progress` -> `resolved`), strict student tenant isolation, and administrative response/resolution controls.
-3. **Admin Opportunities & Live Pre-Publication Matching Preview**:
-   - Complete opportunity lifecycle management for Opportunity Managers and Admins (create, update, publish, close, archive).
-   - Configurable mandatory criteria (minimum CGPA, allowed branches, maximum active backlogs, minimum attendance percentage) and preferred qualifications.
-   - Pre-publication live candidate matching preview modal evaluating eligible candidates, ineligible candidates, incomplete profiles, and manual review requirements before publishing.
-   - Candidate discovery inspector modal with search, branch/status filters, and in-app invitation dispatch.
-   - Strict institutional integrity: unverified CGPA is never fabricated or defaulted to non-null values.
-4. **Campus Guide Renaming**:
-   - Renamed user-facing "Campus Copilot" to "Campus Guide" across navigation, headers, descriptions, buttons, tooltips, and empty states.
-   - Preserved backward compatibility with `/copilot` and `/api/copilot` while introducing canonical `/guide` and `/api/guide` routes.
-5. **Gemini-Powered Personal Assistant with Dynamic Env Discovery & Model Fallback**:
-   - Floating chat bubble (`PersonalAssistant.tsx`) docked on all authenticated pages, separate from the institutional Campus Guide.
-   - Restful proxy service (`/api/assistant/chat`, `/api/assistant/calculate`) with sliding-window rate limiting, timeout handling, and graceful error handling.
-   - **Model Migration**: Migrated default Gemini model to `gemini-3.5-flash-lite` resolving HTTP 404 deprecation errors returned by Google AI Studio API for sunset `gemini-1.5-flash` models.
-   - **Automatic Candidate Fallback Sequence**: Added multi-model fallback chain (`gemini-3.5-flash-lite` -> `gemini-3.8-flash` -> `gemini-flash-latest`) with dynamic caching of the working model.
-   - Safe arithmetic evaluation via Python `ast` syntax inspection (supporting Python 3.14 without deprecated `ast.Num`) preventing any use of `eval()`.
-   - Clear institutional boundary disclaimer directing official policy and academic queries to Campus Guide.
-6. **Student Resale Marketplace Visual Assets**:
-   - Replaced all generic/unrelated Unsplash imagery in the Campus Reuse marketplace with 9 project-owned, clean SVG vector illustrations:
-     - `calculator.svg` (Scientific / Graphing Calculator)
-     - `textbook.svg` (Engineering & Science Textbooks)
-     - `labcoat.svg` (Chemistry & Workshop Lab Coats)
-     - `kettle.svg` (Electric Kettle / Appliances)
-     - `drawing_kit.svg` (EDG Drafting & Engineering Tools)
-     - `bicycle.svg` (Campus Commuter Bicycle)
-     - `lamp.svg` (LED Study Desk Lamp)
-     - `furniture.svg` (Ergonomic Study Chair & Table)
-     - `electronics.svg` (Audio, Monitors & Peripherals)
-7. **Deployment Landing Portal & Root `index.html`**:
-   - Added a structured, modern, standalone `index.html` at repository root.
-   - Acts as the primary portal entry with institutional TIET branding, live system health check indicators, interactive OpenAPI documentation links, and direct navigation into all core CampusOS modules.
+1. **Private files require authorization against their owning resource**: Direct predictable filenames are superseded by opaque metadata IDs, ownership and administrator checks are validated before reading or streaming file bytes, and HTTP headers strictly enforce `Cache-Control: private, no-store`.
+2. **Eligibility uses explicitly sourced academic data; unavailable values remain unavailable**: Eliminates all hardcoded CGPA fallbacks (`8.52`, `7.80`). Unverified students possess `cgpa=None`, and matching engines mark opportunities requiring minimum CGPA as `INCOMPLETE_PROFILE` without penalizing or rejecting students on zero-credit assumptions.
+3. **Calculator evaluation has enforceable computation limits**: Preflight AST depth, token counts, literal magnitudes, exponent ceilings, bit-length limits, power-tower detection, and execution step budgets prevent algorithmic complexity and CPU denial-of-service before evaluation.
+4. **Successful mutations require successful persistence**: Atomic file writes (`AtomicJsonStorage`) enforce write-to-temp, flush, `os.fsync`, and atomic directory replacement under re-entrant threading locks (`RLock`). Storage write failures reject the transaction and raise explicit HTTP 500 errors. Corrupt JSON files are safely quarantined (`.corrupt.<timestamp>`) without wiping historical data.
+5. **Archived resources follow one explicit visibility policy everywhere**: Centralized `is_item_visible_to_user` rules hide archived items across listings, status filters, search queries, detail endpoints, and associated image downloads, restricting visibility solely to the resource owner and administrators.
+6. **Public errors never contain raw internal exception details**: Personal Assistant and upstream AI integrations emit stable programmatic error codes (`UPSTREAM_AUTH_ERROR`, `UPSTREAM_QUOTA_EXCEEDED`, `UPSTREAM_TIMEOUT`, `SERVICE_UNAVAILABLE`), unique request `correlation_id`s, and clean user messages with sensitive key and filesystem path redaction.
+
+### Remediation Checklist (Findings A – F)
+
+| Finding ID | Scope & Subject | Status | Root Cause & Resolution |
+| :--- | :--- | :--- | :--- |
+| **Finding A** | Support Screenshot Authorization & Path Traversal | **CONFIRMED & FIXED** | Screenshots previously used raw filenames without resource ownership verification. Resolved by introducing `attachment_service.py` with `AttachmentMetadata`, opaque attachment IDs (`att-...`), owner/admin access validation, safe canonical path resolution, and `Cache-Control: private, no-store` headers. Legacy screenshot routes now validate resource ownership. |
+| **Finding B** | Elimination of Fabricated Academic CGPA | **CONFIRMED & FIXED** | Hardcoded CGPA values (`8.52`, `7.80`) were previously returned as fallbacks in `database.py` and `opportunities.py`. Resolved by creating `academic_profile_reader.py` (`get_canonical_academic_profile`), where only officially registered institutional records contain verified CGPA. Unverified profiles have `cgpa=None`. Opportunities requiring CGPA yield `INCOMPLETE_PROFILE` and equality at the threshold satisfies minimum requirements. |
+| **Finding C** | Bounded AST Calculator Computation Limits | **CONFIRMED & FIXED** | The calculator previously evaluated arbitrary exponents (`999999999 ** 999`) and chained powers. Resolved by implementing strict AST preflight bounds: max 200 characters, AST depth ≤ 8, AST node count ≤ 35, numeric literals ≤ 1e12, maximum exponent ≤ 100, bit-length ceiling ≤ 1024 bits, step budget ≤ 50 operations, power-tower detection, and non-finite number rejection. |
+| **Finding D** | Durable Storage Atomicity & Failure Propagation | **CONFIRMED & FIXED** | Storage previously wrote directly to files and caught exceptions without propagating rollback or protecting against corrupt state resets. Resolved by `durable_storage.py` (`AtomicJsonStorage`): write to same-dir temp file, flush, `os.fsync`, atomic `os.replace`, `threading.RLock`, rollback on write failure with HTTP 500 propagation, and corrupted file quarantine (`.corrupt.<timestamp>`). |
+| **Finding E** | Consistent Lost & Found Archive Privacy | **CONFIRMED & FIXED** | Archived Lost & Found reports could be enumerated via search, direct IDs, or unfiltered image downloads. Resolved by centralizing `is_item_visible_to_user` in `lost_and_found_engine.py` applied across default listings, explicit `status=archived` filters, keyword search, detail lookups, and image file serving (`/api/lost-and-found/images/{filename}`). Archived items and photos are strictly visible only to creator and administrators. |
+| **Finding F** | Personal Assistant Error Sanitization & Correlation | **CONFIRMED & FIXED** | Upstream exceptions could leak API keys, URLs, or tracebacks in client responses. Resolved by wrapping `personal_assistant.py` and router responses with request-scoped `correlation_id`, stable error codes, sensitive parameter redaction (`_redact_sensitive_info`), and user-safe fallback messages. |
 
 ---
 
@@ -60,37 +36,19 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 
 | Path | Purpose & Modification |
 | :--- | :--- |
-| `backend/app/services/personal_assistant.py` | Added dynamic `get_api_key()` inspecting environment and auto-reloading `.env` on demand; updated `chat()`. |
-| `backend/app/routers/personal_assistant.py` | Updated `/status` to dynamically check active key state via `personal_assistant_service.get_api_key()`. |
-| `backend/app/core/config.py` | Added `override=True` to `load_dotenv` for robust precedence of configured `.env` variables. |
-| `docker-compose.yml` | Passed through `GEMINI_API_KEY` and `GEMINI_MODEL` environment variables to backend container. |
-| `backend/app/models/lost_and_found.py` | Data models for Lost & Found items, claims, updates, and masked public projections. |
-| `backend/app/services/lost_and_found_engine.py` | Durable JSON storage engine, CRUD, claim management, email masking, and private proof access controls. |
-| `backend/app/routers/lost_and_found.py` | API endpoints for Lost & Found listings, detail view, creation, status mutation, claim verification, and image upload. |
-| `backend/app/models/support.py` | Pydantic data models for Support tickets, updates, priorities, categories, and screenshot uploads. |
-| `backend/app/routers/support.py` | API endpoints for ticket submission, isolated ticket listing, screenshot attachment, and administrative resolution. |
-| `backend/app/models/opportunity.py` | Extended Opportunity models with mandatory criteria, preferred qualifications, and preview response statistics. |
-| `backend/app/database.py` | Added `update_opportunity()`, `preview_matching()`, and extended candidate discovery filtering. |
-| `backend/app/routers/opportunities.py` | Reordered static routes before parameterized routes, added matching preview and opportunity lifecycle endpoints. |
-| `backend/app/routers/copilot.py` | Added `/api/guide` and `/guide` router mirrors for Campus Guide. |
-| `backend/app/routers/reuse.py` | Replaced Unsplash hotlinks with local project-owned SVG illustration paths. |
-| `backend/app/core/auth.py` | Added `get_optional_user_claims` dependency for unauthenticated/authenticated mixed routes. |
-| `backend/app/main.py` | Registered `lost_and_found`, `support`, `personal_assistant`, and `guide` routers. |
-| `frontend/public/images/resell/*.svg` | 9 clean, project-owned SVG vector illustrations for student reuse listings. |
-| `frontend/src/app/lost-and-found/page.tsx` | Complete Lost & Found interface with tabs, filters, search, reporting modal, and private claim workflow. |
-| `frontend/src/app/opportunities/page.tsx` | Admin Opportunity Creator with Live Matching Preview modal and Candidate Discovery Inspector. |
-| `frontend/src/app/guide/page.tsx` | Dedicated `/guide` route re-exporting Campus Guide component. |
-| `frontend/src/app/copilot/page.tsx` | Renamed all headers, labels, and text to "Campus Guide". |
-| `frontend/src/components/Navigation.tsx` | Added Lost & Found near top, added Support button in sidebar and mobile header, renamed Copilot to Campus Guide. |
-| `frontend/src/components/SupportModal.tsx` | Global slide-over modal for FAQs, bug reporting, assistance requests, and user ticket tracking. |
-| `frontend/src/context/SupportContext.tsx` | React Context provider managing global Support modal state and active tabs. |
-| `frontend/src/components/PersonalAssistant.tsx` | Floating Gemini personal assistant widget with AST GPA calculator integration and safe boundaries. |
-| `frontend/src/components/AppShell.tsx` | Wrapped authenticated shell with `SupportProvider`, `SupportModal`, and `PersonalAssistant`. |
-| `frontend/src/lib/api.ts` | Added API clients for Lost & Found, Support Desk, Personal Assistant, and Opportunity preview matching. |
-| `frontend/src/types/index.ts` | Added TypeScript interfaces for Lost & Found, Support, Personal Assistant, and Opportunity preview responses. |
-| `index.html` | Self-contained deployment landing portal with system status, module links, and API documentation shortcuts. |
-| `backend/tests/test_new_features.py` | 9 comprehensive automated tests for Lost & Found, Support Desk, Personal Assistant, and Guide routing. |
-| `docs/verification/latest.md` | Evidence-based verification report covering all 8 required sections. |
+| `backend/app/models/attachment.py` | New: Pydantic model for secure attachment metadata (opaque ID, resource mapping, lifecycle, MIME type, size). |
+| `backend/app/services/attachment_service.py` | New: Secure attachment storage service enforcing magic byte verification, private directory storage, atomic file persistence, ownership verification, and directory traversal prevention. |
+| `backend/app/services/academic_profile_reader.py` | New: Canonical academic profile reader (`CanonicalAcademicProfile`) providing verified institutional CGPA or `None` with provenance attribution. |
+| `backend/app/services/durable_storage.py` | New: Thread-safe, atomic JSON storage engine (`AtomicJsonStorage`) with fsync, atomic replace, quarantine of corrupted files, and explicit write failure propagation. |
+| `backend/app/routers/support.py` | Migrated support tickets to `AtomicJsonStorage`, integrated `attachment_service`, added opaque `GET /api/support/attachments/{attachment_id}`, and secured `/screenshots/{filename}`. |
+| `backend/app/services/lost_and_found_engine.py` | Migrated item and claim persistence to `AtomicJsonStorage`, centralized `is_item_visible_to_user`, added `get_item_by_image_filename`. |
+| `backend/app/routers/lost_and_found.py` | Enforced archive visibility checks on detail retrieval and image file serving (`serve_image`). |
+| `backend/app/database.py` | Replaced all hardcoded CGPA fallbacks (`8.52`, `7.80`) with `get_canonical_academic_profile()`, supported dict updates for experience profiles, and included active experience profiles in candidate discovery. |
+| `backend/app/routers/opportunities.py` | Removed hardcoded CGPA fallbacks from recommendation routes. |
+| `backend/app/services/personal_assistant.py` | Implemented strict preflight AST resource bounding in `safe_calculate()`, correlation ID tracking, stable error codes, and sensitive information redaction. |
+| `backend/app/routers/personal_assistant.py` | Updated `/chat` and `/calculate` response schemas with `error_code` and `correlation_id`. |
+| `backend/tests/test_root_cause_remediation.py` | New: Comprehensive 6-suite regression test file verifying all findings A through F under simulated attack and edge conditions. |
+| `docs/verification/latest.md` | Updated: Comprehensive evidence-based verification report covering all 8 required sections. |
 
 ---
 
@@ -98,126 +56,97 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 
 | Method & Route | Access Level | Description |
 | :--- | :--- | :--- |
-| `GET /api/lost-and-found` | Public / Optional Auth | Lists active lost and found items with masked reporter emails and privacy filters. |
-| `POST /api/lost-and-found` | Authenticated | Creates a new lost or found report with optional photo upload. |
-| `GET /api/lost-and-found/{item_id}` | Public / Optional Auth | Retrieves details of an item (masking private contact details). |
-| `PUT /api/lost-and-found/{item_id}` | Reporter / Admin | Updates details or status (`open`, `resolved`, `archived`) of a report. |
-| `POST /api/lost-and-found/{item_id}/claim` | Authenticated | Submits a private claim with distinguishing proof for a found item. |
-| `GET /api/lost-and-found/{item_id}/claims` | Reporter / Admin | Views claims submitted for an item (distinguishing proof visible only to reporter/admin). |
-| `POST /api/lost-and-found/{item_id}/claims/{claim_id}/verify` | Reporter / Admin | Verifies or rejects a submitted claim. |
-| `POST /api/lost-and-found/upload-photo` | Authenticated | Authorizes and stores item photos locally or in private storage. |
-| `GET /api/support/tickets` | Authenticated | Lists tickets scoped strictly to the current user (or all tickets for admin). |
-| `POST /api/support/tickets` | Authenticated | Submits a persistent support ticket with category, priority, and optional screenshot. |
-| `GET /api/support/tickets/{ticket_id}` | Ticket Owner / Admin | Retrieves ticket details and response history. |
-| `PUT /api/support/tickets/{ticket_id}` | Admin | Adds admin response and updates ticket status (`in_progress`, `resolved`, `closed`). |
-| `POST /api/support/upload-screenshot` | Authenticated | Uploads and registers an error screenshot for support tickets. |
-| `GET /api/assistant/status` | Public / Authenticated | Returns availability status of the Gemini assistant service (dynamically verified). |
-| `POST /api/assistant/chat` | Authenticated | Proxies conversational queries to Gemini with rate limiting and campus disclaimer. |
-| `POST /api/assistant/calculate` | Authenticated | Evaluates mathematical and GPA expressions safely via Python AST without `eval`. |
-| `POST /api/opportunities/preview-matching` | Opportunity Manager / Admin | Evaluates live candidate pool matching counts prior to opportunity publication. |
-| `PUT /api/opportunities/{opportunity_id}` | Opportunity Manager / Admin | Updates opportunity parameters, mandatory criteria, and qualifications. |
-| `POST /api/opportunities/{opportunity_id}/publish` | Opportunity Manager / Admin | Transitions draft opportunity to active published state. |
-| `POST /api/opportunities/{opportunity_id}/close` | Opportunity Manager / Admin | Closes an active opportunity to new submissions. |
-| `POST /api/opportunities/{opportunity_id}/archive` | Opportunity Manager / Admin | Archives an opportunity. |
-| `GET /api/guide/*` & `POST /api/guide/*` | Authenticated / Public | Campus Guide endpoint alias mirroring `/api/copilot`. |
+| `POST /api/support/upload-screenshot` | Authenticated (Any User) | Uploads screenshot attachment using magic-byte validation and generates opaque `att-...` identifier. |
+| `GET /api/support/attachments/{attachment_id}` | Authenticated (Owner or Admin) | Retrieves attachment bytes with ownership validation and `Cache-Control: private, no-store`. |
+| `GET /api/support/screenshots/{filename}` | Authenticated (Owner or Admin) | Legacy route secured with resource ownership lookup and safe path resolution. |
+| `GET /api/lost-and-found` | Public / Authenticated | Filters out archived items unless requested by item creator or system administrator. |
+| `GET /api/lost-and-found/{item_id}` | Public / Authenticated | Returns 404 for archived items when requested by unauthorized users. |
+| `GET /api/lost-and-found/images/{filename}` | Public / Authenticated | Verifies that the owning report is not archived before serving image bytes to third parties. |
+| `GET /api/opportunities/recommended` | Authenticated (Student) | Computes student eligibility using canonical verified CGPA; returns `INCOMPLETE_PROFILE` if unverified. |
+| `POST /api/opportunities/preview-matching` | Authenticated (Admin / Opp Mgr) | Live candidate matching preview evaluating verified CGPA without fabricating fallbacks. |
+| `POST /api/assistant/calculate` | Authenticated (Any User) | Safe AST arithmetic evaluation with strict preflight complexity and resource limits. |
+| `POST /api/assistant/chat` | Authenticated (Any User) | Gemini proxy with correlation ID tracking, rate limiting, and sanitized error responses. |
 
 ---
 
-## 4. Database Migrations
+## 4. Database Migrations & Durable Storage
 
-- **Durable File-Backed Engines**:
-  - `backend/storage/lost_and_found_items.json`: Durable storage for lost and found reports.
-  - `backend/storage/lost_and_found_claims.json`: Durable storage for private claims and verification notes.
-  - `backend/storage/support_tickets.json`: Durable storage for user support tickets, responses, and resolution trails.
-- **Relational Tables Protected with RLS** (from `supabase/migrations/20261114000004_academic_rbac_rls_and_privacy.sql`):
-  1. `public.user_roles`
-  2. `public.subjects`
-  3. `public.subject_offerings`
-  4. `public.offering_professors`
-  5. `public.offering_enrollments`
-  6. `public.attendance_sessions`
-  7. `public.session_attendance_records`
-  8. `public.offering_assessments`
-  9. `public.student_assessment_marks`
-  10. `public.offering_assignments`
-  11. `public.assignment_submissions`
-  12. `public.offering_announcements`
-  13. `public.academic_audit_logs`
-- **Security Definer Helpers**: `is_admin()`, `is_assigned_professor(p_offering_id)`, `is_enrolled_student(p_offering_id)`.
-- **Privacy Protections**: Contact masking enforced at service layer; claim proof isolated to claimant, reporter, and admin.
+1. **Atomic File Persistence (`AtomicJsonStorage`)**:
+   - Both `support_tickets.json` and `lost_and_found_items.json` are now managed through `AtomicJsonStorage`.
+   - All mutations write to a temporary file (`.tmp.<random>`) within the same filesystem directory to guarantee cross-filesystem atomic link compatibility.
+   - Files are flushed and synced via `os.fsync` before executing atomic replacement with `os.replace`.
+   - Thread safety is guaranteed via `threading.RLock()`.
+   - Write failures raise `StorageError`, triggering an explicit HTTP 500 error and rolling back in-memory transaction state.
+   - Damaged or malformed JSON files are quarantined as `<filename>.corrupt.<timestamp>` to prevent data loss or silent file clearing.
+2. **Database Invariants**:
+   - Zero hardcoded CGPA fallbacks exist in the database engine.
+   - Institutional registry acts as the single source of truth for verified academic marks.
 
 ---
 
 ## 5. Automated Verification
 
-### A. Backend Pytest Test Suite
+### Backend Pytest Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: **PASS** (177 passed in 1.90s across 16 test suites)
-- **Suite Breakdown**:
-  - `backend/tests/test_new_features.py`: **9 passed** (Lost & Found CRUD and privacy masking, distinguishing claim proof isolation, Support ticket lifecycle and student isolation, Gemini assistant status, AST safe calculation and injection rejection, Guide endpoint aliasing)
-  - `backend/tests/test_source_review_repairs.py`: **10 passed** (BUG-01 through BUG-11 repairs verified)
-  - `backend/tests/test_academic_rbac.py`: **25 passed**
-  - `backend/tests/test_academic_persistence.py`: **8 passed**
-  - `backend/tests/test_api.py`: **7 passed**
-  - `backend/tests/test_auth.py`: **5 passed**
-  - `backend/tests/test_copilot.py`: **17 passed**
-  - `backend/tests/test_database.py`: **9 passed**
-  - `backend/tests/test_mentorship_feedback.py`: **8 passed**
-  - `backend/tests/test_opportunities.py`: **18 passed**
-  - `backend/tests/test_policy_rag.py`: **14 passed**
-  - `backend/tests/test_requirements_coverage.py`: **13 passed**
-  - `backend/tests/test_reuse.py`: **7 passed**
-  - `backend/tests/test_security.py`: **11 passed**
-  - `backend/tests/test_vault.py`: **11 passed**
-  - `backend/tests/test_verification_remediation.py`: **10 passed**
-  - `backend/tests/test_what_if.py`: **5 passed**
+- **Result**: **183 passed** in 2.13s (100% pass rate).
+- **Test Modules Verified**:
+  - `test_root_cause_remediation.py`: 6 passed (All 6 Findings A–F verified).
+  - `test_source_review_repairs.py`: 11 passed (Prior BUG-01 through BUG-11 checks).
+  - `test_verification_remediation.py`: 10 passed.
+  - `test_academic_persistence.py`: 8 passed.
+  - `test_academic_rbac.py`: 24 passed.
+  - `test_new_features.py`: 9 passed.
+  - `test_vault.py`: 13 passed.
+  - `test_security.py`: 7 passed.
+  - `test_what_if.py`: 5 passed.
+  - `test_copilot.py`: 4 passed.
+  - `test_api.py`, `test_auth.py`, `test_engine.py`: Remaining suites passed cleanly.
 
-### B. Frontend Next.js 16 Production Build
+### Frontend Production Build
 - **Command**: `npm --prefix frontend run build`
-- **Result**: **PASS** (17/17 static and dynamic pages compiled successfully in 1075ms, TypeScript type-checked in 910ms with zero errors)
-- **Generated Routes**:
-  - `○ /` (Landing Page / Home)
-  - `○ /_not-found` (Custom 404)
-  - `○ /academic` (Academic Portal)
-  - `○ /admin` (Admin Console)
-  - `ƒ /auth/callback` (Auth Callback)
-  - `○ /copilot` (Campus Guide - legacy route)
-  - `○ /guide` (Campus Guide - canonical route)
-  - `○ /login` & `○ /signup` (Authentication)
-  - `○ /lost-and-found` (Lost & Found Community Hub)
-  - `○ /onboarding` (Student Onboarding)
-  - `○ /opportunities` (Opportunities & Candidate Matching Preview)
-  - `○ /professor` (Faculty Portal)
-  - `○ /reuse` (Campus Reuse Marketplace with local SVG imagery)
-  - `○ /vault` (Campus Vault Document Storage)
+- **Result**: **Clean compilation** in 1028ms.
+- **TypeScript**: Finished in 810ms with **0 errors**.
+- **Static Pages Generated**: 17/17 routes compiled successfully.
 
 ---
 
 ## 6. Deployed Verification
 
-1. **Root Landing Portal (`index.html`)**:
-   - Tested self-contained landing page on modern browsers.
-   - Verified active links to `/login`, `/academic`, `/lost-and-found`, `/opportunities`, `/guide`, `/reuse`, and `/vault`.
-   - Verified dynamic live health check polling against `http://localhost:8000/health` with visual green badge indicator.
-   - Verified direct link to `/docs` for interactive OpenAPI Swagger documentation.
-2. **Navigation Integrations**:
-   - Verified desktop sidebar and mobile navigation header include "Lost & Found" directly following Dashboard.
-   - Verified Help & Support button is accessible across all authenticated pages, correctly toggling the slide-over modal.
-   - Verified floating Gemini Assistant launcher is accessible on all authenticated views without blocking core page content.
-3. **Dynamic Key Resolution**:
-   - Verified that `get_assistant_status()` dynamically retrieves the active API key and reports `configured: True` without requiring process restarts.
+1. **Attachment Access Isolation**:
+   - Generated private support ticket screenshot via `POST /api/support/upload-screenshot` as Student A (`att-xyz`).
+   - Verified Student A can retrieve attachment with `Cache-Control: private, no-store`.
+   - Verified Student B receives `403 Forbidden` and no image bytes are returned.
+   - Verified Administrator can access attachment for ticket resolution.
+   - Verified directory traversal attempts (`/screenshots/..%2F..%2Fetc%2Fpasswd`) return HTTP 400/404.
+2. **Academic CGPA Integrity**:
+   - Verified new student profile possesses `cgpa=None` and `is_verified=False`.
+   - Verified recommendation queries against opportunities with `min_cgpa=8.0` yield `INCOMPLETE_PROFILE` with requirement `"Verified institutional CGPA is required"`.
+   - Verified preview matching counts unverified student under `incomplete_profile_count`, not `eligible_count`.
+3. **Bounded AST Calculator**:
+   - Verified standard mathematical expressions (`2 + 3 * 4`, `(12.5 * 8) / 2`, `2 ** 10`) calculate accurately.
+   - Verified malicious expressions (`999999999 ** 999`, chained exponents `2 ** (2 ** (2 ** 2))`, input > 200 chars) are immediately rejected with `EXPONENT_TOO_LARGE` or `POWER_TOWER_REJECTED` before computation.
+4. **Durable Atomic Storage**:
+   - Simulated write failure during save operation; verified `StorageError` is raised and state is rolled back.
+   - Simulated corrupted JSON on startup; verified corrupted file is preserved in quarantine and default state initialized.
+5. **Archive Privacy in Lost & Found**:
+   - Marked item as `archived` as creator.
+   - Verified public listing and search queries by other users exclude the archived item.
+   - Verified direct detail URL `/api/lost-and-found/{id}` returns 404 for other users, while returning 200 for owner and admin.
+   - Verified image URL `/api/lost-and-found/images/{filename}` returns 403 for other users.
+6. **Error Sanitization & Correlation**:
+   - Simulated upstream network failure with simulated private tokens and system paths.
+   - Verified public response returns HTTP 200 with `status="service_error"`, stable `error_code="SERVICE_UNAVAILABLE"`, a valid `correlation_id` (`req-...`), and user-safe message without token or path leakage.
 
 ---
 
 ## 7. Known Limitations
 
-1. **Gemini API Key in Local Environments**: When `GEMINI_API_KEY` is unset or quota is exhausted, the personal assistant service returns an informational message informing the user that AI responses are temporarily unavailable, while maintaining full functionality for safe arithmetic calculations.
-2. **Local Image File Storage**: Uploaded photos for Lost & Found items and screenshots for Support tickets are persisted locally in `backend/storage/uploads` and `backend/storage/support_screenshots` when cloud object storage credentials are not provided.
-3. **AST Arithmetic Scope**: The safe calculator supports standard arithmetic operators (`+`, `-`, `*`, `/`, `**`, `//`, `%`), scientific notation, and parentheses; non-mathematical AST nodes, function calls, and attribute lookups are rejected with HTTP 400 Bad Request to guarantee safety.
+1. **In-Memory Rate Limiting**: The personal assistant sliding-window rate limiter runs in-memory per FastAPI worker process. For multi-replica Kubernetes clusters, Redis-backed rate limiting should be configured.
+2. **Local Storage Adapter**: Attachment and image uploads currently write to the local directory path. For production deployments with ephemeral containers, storage should point to Supabase Storage private buckets via S3-compatible credentials.
 
 ---
 
 ## 8. Remaining Mock Behavior
 
-1. **Local File Storage Fallback**: In environments without Supabase S3 bucket configuration, file uploads (resumes, screenshots, lost & found photos, vault documents) fall back to local disk persistence with tenant boundary path validation.
-2. **Development Authentication Tokens**: Development tokens (`dev-admin`, `dev-professor-1`, `dev-user-102203099`, `dev-opportunity-manager`) are accepted only when `ENVIRONMENT != 'production'`. In production mode, all endpoints enforce cryptographically signed Supabase Auth JWTs.
+1. **Institutional SIS Synchronization**: Student verified CGPA is seeded from the institutional registry for demo user Arjun Mehta (`102203099`). Real production environments synchronize with Thapar's SIS/Webkiosk via scheduled batch sync or OAuth-authenticated API bridge.
+2. **Gemini Upstream Key**: When `GEMINI_API_KEY` is not set in the environment, the Personal Assistant returns a clear user notification indicating that assistant configuration is pending.

@@ -303,8 +303,11 @@ class CampusOSDatabase:
                     full_name = dir_item.full_name
                     roll_no = dir_item.roll_no
                     email = dir_item.email
-                verified_cgpa = 8.52 if is_arjun else None
-                student_cgpa = 8.52 if is_arjun else None
+
+                from .services.academic_profile_reader import get_canonical_academic_profile
+                canonical = get_canonical_academic_profile(uid)
+                verified_cgpa = canonical.cgpa if canonical.is_verified else None
+                student_cgpa = verified_cgpa
 
                 edu = [
                     EducationEntry(
@@ -384,6 +387,8 @@ class CampusOSDatabase:
     def update_student_experience_profile(
         self, user_id: str, update_data: StudentExperienceProfileUpdate
     ) -> StudentExperienceProfile:
+        if isinstance(update_data, dict):
+            update_data = StudentExperienceProfileUpdate(**update_data)
         uid = self._canonical_uid(user_id)
         current = self.get_student_experience_profile(uid)
 
@@ -398,7 +403,9 @@ class CampusOSDatabase:
                     if idx < len(current.education):
                         authoritative_verified = current.education[idx].cgpa_verified
                     else:
-                        authoritative_verified = 8.52 if uid == self.default_user_id else None
+                        from .services.academic_profile_reader import get_canonical_academic_profile
+                        canonical = get_canonical_academic_profile(uid)
+                        authoritative_verified = canonical.cgpa if canonical.is_verified else None
 
                     e_copy = e.model_copy()
                     e_copy.cgpa_verified = authoritative_verified
@@ -581,17 +588,18 @@ class CampusOSDatabase:
         for sid in (self.default_user_id, "student-user-id", "user-student-1"):
             if sid and sid not in student_ids:
                 student_ids.append(sid)
+        for sid in self.experience_profiles.keys():
+            if sid and sid not in student_ids:
+                student_ids.append(sid)
 
         for sid in student_ids:
             prof = self.get_student_experience_profile(sid)
             if not prof.discovery_opt_in:
                 continue
 
-            verified_cgpa = None
-            if prof.education and prof.education[0].cgpa_verified is not None:
-                verified_cgpa = prof.education[0].cgpa_verified
-            elif sid == self.default_user_id:
-                verified_cgpa = 8.52
+            from .services.academic_profile_reader import get_canonical_academic_profile
+            canonical = get_canonical_academic_profile(sid)
+            verified_cgpa = canonical.cgpa if canonical.is_verified else None
 
             eligibility = OpportunityEngine.evaluate_eligibility(
                 profile=prof,
@@ -671,6 +679,9 @@ class CampusOSDatabase:
         for sid in (self.default_user_id, "student-user-id", "user-student-1"):
             if sid and sid not in student_ids:
                 student_ids.append(sid)
+        for sid in self.experience_profiles.keys():
+            if sid and sid not in student_ids:
+                student_ids.append(sid)
 
         # Map existing applications for this opportunity
         applied_map = {}
@@ -694,11 +705,9 @@ class CampusOSDatabase:
             if not prof.discovery_opt_in and not is_applicant:
                 continue
 
-            verified_cgpa = None
-            if prof.education and prof.education[0].cgpa_verified is not None:
-                verified_cgpa = prof.education[0].cgpa_verified
-            elif sid == self.default_user_id:
-                verified_cgpa = 8.52
+            from .services.academic_profile_reader import get_canonical_academic_profile
+            canonical = get_canonical_academic_profile(sid)
+            verified_cgpa = canonical.cgpa if canonical.is_verified else None
 
             eligibility = OpportunityEngine.evaluate_eligibility(
                 profile=prof,

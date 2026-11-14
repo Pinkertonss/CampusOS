@@ -60,14 +60,14 @@ def get_report_detail(
     claims: Optional[Dict[str, Any]] = Depends(get_optional_user_claims),
 ):
     """
-    Get detailed Lost & Found report with privacy redaction.
+    Get detailed Lost & Found report with privacy redaction and archive visibility enforcement.
     """
-    item = lost_and_found_engine.get_item(item_id)
-    if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
-
     user_id = str(claims["sub"]) if claims and "sub" in claims else None
     is_admin = bool(claims.get("is_admin")) if claims else False
+
+    item = lost_and_found_engine.get_item(item_id, user_id=user_id, is_admin=is_admin)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
     copied = item.model_copy()
     if not is_admin and (not user_id or user_id != item.creator_id):
@@ -314,16 +314,42 @@ async def upload_image(
 
 
 @router.get("/images/{filename}")
-def serve_image(filename: str):
+def serve_image(
+    filename: str,
+    claims: Optional[Dict[str, Any]] = Depends(get_optional_user_claims),
+):
     """
-    Serve uploaded lost and found images.
+    Serve uploaded lost and found images enforcing archive visibility.
+    If the owning report is archived, images are accessible only to the owner and administrators.
     """
     # Prevent path traversal
     if ".." in filename or "/" in filename or "\\" in filename:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename format.")
 
-    target = IMAGES_DIR / filename
-    if not target.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    user_id = str(claims["sub"]) if claims and "sub" in claims else None
+    is_admin = bool(claims.get("is_admin")) if claims else False
 
-    return FileResponse(target)
+    # Check owning item authorization
+    owning_item = lost_and_found_engine.get_item_by_image_filename(filename, user_id=user_id, is_admin=is_admin)
+    target = (IMAGES_DIR / filename).resolve()
+    if not target.is_relative_to(IMAGES_DIR.resolve()) or not target.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found.")
+
+    if not owning_item:
+        # Check if the file belongs to an archived report that the caller cannot access
+        for item in lost_and_found_engine.item_storage.get_all().values():
+            urls = item.image_urls or ([item.image_url] if item.image_url else [])
+            if any(filename in u for u in urls if u):
+                if item.status == "archived" and not (is_admin or (user_id and item.creator_id == user_id)):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Forbidden: Image belongs to an archived report.",
+                    )
+
+    return FileResponse(
+        target,
+        headers={
+            "Cache-Control": "private, max-age=3600" if (owning_item and owning_item.status != "archived") else "private, no-store, max-age=0",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )

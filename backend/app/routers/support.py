@@ -1,6 +1,5 @@
-import json
+import os
 import uuid
-import threading
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
@@ -13,36 +12,16 @@ from ..models.support import (
     SupportTicketUpdate,
 )
 from ..core.auth import get_current_user_claims, require_admin_user
+from ..services.durable_storage import AtomicJsonStorage, StorageError
+from ..services.attachment_service import attachment_service, ATTACHMENTS_DIR
 
 router = APIRouter(prefix="/api/support", tags=["Support & Help"])
 
 STORAGE_DIR = Path(__file__).resolve().parent.parent.parent / "storage"
 TICKETS_FILE = STORAGE_DIR / "support_tickets.json"
-SCREENSHOTS_DIR = STORAGE_DIR / "support_screenshots"
-SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-_lock = threading.RLock()
-_tickets: Dict[str, SupportTicket] = {}
-
-def _load_tickets():
-    global _tickets
-    if TICKETS_FILE.exists():
-        try:
-            with open(TICKETS_FILE, "r", encoding="utf-8") as f:
-                raw = json.load(f)
-                _tickets = {k: SupportTicket(**v) for k, v in raw.items()}
-        except Exception:
-            _tickets = {}
-
-def _save_tickets():
-    with _lock:
-        try:
-            with open(TICKETS_FILE, "w", encoding="utf-8") as f:
-                json.dump({k: v.model_dump() for k, v in _tickets.items()}, f, indent=2)
-        except Exception:
-            pass
-
-_load_tickets()
+# Atomic, transactional storage for Support Tickets
+ticket_storage = AtomicJsonStorage(TICKETS_FILE, SupportTicket)
 
 
 @router.get("/tickets", response_model=List[SupportTicket])
@@ -57,19 +36,18 @@ def list_tickets(
     user_id = str(claims["sub"])
     is_admin = bool(claims.get("is_admin"))
 
-    with _lock:
-        results = list(_tickets.values())
-        if not is_admin:
-            results = [t for t in results if t.user_id == user_id]
+    tickets = list(ticket_storage.get_all().values())
+    if not is_admin:
+        tickets = [t for t in tickets if t.user_id == user_id]
 
-        if status_filter and status_filter != "all":
-            results = [t for t in results if t.status == status_filter]
+    if status_filter and status_filter != "all":
+        tickets = [t for t in tickets if t.status == status_filter]
 
-        if category and category != "all":
-            results = [t for t in results if t.category == category]
+    if category and category != "all":
+        tickets = [t for t in tickets if t.category == category]
 
-        results.sort(key=lambda x: x.created_at, reverse=True)
-        return results
+    tickets.sort(key=lambda x: x.created_at, reverse=True)
+    return tickets
 
 
 @router.get("/tickets/{ticket_id}", response_model=SupportTicket)
@@ -83,17 +61,16 @@ def get_ticket(
     user_id = str(claims["sub"])
     is_admin = bool(claims.get("is_admin"))
 
-    with _lock:
-        ticket = _tickets.get(ticket_id)
-        if not ticket:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    ticket = ticket_storage.get(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
-        if ticket.user_id != user_id and not is_admin:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Forbidden: You do not have access to this support ticket.",
-            )
-        return ticket
+    if ticket.user_id != user_id and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You do not have access to this support ticket.",
+        )
+    return ticket
 
 
 @router.post("/tickets", response_model=SupportTicket, status_code=status.HTTP_201_CREATED)
@@ -103,6 +80,7 @@ def create_ticket(
 ):
     """
     Authenticated user files a support ticket or bug report.
+    Enforces atomic persistence: failed saves roll back and raise HTTP 500 without returning 201.
     """
     user_id = str(claims["sub"])
     user_name = claims.get("user_metadata", {}).get("full_name") or claims.get("email", "").split("@")[0].capitalize() or "Student"
@@ -126,9 +104,23 @@ def create_ticket(
         updated_at=now_iso,
     )
 
-    with _lock:
-        _tickets[ticket_id] = ticket
-        _save_tickets()
+    # If a screenshot attachment was supplied, extract its ID and link lifecycle
+    if payload.screenshot_url:
+        att_token = payload.screenshot_url.split("/")[-1]
+        if att_token.startswith("att-"):
+            att_id = att_token.split(".")[0]
+            try:
+                attachment_service.link_attachment(att_id, ticket_id, user_id)
+            except HTTPException:
+                pass
+
+    try:
+        ticket_storage.set(ticket_id, ticket)
+    except StorageError as se:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Storage persistence failure: could not save ticket.",
+        ) from se
 
     return ticket
 
@@ -141,29 +133,37 @@ def update_ticket(
 ):
     """
     Administrator updates ticket status and adds response.
+    Enforces atomic persistence.
     """
     admin_id = str(claims["sub"])
-    admin_name = claims.get("user_metadata", {}).get("full_name") or "Administrator"
+    ticket = ticket_storage.get(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
-    with _lock:
-        ticket = _tickets.get(ticket_id)
-        if not ticket:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    updated = ticket.model_copy()
 
-        now_iso = datetime.now(timezone.utc).isoformat()
-        if payload.status is not None:
-            ticket.status = payload.status
-            if payload.status == "resolved":
-                ticket.resolved_at = now_iso
-                ticket.resolved_by = admin_id
-        if payload.admin_response is not None:
-            ticket.admin_response = payload.admin_response.strip()
-        if payload.priority is not None:
-            ticket.priority = payload.priority
+    if payload.status is not None:
+        updated.status = payload.status
+        if payload.status == "resolved":
+            updated.resolved_at = now_iso
+            updated.resolved_by = admin_id
+    if payload.admin_response is not None:
+        updated.admin_response = payload.admin_response.strip()
+    if payload.priority is not None:
+        updated.priority = payload.priority
 
-        ticket.updated_at = now_iso
-        _save_tickets()
-        return ticket
+    updated.updated_at = now_iso
+
+    try:
+        ticket_storage.set(ticket_id, updated)
+    except StorageError as se:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Storage persistence failure: could not update ticket.",
+        ) from se
+
+    return updated
 
 
 @router.post("/upload-screenshot")
@@ -172,41 +172,110 @@ async def upload_screenshot(
     claims: Dict[str, Any] = Depends(get_current_user_claims),
 ):
     """
-    Upload an optional screenshot for a support ticket (JPEG, PNG, WEBP, max 5MB).
+    Upload a private screenshot for a support ticket (JPEG, PNG, WEBP, max 5MB).
+    Registers attachment metadata and returns an authorized attachment access URL.
     """
-    ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
-    if file.content_type not in ALLOWED_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported image format. Allowed formats: JPEG, PNG, WEBP.",
-        )
-
+    user_id = str(claims["sub"])
     content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Screenshot file exceeds maximum limit of 5 MB.",
-        )
+    metadata = attachment_service.validate_and_stage_upload(
+        uploader_id=user_id,
+        content=content,
+        declared_content_type=file.content_type or "image/png",
+        original_filename=file.filename or "screenshot.png",
+        resource_type="support_ticket",
+    )
 
-    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "png"
-    safe_filename = f"tkt_{uuid.uuid4().hex[:12]}.{ext.lower()}"
-    target_path = SCREENSHOTS_DIR / safe_filename
-    with open(target_path, "wb") as f:
-        f.write(content)
+    return {
+        "attachment_id": metadata.id,
+        "screenshot_url": f"/api/support/attachments/{metadata.id}",
+    }
 
-    return {"screenshot_url": f"/api/support/screenshots/{safe_filename}"}
+
+@router.get("/attachments/{attachment_id}")
+def get_attachment(
+    attachment_id: str,
+    ticket_id: Optional[str] = Query(None, description="Optional ticket context for cross-validation"),
+    claims: Dict[str, Any] = Depends(get_current_user_claims),
+):
+    """
+    Secure attachment retrieval endpoint.
+    Guarantees:
+    1. Authenticated callers only (anonymous fails 401).
+    2. Restricted to uploader, ticket owner, or authorized admin (cross-student fails 403).
+    3. Validates ticket ID match when supplied.
+    4. Safe path resolution preventing directory traversal.
+    5. No-store private caching headers for sensitive downloads.
+    """
+    user_id = str(claims["sub"])
+    is_admin = bool(claims.get("is_admin"))
+
+    # Resolve parent ticket owner if linked
+    ticket_owner_id = None
+    meta = attachment_service.storage.get(attachment_id)
+    if meta and meta.resource_id:
+        parent_ticket = ticket_storage.get(meta.resource_id)
+        if parent_ticket:
+            ticket_owner_id = parent_ticket.user_id
+
+    file_path, content_type = attachment_service.get_authorized_file(
+        attachment_id=attachment_id,
+        user_id=user_id,
+        is_admin=is_admin,
+        ticket_owner_id=ticket_owner_id,
+        requested_ticket_id=ticket_id,
+    )
+
+    return FileResponse(
+        file_path,
+        media_type=content_type,
+        headers={
+            "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.get("/screenshots/{filename}")
-def serve_screenshot(filename: str):
+def serve_screenshot_legacy(
+    filename: str,
+    claims: Dict[str, Any] = Depends(get_current_user_claims),
+):
     """
-    Serve uploaded support screenshots.
+    Legacy compatibility route for screenshots.
+    Routes strictly through the same resource authorization check as /attachments/{id}.
+    Anonymous access is rejected with 401; unmanaged/unauthorized files fail 403/404.
     """
+    user_id = str(claims["sub"])
+    is_admin = bool(claims.get("is_admin"))
+
     if ".." in filename or "/" in filename or "\\" in filename:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename format.")
 
-    target = SCREENSHOTS_DIR / filename
-    if not target.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Screenshot not found")
+    meta = attachment_service.get_by_filename(filename)
+    if not meta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment not found or access denied.",
+        )
 
-    return FileResponse(target)
+    ticket_owner_id = None
+    if meta.resource_id:
+        parent_ticket = ticket_storage.get(meta.resource_id)
+        if parent_ticket:
+            ticket_owner_id = parent_ticket.user_id
+
+    file_path, content_type = attachment_service.get_authorized_file(
+        attachment_id=meta.id,
+        user_id=user_id,
+        is_admin=is_admin,
+        ticket_owner_id=ticket_owner_id,
+    )
+
+    return FileResponse(
+        file_path,
+        media_type=content_type,
+        headers={
+            "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )

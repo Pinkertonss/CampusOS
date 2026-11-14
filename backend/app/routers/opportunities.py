@@ -28,6 +28,7 @@ from ..models.opportunity import (
     OpportunityUpdate,
 )
 from ..services.opportunity_engine import OpportunityEngine
+from ..services.academic_profile_reader import get_canonical_academic_profile
 
 router = APIRouter(prefix="/api/opportunities", tags=["Opportunity Matching"])
 public_router = APIRouter(prefix="/opportunities", tags=["Opportunity Matching Engine (Root Alias)"])
@@ -165,12 +166,15 @@ def get_recommended_opportunities(user_id: str = Depends(get_current_user_id)):
     if not profile.discovery_opt_in:
         recommendations = []
     else:
+        academic_profile = get_canonical_academic_profile(user_id)
+        verified_cgpa = academic_profile.cgpa if academic_profile.is_verified else None
+
         recommendations = OpportunityEngine.match_opportunities(
             profile=profile,
             opportunities=all_opps,
             courses_attendance=courses_att,
             timetable=timetable,
-            verified_cgpa=8.52 if user_id in (db.default_user_id, "102203099-tiet-user") else 7.80,
+            verified_cgpa=verified_cgpa,
         )
 
     return OpportunityRecommendationResponse(
