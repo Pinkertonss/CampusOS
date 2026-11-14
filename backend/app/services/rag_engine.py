@@ -5,9 +5,12 @@ import uuid
 import math
 import hashlib
 import asyncio
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional, Any, AsyncGenerator
+
+logger = logging.getLogger(__name__)
 
 from ..core.config import settings
 from ..models.copilot import (
