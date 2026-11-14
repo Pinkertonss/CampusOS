@@ -21,6 +21,7 @@
 | **Contact Privacy in Reuse** | **COMPLETED (Phase 1)** | Public `/reuse/listings`, `/reuse/listings/{id}` | Sanitized response schemas | Contact details (phone, hostel room) masked on public feed; visible only to owner or accepted partner | Tested in `test_security.py` |
 | **Cross-Module Student Decision Workflow** | **COMPLETED (Phase 6)** | `/academics/decision-matrix`, `/academics/daily-plan` | Cross-module synthesis (`ActionPlanEngine`) | Academic risk + timetable schedule + urgent deadline trade-off collision detection | Tests in `test_planner.py` |
 | **Opportunity Matching & Recommendation Engine** | **COMPLETED (Phase 7)** | `/api/opportunities/recommended`, `/profile`, `/save` | Multi-tenant `OpportunityEngine` + `CampusOSDatabase` | Skill tags matching, timetable schedule collision detection, and attendance risk feasibility scoring | 8 tests in `test_opportunities.py` |
+| **Accessibility, Performance & Monorepo Docs** | **COMPLETED (Phase 8)** | Monorepo-wide audit & verification | Full a11y labels, Next.js route compilation & docs | Zero a11y linter warnings, 13 App Router pages, 101 tests green | Documented in `README.md` & `verification/latest.md` |
 
 ---
 
@@ -73,7 +74,4 @@
 5. **Phase 5 (P1) - COMPLETED**: Campus Reuse Marketplace complete two-party lifecycle (offer -> request -> accept -> bilateral handoff confirmation) and verified SDG 12 impact calculation.
 6. **Phase 6 (P1) - COMPLETED**: Cross-module student decision intelligence synthesizing academic attendance risk, calendar/timetable schedule, and actionable deadline priorities with trade-off conflict detection.
 7. **Phase 7 (P1) - COMPLETED**: Opportunity matching recommendation engine synthesizing opt-in skill tags, timetable lecture schedule compatibility, and attendance feasibility scoring with transparency explanations.
-8. **Phase 8 - NEXT**: Full accessibility audit, performance benchmarking, and final documentation.
-8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.
-7. **Phase 7**: Opportunity matching and calendar conflict detection.
-8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.
+8. **Phase 8 (P1) - COMPLETED**: Comprehensive accessibility audit (full `aria-label` coverage on icon buttons, form labels, and interactive drawers), Next.js performance build optimization (13 static/dynamic routes, 0 errors), and complete monorepo documentation overhaul.

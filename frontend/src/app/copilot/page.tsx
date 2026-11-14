@@ -583,6 +583,7 @@ export default function CampusCopilotPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedCitation(null)}
+                      aria-label="Close source inspector"
                       className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     >
                       <X className="w-4 h-4" />
@@ -845,6 +846,7 @@ export default function CampusCopilotPage() {
                             <button
                               type="button"
                               onClick={() => setDocToDelete(doc)}
+                              aria-label={`Delete ${doc.title} and vector chunks`}
                               className="text-rose-600 hover:text-rose-800 dark:hover:text-rose-400 p-1 rounded transition"
                               title="Delete document and vector chunks"
                             >

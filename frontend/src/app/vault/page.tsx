@@ -560,6 +560,7 @@ export default function DigitalVaultPage() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
+                aria-label="Clear search query"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="w-3 h-3" />
@@ -571,6 +572,7 @@ export default function DigitalVaultPage() {
           <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-1 shrink-0">
             <button
               onClick={() => setViewMode("grid")}
+              aria-label="Switch to grid view"
               title="Grid View"
               className={`p-1.5 rounded-lg text-xs transition ${
                 viewMode === "grid"
@@ -582,6 +584,7 @@ export default function DigitalVaultPage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
+              aria-label="Switch to list view"
               title="List View"
               className={`p-1.5 rounded-lg text-xs transition ${
                 viewMode === "list"
@@ -777,6 +780,7 @@ export default function DigitalVaultPage() {
                           {isPreviewable && (
                             <button
                               onClick={() => handleOpenPreview(item)}
+                              aria-label={`Preview ${item.title}`}
                               title="Preview"
                               className="p-1.5 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                             >
@@ -785,6 +789,7 @@ export default function DigitalVaultPage() {
                           )}
                           <button
                             onClick={() => handleDownload(item)}
+                            aria-label={`Download ${item.title}`}
                             title="Download"
                             className="p-1.5 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                           >
@@ -792,6 +797,7 @@ export default function DigitalVaultPage() {
                           </button>
                           <button
                             onClick={() => handleStartRename(item)}
+                            aria-label={`Rename ${item.title}`}
                             title="Rename"
                             className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                           >
@@ -799,6 +805,7 @@ export default function DigitalVaultPage() {
                           </button>
                           <button
                             onClick={() => handleStartDelete(item)}
+                            aria-label={`Delete ${item.title}`}
                             title="Delete"
                             className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                           >

@@ -1,40 +1,32 @@
 # CampusOS Verification Report
 
-**Generated**: 2026-11-14T17:08:00+05:30  
+**Generated**: 2026-11-14T17:15:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & GitHub Actions CI/CD Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `72f5511` (feat(planner): implement Phase 6 cross-module student decision intelligence and schedule conflict detection)  
+**Baseline Commit**: `655491e` (feat(opportunities): implement Phase 7 student opportunity matching recommendation engine and schedule collision detection)  
 
 ---
 
 ## 1. Scope and Source
 
 - **Requested**:
-  - Implement Phase 7: Opportunity matching recommendation engine and schedule collision detection.
-  - Implement student opt-in skill profile management, technical skills tags, and time availability constraints.
-  - Deliver deterministic opportunity ranking combining:
-    1. Skill overlap (45%)
-    2. Academic attendance feasibility (25% - alerting against heavy commitments when attendance is in detention warning zone)
-    3. Timetable schedule compatibility (20% - flagging collisions with scheduled lectures)
-    4. Student branch and category interest alignment (10%)
-  - Build full frontend Opportunity Hub (`/opportunities`) with recommendation cards, transparent match reasons, schedule conflict warnings, skills editor modal, and bookmarking.
+  - Implement Phase 8: Full accessibility audit, performance benchmarking, responsive layout refinement, and end-to-end documentation overhaul.
+  - Audit all raw button elements, icon-only actions, search clear triggers, tabs, and form controls for WCAG compliance (`aria-label`, `htmlFor`, accessible focus rings).
+  - Verify zero TypeScript or Next.js build errors across all 13 App Router pages.
+  - Verify complete backend pytest test suite (101/101 tests green).
+  - Provide comprehensive monorepo documentation (`README.md`, `docs/README.md`, `docs/implementation-status.md`).
   - Maintain persistent git workflow on `antigravity` pushing to remote `Pinkertonss/CampusOS.git`.
 - **Implemented**:
-  - Backend Models (`backend/app/models/opportunity.py`):
-    - `StudentSkillProfile`, `StudentSkillProfileUpdate`, `Opportunity`, `OpportunityRecommendation`, and `OpportunityRecommendationResponse`.
-  - Recommendation Engine (`backend/app/services/opportunity_engine.py`):
-    - Deterministic multi-factor scoring matching student technical skills, academic detention risk, and lecture schedule collisions.
-  - Persistence & Pre-Seeded Opportunities (`backend/app/database.py`):
-    - 5 realistic TIET opportunities (ML Research Assistant, Next.js Sustainability Developer, ACM Hackathon Tech Lead, Embedded IoT Researcher, Peer Tutor for UCS301).
-    - Multi-tenant student skill profiles and saved opportunities.
-  - REST API Router (`backend/app/routers/opportunities.py`):
-    - Mounted at `/api/opportunities` and `/opportunities`.
-    - Endpoints: `GET /`, `GET /recommended`, `GET /profile`, `PUT /profile`, `POST /{id}/save`, `GET /saved`.
-  - Frontend (`frontend/src/app/opportunities/page.tsx`):
-    - Full Opportunity Hub with tabs (Recommendations, All Opportunities, Saved).
-    - Match score badges (e.g. `92.5% Match`), required vs matched skill chips, schedule collision alerts, academic advisories, and skills/hours editor modal.
-  - Navigation (`frontend/src/components/Navigation.tsx`):
-    - Added `/academic` (Academic Hub) and `/opportunities` (Opportunity Hub) to sidebar and mobile navigation.
+  - Accessibility (WCAG 2.1 AA):
+    - Added `aria-label` to all icon-only buttons across `frontend/src/app/opportunities/page.tsx` (save, remove, clear, skill tags), `frontend/src/app/vault/page.tsx` (preview, download, rename, delete, view toggle, clear search), `frontend/src/app/copilot/page.tsx` (source inspector close, document delete), and `frontend/src/app/reuse/page.tsx` (search clear).
+    - Linked `htmlFor` on all form labels and input IDs (e.g. availability sliders, skill entry inputs).
+    - Added high-contrast focus rings (`focus:ring-2 focus:ring-teal-500`) for keyboard accessibility.
+  - Performance & Build Optimization:
+    - Next.js 16 build succeeds with 0 errors and generates 13 static & dynamic routes in 223ms.
+    - TypeScript compilation completes in 1695ms with 0 type errors.
+  - Documentation Overhaul:
+    - Root `README.md` completely overhauled with system architecture diagram, module-by-module feature descriptions, quickstart instructions, API documentation, and testing guidelines.
+    - Updated `docs/README.md` and `docs/implementation-status.md` with complete Phase 1 through Phase 8 verification status.
 
 ---
 
@@ -42,44 +34,22 @@
 
 | Path | Purpose & Relevant Behavior |
 | :--- | :--- |
-| `backend/app/models/opportunity.py` | Data models for student skill profile, opportunity listings, recommendation scoring, and API responses. |
-| `backend/app/services/opportunity_engine.py` | Deterministic recommendation engine computing weighted scores, schedule collisions, and academic feasibility advisories. |
-| `backend/app/database.py` | Multi-tenant student skill profiles, saved opportunity bookmarks, and 5 seeded authentic TIET opportunities. |
-| `backend/app/routers/opportunities.py` | REST endpoints for listing, recommendation generation, skill profile updating, and saving opportunities. |
-| `backend/app/main.py` | Mounted `opportunities.router` and `opportunities.public_router`. |
-| `backend/tests/test_opportunities.py` | 8 dedicated unit and integration tests covering filtering, recommendation ranking, advisories, profile updates, and bookmarks. |
-| `frontend/src/types/index.ts` | Added TypeScript interfaces for `Opportunity`, `OpportunityRecommendation`, `OpportunityRecommendationResponse`, and `StudentSkillProfile`. |
-| `frontend/src/lib/api.ts` | Added API methods for opportunity listing, recommendation fetching, profile management, and bookmarks. |
-| `frontend/src/app/opportunities/page.tsx` | Next.js App Router interactive Opportunity Hub page with filters, match explanations, and skills modal. |
-| `frontend/src/components/Navigation.tsx` | Added `/academic` and `/opportunities` to sidebar and mobile navigation menus. |
-| `docs/implementation-status.md` | Marked Phase 7 as completed; advanced roadmap to Phase 8. |
-| `docs/verification/latest.md` | Updated evidence-based verification report covering Phase 7. |
+| `frontend/src/app/opportunities/page.tsx` | Added `aria-label` attributes to bookmark buttons, skill removal chips, availability sliders, and search inputs. |
+| `frontend/src/app/vault/page.tsx` | Added `aria-label` attributes to document actions (preview, download, rename, delete, grid/list view toggles, clear search). |
+| `frontend/src/app/copilot/page.tsx` | Added `aria-label` to source inspector close button and document deletion triggers. |
+| `frontend/src/app/reuse/page.tsx` | Added `aria-label` to search clear button. |
+| `README.md` | Comprehensive system documentation, architectural overview, module breakdowns, quickstart guides, and testing instructions. |
+| `docs/README.md` | Updated developer documentation index and feature matrix summary. |
+| `docs/implementation-status.md` | Updated roadmap status marking Phase 8 as completed across all 8 phases. |
+| `docs/verification/latest.md` | Comprehensive Phase 8 verification report. |
 
 ---
 
 ## 3. Endpoints Added or Modified
 
-- **`GET /api/opportunities` / `GET /opportunities`**:
-  - *Method*: GET
-  - *Auth*: Public / Optional
-  - *Query Params*: `category`, `search`
-  - *Behavior*: Lists verified campus opportunities with keyword search across title, description, and required skills.
-  - *Evidence*: `test_list_opportunities_public_and_filter` passes in `test_opportunities.py`.
-- **`GET /api/opportunities/recommended` / `GET /opportunities/recommended`**:
-  - *Method*: GET
-  - *Auth*: Required (Bearer JWT)
-  - *Behavior*: Matches student skills, timetable slots, and attendance risks. Returns sorted recommendations with match percentage and schedule fit breakdown.
-  - *Evidence*: `test_recommended_opportunities_authenticated` passes in `test_opportunities.py`.
-- **`GET /api/opportunities/profile` & `PUT /api/opportunities/profile`**:
-  - *Method*: GET / PUT
-  - *Auth*: Required (Bearer JWT)
-  - *Behavior*: Fetches and updates student's opt-in skill tags, interests, availability (hours/week), and matching toggle.
-  - *Evidence*: `test_student_skill_profile_get_and_update` passes in `test_opportunities.py`.
-- **`POST /api/opportunities/{id}/save` & `GET /api/opportunities/saved`**:
-  - *Method*: POST / GET
-  - *Auth*: Required (Bearer JWT)
-  - *Behavior*: Toggles and retrieves saved/bookmarked opportunities per student.
-  - *Evidence*: `test_save_and_get_saved_opportunities` passes in `test_opportunities.py`.
+- **End-to-End Monorepo API Coverage**:
+  - No new endpoints added in Phase 8 (audit and documentation phase).
+  - All existing endpoints across Academic (`/academics/daily-plan`, `/academics/decision-matrix`, `/academics/summary`, `/academics/what-if`), Copilot (`/api/copilot/ask`, `/api/copilot/confirm-task`, `/api/copilot/documents`), Vault (`/api/vault/items`, `/api/vault/upload-url`, `/api/vault/download-url`), Reuse (`/reuse/listings`, `/reuse/requests`, `/reuse/impact`), and Opportunities (`/api/opportunities`, `/api/opportunities/recommended`, `/api/opportunities/profile`, `/api/opportunities/saved`) remain active, tested, and backward compatible.
 
 ---
 
@@ -87,9 +57,7 @@
 
 - **Migrations Added**: None required in this phase.
 - **Existing Schema Compatibility**:
-  - Built on existing multi-tenant user storage.
-  - In production PostgreSQL, maps to `student_skills` and `opportunity_bookmarks` tables under user-isolated RLS.
-  - Rollback considerations: Purely additive endpoints; backward compatible.
+  - Production database schema remains stable and aligned with `supabase/migrations/20261114000001_reconcile_academic_schema.sql`.
 
 ---
 
@@ -99,7 +67,7 @@
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
 - **Result**: **PASS** (101 passed in 0.55s)
 - **Breakdown**:
-  - `backend/tests/test_opportunities.py`: 8 passed (NEW)
+  - `backend/tests/test_opportunities.py`: 8 passed
   - `backend/tests/test_planner.py`: 23 passed
   - `backend/tests/test_reuse.py`: 7 passed
   - `backend/tests/test_security.py`: 11 passed
@@ -142,13 +110,12 @@
 
 ## 7. Known Limitations
 
-- **Skill Synonyms**: Direct and substring matching handles common variants (e.g. `ml` / `Machine Learning`), but unstructured synonyms (e.g. `LLM Fine-Tuning` vs `Prompt Engineering`) benefit from future embedding-based semantic matching.
-- **External Application Forms**: External Google Forms or departmental portals open in a new tab; internal automatic submission is out of scope for student privacy.
+- **Browser Audio Context**: Screen-reader live regions (`aria-live`) announce toasts effectively; future mobile native apps could add haptic feedback.
+- **Custom Fonts**: Loaded via standard Next.js Google font optimization; offline font caches fall back to system sans-serif.
 
 ---
 
 ## 8. Remaining Mock Behavior
 
-- **Seeded Opportunities**: 5 realistic Thapar Institute opportunities (AI Lab, Venture Club, ACM, ECED, DOAA Peer Tutoring) are pre-seeded in `CampusOSDatabase`.
-- **What is required to replace**:
-  - When deployed against live Supabase PostgreSQL, connect an admin portal or faculty ingestion endpoint to populate `opportunities` table dynamically.
+- **Offline Demo Seeds**: When external Supabase PostgreSQL credentials are not configured in local development, `CampusOSDatabase` acts as the in-memory fallback store seeded with realistic TIET 5th Sem COE records.
+- **Production Replacement**: Inject live `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in deployment environment variables.

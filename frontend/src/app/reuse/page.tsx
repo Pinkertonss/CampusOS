@@ -458,6 +458,7 @@ export default function CampusReusePage() {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   <X className="w-3 h-3" />

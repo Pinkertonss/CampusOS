@@ -369,6 +369,7 @@ export default function OpportunitiesPage() {
 
                       <button
                         onClick={() => handleToggleSave(opp.id)}
+                        aria-label={isSaved ? "Remove from saved" : "Save opportunity"}
                         className={`p-1.5 rounded-lg transition-colors ${
                           isSaved
                             ? "bg-teal-500/20 text-teal-400 border border-teal-500/40"
@@ -501,6 +502,7 @@ export default function OpportunitiesPage() {
                       </span>
                       <button
                         onClick={() => handleToggleSave(opp.id)}
+                        aria-label={isSaved ? "Remove from saved" : "Save opportunity"}
                         className={`p-1.5 rounded-lg transition-colors ${
                           isSaved
                             ? "bg-teal-500/20 text-teal-400 border border-teal-500/40"
@@ -571,6 +573,7 @@ export default function OpportunitiesPage() {
                   </span>
                   <button
                     onClick={() => handleToggleSave(opp.id)}
+                    aria-label="Remove from saved"
                     className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/40"
                   >
                     <Bookmark className="w-3.5 h-3.5" fill="currentColor" />
@@ -629,6 +632,7 @@ export default function OpportunitiesPage() {
               type="checkbox"
               checked={editOptIn}
               onChange={(e) => setEditOptIn(e.target.checked)}
+              aria-label="Opt-in for opportunity matching"
               className="w-4 h-4 rounded text-teal-500 focus:ring-teal-400 bg-slate-900 border-slate-700"
             />
           </div>
@@ -636,16 +640,18 @@ export default function OpportunitiesPage() {
           {/* Availability hours slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="font-semibold text-slate-200">Available Time Commitment</label>
+              <label htmlFor="avail-hours-slider" className="font-semibold text-slate-200">Available Time Commitment</label>
               <span className="font-mono text-teal-400 font-bold">{editHours} hours / week</span>
             </div>
             <input
+              id="avail-hours-slider"
               type="range"
               min={2}
               max={25}
               step={1}
               value={editHours}
               onChange={(e) => setEditHours(Number(e.target.value))}
+              aria-label="Available time commitment in hours per week"
               className="w-full accent-teal-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-500">
@@ -657,14 +663,16 @@ export default function OpportunitiesPage() {
 
           {/* Add Skill Tags */}
           <div className="space-y-2">
-            <label className="font-semibold text-slate-200">Your Technical Skills & Strengths</label>
+            <label htmlFor="skill-input-box" className="font-semibold text-slate-200">Your Technical Skills & Strengths</label>
             <div className="flex gap-2">
               <input
+                id="skill-input-box"
                 type="text"
                 placeholder="Add a skill (e.g. PyTorch, Next.js, C++)"
                 value={skillInput}
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSkill())}
+                aria-label="New skill name to add"
                 className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
               />
               <Button size="sm" variant="secondary" onClick={handleAddSkill}>
@@ -681,6 +689,7 @@ export default function OpportunitiesPage() {
                   {s}
                   <button
                     onClick={() => handleRemoveSkill(s)}
+                    aria-label={`Remove skill ${s}`}
                     className="text-teal-400 hover:text-red-400 transition-colors ml-0.5"
                   >
                     <X className="w-3 h-3" />
