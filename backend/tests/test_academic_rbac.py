@@ -154,11 +154,22 @@ def test_admin_universal_access():
 
 def test_cannot_demote_or_deactivate_last_active_admin():
     """Invariant: System must reject demoting or deactivating the last active administrator."""
-    # Attempt to demote the sole default admin
+    default_admin_id = "admin-00000000-0000-0000-0000-000000000001"
+    db.academic_rbac.user_roles[default_admin_id] = {"role": "admin", "status": "active"}
+    
+    # Ensure only the default admin is active for this invariant test
+    extra_admins = [
+        uid for uid, item in db.academic_rbac.user_roles.items()
+        if uid != default_admin_id and item.get("role") == "admin" and item.get("status") == "active"
+    ]
+    for uid in extra_admins:
+        db.academic_rbac.user_roles[uid]["status"] = "inactive"
+
+    # Attempt to demote the sole active admin
     res = client.post(
         "/api/academic/users/roles",
         json={
-            "user_id": "admin-00000000-0000-0000-0000-000000000001",
+            "user_id": default_admin_id,
             "role": "student",
             "status": "active",
         },
@@ -166,6 +177,10 @@ def test_cannot_demote_or_deactivate_last_active_admin():
     )
     assert res.status_code == 400
     assert "last active administrator" in res.json()["detail"].lower()
+
+    # Restore extra admins status
+    for uid in extra_admins:
+        db.academic_rbac.user_roles[uid]["status"] = "active"
 
 
 # ============================================================
@@ -519,3 +534,68 @@ def test_audit_logs_contain_faculty_and_admin_mutations():
     assert len(logs) > 0
     actions = {l["action"] for l in logs}
     assert any("ENROLLMENT" in a or "SESSION" in a or "ASSESSMENT" in a for a in actions)
+
+
+# ============================================================
+# 11. Administrator Account Creation & Provisioning
+# ============================================================
+
+def test_create_admin_account_with_institutional_key():
+    """Users can create an administrator account using the institutional key."""
+    res = client.post(
+        "/api/academic/admin/create-account",
+        json={
+            "email": "dean_academic@thapar.edu",
+            "full_name": "Dr. Manpreet Singh (Dean)",
+            "admin_secret_key": "TIET-ADMIN-2026",
+        },
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["role"] == "admin"
+    assert data["email"] == "dean_academic@thapar.edu"
+    assert data["token"]
+
+    # Verify that the new admin token can access administrator-only audit logs
+    admin_res = client.get(
+        "/api/academic/audit-logs",
+        headers={"Authorization": f"Bearer {data['token']}"},
+    )
+    assert admin_res.status_code == 200
+
+    # Cleanup created user from engine
+    db.academic_rbac.user_roles.pop(data["user_id"], None)
+    db.academic_rbac._save_persisted_data()
+
+
+def test_create_admin_account_with_existing_admin():
+    """An existing administrator can provision another administrator account."""
+    res = client.post(
+        "/api/academic/admin/create-account",
+        json={
+            "email": "deputy_registrar@thapar.edu",
+            "full_name": "Deputy Registrar Academic",
+        },
+        headers={"Authorization": f"Bearer {ADMIN_TOKEN}"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["role"] == "admin"
+
+    # Cleanup created user from engine
+    db.academic_rbac.user_roles.pop(data["user_id"], None)
+    db.academic_rbac._save_persisted_data()
+
+
+def test_create_admin_account_unauthorized_rejected():
+    """Attempting to create an admin account without credentials or wrong key returns 403."""
+    res = client.post(
+        "/api/academic/admin/create-account",
+        json={
+            "email": "unauthorized_hacker@thapar.edu",
+            "full_name": "Intruder",
+            "admin_secret_key": "wrong-key",
+        },
+    )
+    assert res.status_code == 403
+

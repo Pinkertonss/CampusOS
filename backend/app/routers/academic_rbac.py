@@ -1,12 +1,13 @@
 import logging
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Header
 from fastapi.responses import PlainTextResponse
 
 from ..core.auth import (
     get_current_user_claims,
     require_admin_user,
     require_professor_or_admin,
+    verify_supabase_jwt_claims,
 )
 from ..database import db
 from ..models.academic_rbac import (
@@ -38,6 +39,8 @@ from ..models.academic_rbac import (
     RosterResponse,
     UserRoleUpdate,
     AcademicAuditLog,
+    AdminAccountCreate,
+    AdminAccountResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -618,6 +621,53 @@ def export_roster_csv(
 # ============================================================
 # 8. User Roles & Academic Audit Endpoints
 # ============================================================
+
+@router.post("/admin/create-account", response_model=AdminAccountResponse, status_code=status.HTTP_201_CREATED)
+def create_administrator_account(
+    payload: AdminAccountCreate,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Creates/provisions a new administrator account.
+    Authorized if:
+    1. Caller is an active Administrator (Bearer token with is_admin=True), OR
+    2. Caller provides valid institutional admin secret key ('TIET-ADMIN-2026').
+    """
+    is_authorized = False
+    actor_id = "system-onboarding"
+
+    # Check 1: Existing Admin session
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ", 1)[1].strip()
+        try:
+            claims = verify_supabase_jwt_claims(token)
+            if claims.get("is_admin"):
+                is_authorized = True
+                actor_id = str(claims["sub"])
+        except Exception:
+            pass
+
+    # Check 2: Institutional verification code
+    if not is_authorized:
+        institutional_code = "TIET-ADMIN-2026"
+        if payload.admin_secret_key and payload.admin_secret_key.strip() == institutional_code:
+            is_authorized = True
+            actor_id = "institutional-invite"
+
+    if not is_authorized:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized: Valid administrator credentials or institutional admin key ('TIET-ADMIN-2026') required.",
+        )
+
+    res = db.academic_rbac.create_admin_account(
+        email=payload.email,
+        full_name=payload.full_name,
+        user_id=payload.user_id,
+        actor_id=actor_id,
+    )
+    return AdminAccountResponse(**res)
+
 
 @router.get("/users/roles", response_model=List[Dict[str, Any]])
 def list_user_roles(admin_claims: Dict[str, Any] = Depends(require_admin_user)):

@@ -21,7 +21,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "/";
-  const { signIn, signInWithGoogle, signInAsDemo, isLoading } = useAuth();
+  const { signIn, signInWithGoogle, signInAsDemo, signInAsAdminDemo, isLoading } = useAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
@@ -30,6 +30,7 @@ function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [adminDemoSubmitting, setAdminDemoSubmitting] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +76,16 @@ function LoginForm() {
     router.push(nextUrl);
   };
 
+  const handleAdminDemoSignIn = async () => {
+    setAdminDemoSubmitting(true);
+    await signInAsAdminDemo();
+    setAdminDemoSubmitting(false);
+    toast.success("Signed in as Administrator (Demo)", {
+      description: "Welcome Dr. Administrator (DOAA)",
+    });
+    router.push("/admin");
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-slate-950 text-slate-100 relative overflow-hidden">
       {/* Background ambient teal/blue glow */}
@@ -104,26 +115,37 @@ function LoginForm() {
           <div className="mb-6 p-3.5 rounded-xl bg-teal-950/60 border border-teal-800/60 flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-teal-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Instant Demo Sign In
+                <Sparkles className="w-3.5 h-3.5" /> Instant Demo Personas
               </span>
               <span className="text-[10px] text-teal-400/80 bg-teal-900/60 px-1.5 py-0.5 rounded font-mono">
-                TIET COE Sem 5
+                Student &amp; Admin
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Explore with pre-seeded attendance, timetable, and campus documents without entering credentials.
+              Explore with verified student attendance or institutional administrative governance without manual credentials.
             </p>
-            <Button
-              variant="primary"
-              size="sm"
-              isLoading={demoSubmitting}
-              onClick={handleDemoSignIn}
-              fullWidth
-              leftIcon={<CheckCircle2 className="w-4 h-4" />}
-              className="bg-teal-600 hover:bg-teal-500 text-white font-medium"
-            >
-              Sign In as Arjun Mehta (Demo)
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <Button
+                variant="primary"
+                size="sm"
+                isLoading={demoSubmitting}
+                onClick={handleDemoSignIn}
+                leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                className="bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs"
+              >
+                Student (Arjun)
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                isLoading={adminDemoSubmitting}
+                onClick={handleAdminDemoSignIn}
+                leftIcon={<ShieldCheck className="w-3.5 h-3.5 text-teal-400" />}
+                className="bg-slate-800 hover:bg-slate-700 text-white border-slate-700 font-medium text-xs"
+              >
+                Admin (DOAA)
+              </Button>
+            </div>
           </div>
 
           <div className="relative my-4">

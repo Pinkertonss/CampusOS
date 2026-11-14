@@ -308,6 +308,21 @@ class UserRoleUpdate(BaseModel):
     role: str  # student, professor, admin
     status: str = "active"
 
+class AdminAccountCreate(BaseModel):
+    email: str
+    full_name: str
+    user_id: Optional[str] = None
+    admin_secret_key: Optional[str] = None
+
+class AdminAccountResponse(BaseModel):
+    user_id: str
+    email: str
+    full_name: str
+    role: str = "admin"
+    status: str = "active"
+    token: str
+    message: str
+
 class AcademicAuditLog(BaseModel):
     id: str
     timestamp: str

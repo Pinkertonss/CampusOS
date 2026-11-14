@@ -30,6 +30,7 @@ import {
   updateUserRole,
   fetchAcademicAuditLogs,
   fetchSubjects,
+  createAdminAccount,
 } from "../../lib/api";
 import {
   SubjectOffering,
@@ -45,6 +46,10 @@ export default function AdminConsolePage() {
   // 1. Roles State
   const [roles, setRoles] = useState<UserRoleItem[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
+  const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
+  const [adminNameInput, setAdminNameInput] = useState("");
+  const [adminEmailInput, setAdminEmailInput] = useState("");
+  const [adminUserIdInput, setAdminUserIdInput] = useState("");
 
   // 2. Offerings State
   const [offerings, setOfferings] = useState<SubjectOffering[]>([]);
@@ -117,6 +122,31 @@ export default function AdminConsolePage() {
       setFeedbackMessage({ type: "success", text: `Updated user ${userId} to ${newRole} (${statusVal}).` });
     } catch (err: any) {
       setFeedbackMessage({ type: "error", text: err.message || "Failed to update role." });
+    }
+  };
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await createAdminAccount({
+        email: adminEmailInput,
+        full_name: adminNameInput,
+        user_id: adminUserIdInput || undefined,
+      });
+      setShowCreateAdminModal(false);
+      setAdminNameInput("");
+      setAdminEmailInput("");
+      setAdminUserIdInput("");
+      loadRoles();
+      setFeedbackMessage({
+        type: "success",
+        text: `Administrator ${res.full_name} (${res.email}) provisioned successfully.`,
+      });
+    } catch (err: any) {
+      setFeedbackMessage({
+        type: "error",
+        text: err.message || "Failed to create administrator account.",
+      });
     }
   };
 
@@ -229,10 +259,16 @@ export default function AdminConsolePage() {
                 Manage roles and account states. Safe invariants prevent removal of the last administrator.
               </p>
             </div>
-            <Button size="sm" variant="secondary" onClick={loadRoles}>
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setShowCreateAdminModal(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Administrator
+              </Button>
+              <Button size="sm" variant="secondary" onClick={loadRoles}>
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
@@ -545,6 +581,61 @@ export default function AdminConsolePage() {
                 </Button>
                 <Button size="sm" type="submit">
                   Confirm Assignment
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL: Create Administrator */}
+      {showCreateAdminModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Provision New Administrator</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Authorized superadmins can grant full academic administrative privileges to institutional personnel.
+              </p>
+            </div>
+            <form onSubmit={handleCreateAdmin} className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dr. A. K. Verma"
+                  value={adminNameInput}
+                  onChange={(e) => setAdminNameInput(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Institutional Email</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. akverma@thapar.edu"
+                  value={adminEmailInput}
+                  onChange={(e) => setAdminEmailInput(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">User Identifier (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. admin-akverma"
+                  value={adminUserIdInput}
+                  onChange={(e) => setAdminUserIdInput(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" type="button" onClick={() => setShowCreateAdminModal(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" type="submit">
+                  Provision Admin
                 </Button>
               </div>
             </form>

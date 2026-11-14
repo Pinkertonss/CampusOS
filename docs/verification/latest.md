@@ -1,9 +1,9 @@
 # CampusOS Verification Report: Academic RBAC & Subject Offerings
 
-**Generated**: 2026-11-14T18:25:00+05:30  
+**Generated**: 2026-11-14T18:38:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & GitHub Actions CI/CD Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `f9ce145`  
+**Baseline Commit**: `6ab8d9f`  
 
 ---
 
@@ -11,6 +11,7 @@
 
 - **Requested**:
   - Implement a complete, secure academic role and permission system in CampusOS for Students, Professors, and Administrators.
+  - Provide an option to create an Administrator account and provide an instant demo account for Administrator persona.
   - Scope permissions to catalog subjects vs subject offerings (term, section, assigned faculty).
   - Enforce section isolation (e.g. Professor for Section A cannot manage or view Section B unless explicitly assigned or acting as Admin).
   - Build searchable student directory and enrollment management (enroll, disenroll with reason, active & historical tracking, attendance eligibility respecting enrollment dates).
@@ -22,21 +23,25 @@
   - Deliver role-scoped dashboards: Faculty Management Portal (`/professor`), Administrator Academic Console (`/admin`), and enrolled student offering views.
   - Implement server-side verification and immutable academic audit logging (`academic_audit_logs`).
   - Prevent removal or deactivation of the last active administrator.
-  - Write comprehensive automated tests (14 required verification scenarios) and verify clean production build.
+  - Write comprehensive automated tests (including admin creation & demo auth scenarios) and verify clean production build.
 - **Implemented**:
   - Full relational schema migration created: `supabase/migrations/20261114000002_academic_rbac_and_offerings.sql`.
-  - Core domain models created: `backend/app/models/academic_rbac.py`.
-  - Core authorization dependencies updated: `backend/app/core/auth.py` (`require_professor_or_admin`, `require_admin_user`, dev token mapping for Dr. Rajesh Kumar, Dr. Sunita Sharma, Arjun Mehta, Rohan Verma).
+  - Core domain models created: `backend/app/models/academic_rbac.py` including `AdminAccountCreate` and `AdminAccountResponse`.
+  - Core authorization dependencies updated: `backend/app/core/auth.py` (`require_professor_or_admin`, `require_admin_user`, dev token mapping for Dr. Rajesh Kumar, Dr. Sunita Sharma, Arjun Mehta, Rohan Verma, and Administrator `dev-admin` / `admin-token-*`).
+  - Administrator Account Provisioning API: `POST /api/academic/admin/create-account` accepting either an existing active admin session OR the verified institutional secret key (`TIET-ADMIN-2026`).
+  - One-Click Administrator Demo Persona: Added to `/login` alongside student demo, instantly hydrating `dev-admin` session and redirecting directly to `/admin`.
+  - Self-Service Administrator Signup: `/signup` portal features Account Type toggle ("Student" vs "Administrator") requiring the institutional key for admin provisioning.
+  - Console Administrator Provisioning: `/admin` Roles tab features an "Add Administrator" button and modal for active administrators.
   - Academic RBAC service engine: `backend/app/services/academic_engine.py` with multi-offering isolation, attendance policy calculator, support flagging, formula-safe CSV export, and persistent storage (`storage/academic_offerings_persistence.json`).
-  - REST API Router registered: `backend/app/routers/academic_rbac.py` with 21 offering-scoped endpoints.
-  - Automated test suite: `backend/tests/test_academic_rbac.py` with 21 exhaustive test cases passing in 0.34s.
-  - Total Pytest suite: 132/132 tests passing in 0.79s.
+  - REST API Router registered: `backend/app/routers/academic_rbac.py` with 22 offering-scoped and administrative endpoints.
+  - Automated test suite: `backend/tests/test_academic_rbac.py` with 24 exhaustive test cases passing in 0.38s.
+  - Total Pytest suite: 135/135 tests passing in 0.77s.
   - Frontend TypeScript definitions: `frontend/src/types/index.ts`.
   - Frontend API Client methods: `frontend/src/lib/api.ts` (30+ typed methods).
   - Faculty Portal UI: `frontend/src/app/professor/page.tsx` (5 interactive tabs: Roster, Attendance, Assessments, Assignments, Announcements).
-  - Administrator Console UI: `frontend/src/app/admin/page.tsx` (Roles with last-admin protection, Offerings provisioning, Faculty assignment, Audit log).
+  - Administrator Console UI: `frontend/src/app/admin/page.tsx` (Roles with last-admin protection, Offerings provisioning, Faculty assignment, Provision Admin Modal, Audit log).
   - Navigation links: `frontend/src/components/Navigation.tsx`.
-  - Next.js 16 production build: 15/15 static and dynamic routes compiled in 1171ms with 0 type errors.
+  - Next.js 16 production build: 15/15 static and dynamic routes compiled in 1458ms with 0 type errors.
 
 ---
 
@@ -96,6 +101,7 @@
 | `GET /api/academic/users/roles` | Administrator | List user roles and account statuses. |
 | `POST /api/academic/users/roles` | Administrator | Update user role; prevents removal of last active admin. |
 | `GET /api/academic/audit-logs` | Administrator | Inspect immutable academic audit trail. |
+| `POST /api/academic/admin/create-account` | Admin / Institutional Key | Provision a new administrator account. |
 
 ---
 
@@ -123,9 +129,9 @@
 
 ### A. Backend Pytest Test Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: **PASS** (132 passed in 0.79s)
+- **Result**: **PASS** (135 passed in 0.77s)
 - **Breakdown**:
-  - `backend/tests/test_academic_rbac.py`: **21 passed** (100% of RBAC test scenarios)
+  - `backend/tests/test_academic_rbac.py`: **24 passed** (100% of RBAC & Admin test scenarios)
     - `test_anonymous_requests_rejected_with_401`: PASS
     - `test_student_can_only_view_enrolled_offerings`: PASS
     - `test_student_cannot_view_unenrolled_offering_details`: PASS
@@ -147,6 +153,9 @@
     - `test_roster_support_identification`: PASS (Rohan Verma correctly flagged for attendance & academic support)
     - `test_roster_csv_export_formula_injection_prevention`: PASS (`=cmd...`, `+102203888`, `@eval...` sanitized with `'` prefix)
     - `test_audit_logs_contain_faculty_and_admin_mutations`: PASS
+    - `test_create_admin_account_with_institutional_key`: PASS (Creates admin with key and validates token)
+    - `test_create_admin_account_with_existing_admin`: PASS (Existing admin provisions another admin)
+    - `test_create_admin_account_unauthorized_rejected`: PASS (Rejects unauthorized/invalid key with 403)
   - `backend/tests/test_copilot.py`: 21 passed
   - `backend/tests/test_planner.py`: 23 passed
   - `backend/tests/test_vault.py`: 14 passed

@@ -12,19 +12,23 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
+  KeyRound,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Card, Badge, useToast } from "../../components/ui";
+import { createAdminAccount } from "../../lib/api";
 
 export default function SignupPage() {
   const router = useRouter();
   const { signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
 
+  const [accountType, setAccountType] = useState<"student" | "admin">("student");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [adminSecretKey, setAdminSecretKey] = useState("TIET-ADMIN-2026");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
@@ -48,6 +52,33 @@ export default function SignupPage() {
       toast.error("Passwords do not match", {
         description: "Please confirm your password carefully.",
       });
+      return;
+    }
+
+    if (accountType === "admin") {
+      setSubmitting(true);
+      try {
+        const res = await createAdminAccount({
+          email,
+          full_name: fullName,
+          admin_secret_key: adminSecretKey,
+        });
+        document.cookie = `campusos_auth_token=${encodeURIComponent(res.token)}; path=/; SameSite=Lax`;
+        document.cookie = "campusos_onboarded=true; path=/; SameSite=Lax";
+        localStorage.setItem("campusos_auth_token", res.token);
+        localStorage.setItem("campusos_role", "admin");
+        localStorage.removeItem("campusos_logged_out");
+        toast.success("Administrator Account Created", {
+          description: `Welcome ${fullName}. Redirecting to Administrator Console...`,
+        });
+        router.push("/admin");
+      } catch (err: any) {
+        toast.error("Administrator Creation Failed", {
+          description: err.message || "Invalid institutional authorization key.",
+        });
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -103,6 +134,33 @@ export default function SignupPage() {
 
         {/* Main Card */}
         <Card className="p-6 sm:p-8 bg-slate-900/90 border-slate-800 shadow-2xl backdrop-blur-md">
+          {/* Persona Type Switcher */}
+          <div className="mb-5 flex rounded-lg bg-slate-950/80 p-1 border border-slate-800">
+            <button
+              type="button"
+              onClick={() => setAccountType("student")}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                accountType === "student"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Student Account
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountType("admin")}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                accountType === "admin"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Administrator Account
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
@@ -119,13 +177,46 @@ export default function SignupPage() {
                   id="name"
                   type="text"
                   required
-                  placeholder="e.g. Arjun Mehta"
+                  placeholder={accountType === "admin" ? "e.g. Dr. Rajeshwar Singh (DOAA)" : "e.g. Arjun Mehta"}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
                 />
               </div>
             </div>
+
+            {accountType === "admin" && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="admin-key"
+                    className="block text-xs font-medium text-teal-300"
+                  >
+                    Institutional Admin Authorization Key
+                  </label>
+                  <span className="text-[10px] text-teal-400/80 font-mono">
+                    Default: TIET-ADMIN-2026
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-500">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="admin-key"
+                    type="text"
+                    required
+                    placeholder="TIET-ADMIN-2026"
+                    value={adminSecretKey}
+                    onChange={(e) => setAdminSecretKey(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-teal-700/80 rounded-lg text-sm text-teal-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Required by TIET Senate to verify administrative governance permissions.
+                </p>
+              </div>
+            )}
 
             <div>
               <label

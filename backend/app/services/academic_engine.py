@@ -651,6 +651,44 @@ class AcademicRBACEngine:
         self._save_persisted_data()
         return {"user_id": target_user_id, "role": new_role, "status": status_val}
 
+    def create_admin_account(
+        self,
+        email: str,
+        full_name: str,
+        user_id: Optional[str] = None,
+        actor_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Provisions a new administrator account in user_roles and emits an audit event.
+        """
+        uid = user_id or f"admin-{uuid.uuid4().hex[:12]}"
+        self.user_roles[uid] = {
+            "role": "admin",
+            "status": "active",
+            "email": email,
+            "full_name": full_name,
+        }
+
+        self.log_audit(
+            actor_id=actor_id or uid,
+            actor_role="admin",
+            action="CREATE_ADMIN_ACCOUNT",
+            offering_id=None,
+            resource_id=uid,
+            details={"email": email, "full_name": full_name},
+            reason=f"Administrator account provisioned for {full_name} ({email})",
+        )
+        self._save_persisted_data()
+        return {
+            "user_id": uid,
+            "email": email,
+            "full_name": full_name,
+            "role": "admin",
+            "status": "active",
+            "token": "dev-admin" if uid == "admin-00000000-0000-0000-0000-000000000001" else f"admin-token-{uid}",
+            "message": f"Administrator account successfully provisioned for {full_name}",
+        }
+
     def log_audit(
         self,
         actor_id: str,

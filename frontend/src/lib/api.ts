@@ -55,6 +55,8 @@ import {
   RosterResponse,
   AcademicAuditLog,
   UserRoleItem,
+  AdminAccountCreate,
+  AdminAccountResponse,
 } from "../types";
 import {
   MOCK_COURSES,
@@ -79,6 +81,23 @@ async function getAuthHeaders(customHeaders: Record<string, string> = {}): Promi
   const headers: Record<string, string> = {
     ...customHeaders,
   };
+
+  // Check cookie or localStorage for active session token (e.g. dev-admin, dev-user-102203099, or Supabase JWT)
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(/campusos_auth_token=([^;]+)/);
+    if (match && match[1]) {
+      const cookieToken = decodeURIComponent(match[1]);
+      if (cookieToken) {
+        headers["Authorization"] = `Bearer ${cookieToken}`;
+        return headers;
+      }
+    }
+    const localToken = localStorage.getItem("campusos_auth_token");
+    if (localToken) {
+      headers["Authorization"] = `Bearer ${localToken}`;
+      return headers;
+    }
+  }
 
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -1842,6 +1861,25 @@ export async function fetchAcademicAuditLogs(
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Failed to fetch academic audit logs");
+  }
+  return await res.json();
+}
+
+export async function createAdminAccount(data: {
+  email: string;
+  full_name: string;
+  user_id?: string;
+  admin_secret_key?: string;
+}): Promise<AdminAccountResponse> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/academic/admin/create-account`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create administrator account");
   }
   return await res.json();
 }

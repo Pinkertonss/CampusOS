@@ -760,4 +760,22 @@ export interface UserRoleItem {
   status: string;
 }
 
+export interface AdminAccountCreate {
+  email: string;
+  full_name: string;
+  user_id?: string;
+  admin_secret_key?: string;
+}
+
+export interface AdminAccountResponse {
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  status: string;
+  token: string;
+  message: string;
+}
+
+
 
