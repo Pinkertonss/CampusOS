@@ -219,27 +219,41 @@ class AttendanceEngine:
 
     @classmethod
     def process_records(
-        cls, records: List[Dict[str, Any]], target_percent: float = 75.0
+        cls,
+        records: List[Dict[str, Any]],
+        target_percent: float = 75.0,
+        enrollment_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Filters out 'cancelled' classes and computes attendance statistics.
-        Cancelled classes do not count toward total held t.
-        Only status == 'present' counts as attended a.
-        status == 'present' or 'absent' counts toward total held t.
+        Filters out 'cancelled' and 'excused' classes and computes attendance statistics.
+        Cancelled and excused classes do not count toward total held t.
+        'present' and 'late' count as attended a.
+        'present', 'late', and 'absent' count toward total held t.
+        Respects enrollment_date if provided (ignores sessions prior to enrollment).
         """
         attended = 0
         total_held = 0
         cancelled = 0
+        excused = 0
 
         for rec in records:
+            rec_date = rec.get("date") or rec.get("session_date")
+            if rec_date and enrollment_date:
+                r_date_str = str(rec_date)[:10]
+                e_date_str = str(enrollment_date)[:10]
+                if r_date_str < e_date_str:
+                    continue
+
             status = str(rec.get("status", "")).strip().lower()
-            if status == "present":
+            if status in ("present", "late"):
                 attended += 1
                 total_held += 1
             elif status == "absent":
                 total_held += 1
             elif status == "cancelled":
                 cancelled += 1
+            elif status == "excused":
+                excused += 1
 
         percent = cls.calculate_current_percent(attended, total_held)
         status = cls.evaluate_status(percent, target_percent)
@@ -252,6 +266,7 @@ class AttendanceEngine:
             "attended": attended,
             "total_held": total_held,
             "cancelled": cancelled,
+            "excused": excused,
             "percent": percent,
             "status": status,
             "safe_bunks_remaining": safe_bunks,
@@ -268,20 +283,21 @@ class GradeEngine:
     @staticmethod
     def calculate_current_weighted_score(
         assessments: List[Dict[str, Any]],
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """
         Computes current weighted score from completed assessments:
             score_i = (obtained_marks / max_marks) * weight_percent
             current_weighted_score = sum(score_i)
 
         Only assessments where obtained_marks is not None are counted.
+        Distinguishes earned weighted contribution from performance on graded work alone.
         """
         current_weighted_score = 0.0
         completed_weight = 0.0
         total_planned_weight = 0.0
 
         for a in assessments:
-            weight = float(a.get("weight_percent", 0.0))
+            weight = max(0.0, float(a.get("weight_percent", 0.0)))
             max_m = float(a.get("max_marks", 100.0))
             obtained = a.get("obtained_marks")
 
@@ -294,12 +310,18 @@ class GradeEngine:
                 completed_weight += weight
 
         remaining_weight = max(0.0, 100.0 - completed_weight)
+        graded_performance = (
+            round((current_weighted_score / completed_weight) * 100.0, 2)
+            if completed_weight > 0
+            else None
+        )
 
         return {
             "current_weighted_score": round(current_weighted_score, 2),
             "completed_weight": round(completed_weight, 2),
             "remaining_weight": round(remaining_weight, 2),
             "total_planned_weight": round(total_planned_weight, 2),
+            "graded_performance_percent": graded_performance,
         }
 
     @staticmethod

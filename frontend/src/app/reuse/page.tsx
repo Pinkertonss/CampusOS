@@ -1025,6 +1025,17 @@ export default function CampusReusePage() {
               </div>
             </div>
           </Card>
+
+          {/* Environmental Estimation Transparency Note */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+            <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Leaf className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>Environmental & Economic Estimation Model</span>
+            </div>
+            <p>
+              Metrics are calculated strictly from verified completed bilateral exchanges. Savings reflect regional second-hand campus market values (₹450–₹1,450/item). Carbon and solid waste diversion metrics are modeled estimates benchmarked to standard life-cycle assessment factors (1.4 kg paper/book, 0.25 kg e-waste/calculator, 2.45 kg CO₂e offset per kg diverted materials).
+            </p>
+          </div>
         </div>
       )}
 

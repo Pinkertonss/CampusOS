@@ -47,6 +47,7 @@
 | `POST /api/copilot/documents` | Administrator | Ingests, chunks, embeds, and atomically persists approved campus document. Dynamic upload attribution. |
 | `DELETE /api/copilot/documents/{id}` | Administrator | Purges document, chunks, index entry, and safely unlinks storage file preventing directory traversal. |
 | `POST /api/copilot/confirm-task` | Authenticated Student | Validates fields, deduplicates idempotently, and persists task atomically across process restarts. |
+| `GET /api/academic/import-csv-template` | Public / Student | Returns standard RFC 4180 CSV template for attendance and course bulk import. |
 | `GET /api/academic/offerings` | Authenticated | Scoped academic offerings list (Admin: all, Professor: assigned, Student: enrolled). |
 | `POST /api/academic/offerings` | Administrator | Provision a new subject offering with term and section. |
 | `POST /api/academic/admin/create-account` | Admin / Institutional Key | Provisions new administrator account. |
@@ -77,7 +78,7 @@
 
 ### A. Backend Pytest Test Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: **PASS** (145 passed in 1.73s across 12 test suites)
+- **Result**: **PASS** (150 passed in 1.23s across 13 test suites)
 - **Suite Breakdown**:
   - `backend/tests/test_academic_rbac.py`: **24 passed**
   - `backend/tests/test_planner.py`: **23 passed**
@@ -85,27 +86,23 @@
   - `backend/tests/test_vault.py`: **14 passed**
   - `backend/tests/test_security.py`: **11 passed**
   - `backend/tests/test_verification_remediation.py`: **10 passed**
-    - `test_user_metadata_cannot_grant_admin_privileges`: PASS
-    - `test_user_metadata_cannot_grant_professor_privileges`: PASS
-    - `test_server_controlled_app_metadata_grants_admin`: PASS
-    - `test_invalid_token_on_optional_route_rejected_with_401`: PASS
-    - `test_compatible_embedding_signature_succeeds`: PASS
-    - `test_incompatible_vector_space_signature_rejected`: PASS
-    - `test_reindex_corpus_updates_signature`: PASS
-    - `test_independent_process_restart_persistence`: PASS (Subprocess restart verified)
-    - `test_document_deletion_traversal_prevention`: PASS
-    - `test_stale_circular_date_detected_as_expired`: PASS
   - `backend/tests/test_opportunities.py`: **9 passed**
   - `backend/tests/test_academic_persistence.py`: **8 passed**
   - `backend/tests/test_api.py`: **7 passed**
   - `backend/tests/test_reuse.py`: **7 passed**
   - `backend/tests/test_auth.py`: **5 passed**
   - `backend/tests/test_what_if.py`: **5 passed**
+  - `backend/tests/test_requirements_coverage.py`: **5 passed**
+    - `test_csv_template_endpoint`: PASS
+    - `test_borrow_mode_completion_restores_listing_available`: PASS (Loan return restores listing to available)
+    - `test_attendance_engine_excused_late_and_enrollment_date`: PASS
+    - `test_grade_engine_distinguishes_earned_vs_graded_performance`: PASS
+    - `test_reuse_impact_returns_estimation_assumptions`: PASS
   - `backend/tests/test_impact.py`: **1 passed**
 
 ### B. Frontend Next.js Production Build
 - **Command**: `npm --prefix frontend run build`
-- **Result**: **PASS** (Exit code 0, 1105ms compile, 978ms TypeScript type check)
+- **Result**: **PASS** (Exit code 0, 1356ms compile, 1949ms TypeScript type check)
 - **Routes Generated (15 total)**:
   `/, /academic, /admin, /copilot, /login, /onboarding, /opportunities, /professor, /reuse, /signup, /vault, /auth/callback, /_not-found`
 

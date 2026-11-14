@@ -3,7 +3,7 @@ import io
 import uuid
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
 
 from ..core.auth import get_current_user_id, get_optional_user_id
 from ..core.supabase import get_supabase_client
@@ -135,6 +135,61 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
                     {"status": "absent"} for _ in range(max(0, att.total_classes - att.attended_classes))
                 ]
             }
+
+    # Seamlessly incorporate official subject-offering enrollments and professor-marked sessions
+    try:
+        official_offerings = db.academic_rbac.list_offerings(user_id=user_id, role="student", is_admin=False)
+        existing_codes = {c.get("code") for c in courses_list}
+        for off in official_offerings:
+            if off.subject_code not in existing_codes:
+                courses_list.append({
+                    "id": off.id,
+                    "code": off.subject_code,
+                    "name": off.subject_name,
+                    "credits": 4.0,
+                    "grade": None,
+                    "target_grade": "A",
+                    "semester": 5,
+                    "is_official": True,
+                    "section": off.section,
+                })
+                existing_codes.add(off.subject_code)
+
+            if off.subject_code not in attendance_map:
+                enr = db.academic_rbac.offering_enrollments.get(off.id, {}).get(user_id)
+                enrolled_date_str = enr.enrolled_at[:10] if enr else None
+                sessions = db.academic_rbac.attendance_sessions.get(off.id, [])
+                att_count = 0
+                held_count = 0
+                recs = []
+                for s in sessions:
+                    if s.is_cancelled:
+                        continue
+                    if enrolled_date_str and s.session_date < enrolled_date_str:
+                        continue
+                    s_rec = db.academic_rbac.session_attendance_records.get(s.id, {}).get(user_id)
+                    if s_rec:
+                        if s_rec.status == "excused":
+                            continue
+                        held_count += 1
+                        if s_rec.status in ("present", "late"):
+                            att_count += 1
+                            recs.append({"status": "present", "date": s.session_date})
+                        else:
+                            recs.append({"status": "absent", "date": s.session_date})
+                    else:
+                        held_count += 1
+                        recs.append({"status": "absent", "date": s.session_date})
+
+                if held_count > 0:
+                    attendance_map[off.subject_code] = {
+                        "attended": att_count,
+                        "total_held": held_count,
+                        "records": recs,
+                        "is_official": True,
+                    }
+    except Exception:
+        pass
 
     if not assessments_list:
         today = date.today()
@@ -963,3 +1018,37 @@ async def import_academic_csv(
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV file: {str(e)}")
+
+
+@router.get("/import-csv-template")
+@academics_router.get("/import-csv-template")
+@academic_singular_router.get("/import-csv-template")
+def get_csv_template(template_type: str = Query("attendance", pattern="^(attendance|courses)$")):
+    """
+    Returns an RFC 4180 compliant CSV template for bulk academic record import.
+    """
+    if template_type == "attendance":
+        content = (
+            "course_code,course_name,attended,total\n"
+            "UCS301,Data Structures & Algorithms,36,40\n"
+            "UCS310,Database Management Systems,25,32\n"
+            "UCS405,Operating Systems,18,25\n"
+            "UMA010,Mathematics - III,17,28\n"
+            "UED101,Engineering Design Project - I,19,20\n"
+        )
+        filename = "thapar_attendance_template.csv"
+    else:
+        content = (
+            "course_code,course_name,credits,target_grade\n"
+            "UCS301,Data Structures & Algorithms,4.5,A\n"
+            "UCS310,Database Management Systems,4.0,A-\n"
+            "UCS405,Operating Systems,4.0,B\n"
+            "UMA010,Mathematics - III,3.5,B+\n"
+        )
+        filename = "thapar_courses_template.csv"
+
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

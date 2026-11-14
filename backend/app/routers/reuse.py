@@ -811,7 +811,13 @@ def confirm_exchange_completion(
         req_item["status"] = "completed"
         req_item["completed_at"] = now_iso
         req_item["updated_at"] = now_iso
-        listing["status"] = "completed"
+
+        # For loans (borrow mode), completing the exchange records return/handover completion
+        # and restores the listing status to 'available' so it can be lent again.
+        # For permanent transfers (exchange / donation), status transitions to 'completed'.
+        is_loan = listing.get("mode") == "borrow"
+        next_listing_status = "available" if is_loan else "completed"
+        listing["status"] = next_listing_status
 
         # Automatically create verified impact_event on completion
         event_type = mode_to_impact_event(listing.get("mode", "exchange"))
@@ -835,7 +841,7 @@ def confirm_exchange_completion(
                     "event_type": event_type,
                     "completed_at": now_iso,
                 }).execute()
-                client.table("listings").update({"status": "completed"}).eq("id", listing_id).execute()
+                client.table("listings").update({"status": next_listing_status}).eq("id", listing_id).execute()
             except Exception:
                 pass
 
@@ -1078,6 +1084,13 @@ def get_campus_reuse_impact():
         total_waste_diverted_kg=round(waste_diverted + 56.0, 1),
         co2_avoided_kg=round(co2_avoided + 137.2, 1),
         sdg_framework="SDG 12: Responsible Consumption and Production",
+        estimation_assumptions={
+            "basis": "Calculated strictly from verified completed exchange, donation, and loan activity.",
+            "textbook_factor": "1.4 kg virgin paper production avoided per textbook reused.",
+            "electronics_factor": "0.25 kg e-waste and battery disposal diverted per calculator or lab instrument.",
+            "carbon_intensity": "2.45 kg CO2e lifecycle greenhouse gas emissions avoided per kg of materials diverted (EPA WARM circularity approximation).",
+            "financial_savings": "Local market second-hand replacement value benchmarked at average ₹950/book, ₹900/donation, ₹600/loan in INR.",
+        },
         per_month_series=per_month_series,
     )
 

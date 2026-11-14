@@ -539,6 +539,7 @@ export interface ReuseImpactResponse {
   total_waste_diverted_kg: number;
   co2_avoided_kg: number;
   sdg_framework: string;
+  estimation_assumptions?: Record<string, string>;
   per_month_series: MonthlyImpactSeries[];
 }
 
