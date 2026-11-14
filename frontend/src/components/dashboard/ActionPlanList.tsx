@@ -10,18 +10,24 @@ import {
   Clock,
   ArrowRight,
   ShieldAlert,
+  Compass,
+  Calculator,
 } from "lucide-react";
 import { DailyActionItem } from "../../types";
 import { Card, CardHeader, CardTitle, Badge, Button, useToast } from "../ui";
 
 interface ActionPlanListProps {
   initialActions: DailyActionItem[];
+  recommendedFocus?: string;
   onActionDismiss?: (id: string) => void;
+  onOpenWhatIf?: (courseCode?: string) => void;
 }
 
 export default function ActionPlanList({
   initialActions,
+  recommendedFocus,
   onActionDismiss,
+  onOpenWhatIf,
 }: ActionPlanListProps) {
   const [actions, setActions] = useState<DailyActionItem[]>(initialActions);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
@@ -34,8 +40,8 @@ export default function ActionPlanList({
       return next;
     });
 
-    toast.success("Action completed", {
-      description: `Marked "${item.title}" as handled.`,
+    toast.success("Action handled", {
+      description: `Marked "${item.title}" as resolved.`,
     });
 
     if (onActionDismiss) {
@@ -56,7 +62,7 @@ export default function ActionPlanList({
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
-              Today&apos;s Action Plan
+              Cross-Module Decision Intelligence
               {activeActions.length > 0 && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-900/80 text-teal-300 border border-teal-700/60 font-mono">
                   {activeActions.length} prioritized
@@ -64,11 +70,23 @@ export default function ActionPlanList({
               )}
             </h2>
             <p className="text-xs text-slate-400">
-              Prioritized recommendations generated from your attendance thresholds and deadlines
+              Synthesized from attendance thresholds, timetable schedule, and upcoming deadlines
             </p>
           </div>
         </div>
       </div>
+
+      {recommendedFocus && (
+        <div className="mb-4 p-3.5 rounded-xl bg-teal-950/40 border border-teal-500/30 flex items-start gap-3 shadow-inner">
+          <div className="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0 mt-0.5">
+            <Compass className="w-3.5 h-3.5" />
+          </div>
+          <div className="text-xs">
+            <span className="font-semibold text-teal-300">Decision Engine Focus: </span>
+            <span className="text-slate-200">{recommendedFocus}</span>
+          </div>
+        </div>
+      )}
 
       {activeActions.length === 0 ? (
         <div className="flex items-center justify-center p-6 text-center rounded-xl bg-slate-950/40 border border-slate-800/60">
@@ -83,22 +101,22 @@ export default function ActionPlanList({
       ) : (
         <div className="space-y-3">
           {activeActions.map((action) => {
+            const isConflict = action.category === "conflict";
             const isUrgent = action.priority === "urgent";
             const isHigh = action.priority === "high";
 
             let priorityVariant: "danger" | "warning" | "info" | "default" = "default";
-            if (isUrgent) priorityVariant = "danger";
+            if (isConflict || isUrgent) priorityVariant = "danger";
             else if (isHigh) priorityVariant = "warning";
             else if (action.priority === "medium") priorityVariant = "info";
-
-            const isAttendance = action.category === "attendance";
-            const isDeadline = action.category === "deadline";
 
             return (
               <div
                 key={action.id}
                 className={`p-3.5 sm:p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                  isUrgent
+                  isConflict
+                    ? "bg-gradient-to-r from-red-950/40 via-amber-950/30 to-slate-950/60 border-amber-600/60 shadow-md hover:border-amber-500"
+                    : isUrgent
                     ? "bg-red-950/20 border-red-800/50 hover:border-red-700/80"
                     : isHigh
                     ? "bg-amber-950/20 border-amber-800/50 hover:border-amber-700/80"
@@ -108,11 +126,17 @@ export default function ActionPlanList({
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={priorityVariant} size="sm" dot>
-                      {action.priority.toUpperCase()}
+                      {isConflict ? "SCHEDULE CONFLICT" : action.priority.toUpperCase()}
                     </Badge>
                     {action.course_code && (
                       <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-semibold">
                         {action.course_code}
+                      </span>
+                    )}
+                    {action.schedule_info && (
+                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-slate-800/90 text-teal-300 border border-teal-800/40 font-medium">
+                        <Clock className="w-3 h-3 text-teal-400" />
+                        {action.schedule_info}
                       </span>
                     )}
                     <h3 className="text-sm font-semibold text-slate-100 truncate">
@@ -120,12 +144,36 @@ export default function ActionPlanList({
                     </h3>
                   </div>
 
+                  {action.conflict_warning && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-300 font-medium bg-amber-950/40 px-2 py-1 rounded border border-amber-800/40">
+                      <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                      <span>{action.conflict_warning}</span>
+                    </div>
+                  )}
+
                   <p className="text-xs text-slate-300 leading-relaxed">
                     {action.reason}
                   </p>
+
+                  {action.action_required && (
+                    <p className="text-[11px] text-slate-400">
+                      <strong className="text-slate-300">Action:</strong> {action.action_required}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                  {action.course_code && onOpenWhatIf && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onOpenWhatIf(action.course_code)}
+                      leftIcon={<Calculator className="w-3.5 h-3.5 text-teal-400" />}
+                      className="text-xs text-teal-300 hover:text-teal-200 hover:bg-teal-950/40"
+                    >
+                      Simulate
+                    </Button>
+                  )}
                   <Button
                     variant="secondary"
                     size="sm"

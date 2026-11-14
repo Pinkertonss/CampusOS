@@ -193,12 +193,15 @@ export interface ImpactMetrics {
 
 export interface DailyActionItem {
   id: string;
-  category: "attendance" | "deadline" | "task" | string;
+  category: "attendance" | "deadline" | "task" | "conflict" | string;
   priority: "urgent" | "high" | "medium" | "low";
   title: string;
   course_code?: string;
   current_percent?: number;
   due_date?: string;
+  schedule_info?: string;
+  conflict_warning?: string;
+  risk_score?: number;
   reason: string;
   action_required?: string;
 }
@@ -208,7 +211,35 @@ export interface DailyPlanResponse {
   total_actions: number;
   urgent_count: number;
   high_count: number;
+  conflicts_count?: number;
+  recommended_focus?: string;
   actions: DailyActionItem[];
+}
+
+export interface ScheduleSlot {
+  course_code: string;
+  course_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  venue: string;
+  slot_type: string;
+  current_attendance_percent: number;
+  attendance_status: string;
+  is_attendance_mandatory: boolean;
+}
+
+export interface DecisionMatrixResponse {
+  date: string;
+  recommended_focus: string;
+  conflicts: DailyActionItem[];
+  today_schedule: ScheduleSlot[];
+  priorities: DailyActionItem[];
+  academic_standing_summary: {
+    safe: number;
+    warning: number;
+    critical: number;
+  };
 }
 
 export interface AcademicSummaryCourse {

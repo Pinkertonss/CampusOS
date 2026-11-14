@@ -173,12 +173,15 @@ class GradeWhatIfResponse(BaseModel):
 
 class DailyActionItem(BaseModel):
     id: str
-    category: str  # 'attendance' | 'deadline' | 'task'
+    category: str  # 'attendance' | 'deadline' | 'task' | 'conflict'
     priority: str  # 'urgent' | 'high' | 'medium' | 'low'
     title: str
     course_code: Optional[str] = None
     current_percent: Optional[float] = None
     due_date: Optional[str] = None
+    schedule_info: Optional[str] = None
+    conflict_warning: Optional[str] = None
+    risk_score: Optional[float] = None
     reason: str
     action_required: Optional[str] = None
 
@@ -187,7 +190,17 @@ class DailyPlanResponse(BaseModel):
     total_actions: int
     urgent_count: int
     high_count: int
+    conflicts_count: int = 0
+    recommended_focus: Optional[str] = None
     actions: List[DailyActionItem]
+
+class DecisionMatrixResponse(BaseModel):
+    date: str
+    recommended_focus: str
+    conflicts: List[Dict[str, Any]]
+    today_schedule: List[Dict[str, Any]]
+    priorities: List[DailyActionItem]
+    academic_standing_summary: Dict[str, int]
 
 class AcademicSummaryResponse(BaseModel):
     student_name: str

@@ -193,11 +193,13 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* ========================================================
-              2. TOP: TODAY'S ACTION PLAN
+              2. TOP: TODAY'S ACTION PLAN & DECISION INTELLIGENCE
           ======================================================== */}
           {dailyPlan && (
             <ActionPlanList
               initialActions={dailyPlan.actions}
+              recommendedFocus={dailyPlan.recommended_focus}
+              onOpenWhatIf={handleOpenWhatIfAttendance}
               onActionDismiss={() => {
                 // Optional refresh or sync
               }}

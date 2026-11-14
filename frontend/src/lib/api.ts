@@ -34,6 +34,7 @@ import {
   ReuseNotification,
   CampusDocument,
   DocumentUploadResponse,
+  DecisionMatrixResponse,
 } from "../types";
 import {
   MOCK_COURSES,
@@ -198,6 +199,29 @@ export async function getDailyPlan(referenceDate?: string): Promise<DailyPlanRes
   } catch (e) {
     console.warn("Using fallback daily plan:", e);
     return MOCK_DAILY_PLAN as DailyPlanResponse;
+  }
+}
+
+export async function getDecisionMatrix(referenceDate?: string): Promise<DecisionMatrixResponse> {
+  try {
+    const headers = await getAuthHeaders();
+    const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
+    const res = await fetch(`${API_BASE}/academics/decision-matrix${query}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch decision matrix");
+    return await res.json();
+  } catch (e) {
+    console.warn("Using fallback decision matrix:", e);
+    return {
+      date: new Date().toISOString().split("T")[0],
+      recommended_focus: "Maintain regular attendance and prepare for upcoming assessments.",
+      conflicts: [],
+      today_schedule: [],
+      priorities: (MOCK_DAILY_PLAN as DailyPlanResponse).actions,
+      academic_standing_summary: { safe: 4, warning: 1, critical: 1 },
+    };
   }
 }
 

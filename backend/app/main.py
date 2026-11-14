@@ -22,6 +22,7 @@ app.add_middleware(
 # Include feature routers
 app.include_router(academic.router)
 app.include_router(academic.academics_router)
+app.include_router(academic.academic_singular_router)
 app.include_router(copilot.router)
 app.include_router(copilot.copilot_public_router)
 app.include_router(vault.router)

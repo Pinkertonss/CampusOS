@@ -19,7 +19,7 @@
 | **Actionable Copilot Task Confirmation** | **COMPLETED (Phase 4)** | `/api/copilot/confirm-task` | PostgreSQL `tasks` + `CampusOSDatabase.user_deadlines` | Secured with student auth (`get_current_user_id`); preview title/due date/reason before saving; persists user-owned task | Tested in `test_copilot.py` & `test_api.py` |
 | **Campus Reuse Marketplace** | **COMPLETED (Phase 5)** | `/reuse/listings`, `/requests`, `/impact` | PostgreSQL `listings`, `exchange_requests`, `impact_events` | 2-party bilateral confirmation flow (request -> accept -> mutual confirm) updates verified SDG 12 metrics; non-owner actions blocked | 7 tests in `test_reuse.py` and `test_security.py` |
 | **Contact Privacy in Reuse** | **COMPLETED (Phase 1)** | Public `/reuse/listings`, `/reuse/listings/{id}` | Sanitized response schemas | Contact details (phone, hostel room) masked on public feed; visible only to owner or accepted partner | Tested in `test_security.py` |
-| **Cross-Module Student Decision Workflow** | **Missing (Phase 6)** | Dashboard Priorities Integration | Academic risk + calendar conflict + task planning | Not yet synthesized across academic calendar and copilot | Scheduled for Phase 6 |
+| **Cross-Module Student Decision Workflow** | **COMPLETED (Phase 6)** | `/academics/decision-matrix`, `/academics/daily-plan` | Cross-module synthesis (`ActionPlanEngine`) | Academic risk + timetable schedule + urgent deadline trade-off collision detection | Tests in `test_planner.py` |
 | **Opportunity Matching** | **Missing (Phase 7)** | Opportunity recommendation engine | Opt-in skill tags, schedule compatibility | Post-MVP / Phase 7 | Scheduled for Phase 7 |
 
 ---
@@ -28,7 +28,7 @@
 
 - **Backend Pytest**:
   - Command: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-  - Result: **90 passed in 0.50s** (90/90 tests green across `test_academic_persistence.py`, `test_api.py`, `test_auth.py`, `test_copilot.py`, `test_impact.py`, `test_planner.py`, `test_reuse.py`, `test_security.py`, `test_vault.py`, `test_what_if.py`).
+  - Result: **93 passed in 0.53s** (93/93 tests green across all test files).
 - **Frontend Next.js Build**:
   - Command: `npm --prefix frontend run build`
   - Result: Compiled successfully; all 12 routes generated (`/`, `/academic`, `/copilot`, `/vault`, `/reuse`, `/login`, `/onboarding`, `/signup`).
@@ -71,6 +71,8 @@
    - Replaced false "pgvector RAG" badge with truthful "Citation-Grounded Verified Search · 768-dim Embeddings".
    - 12 comprehensive tests in `backend/tests/test_copilot.py` including a curated multi-domain evaluation set (90/90 suite passing).
 5. **Phase 5 (P1) - COMPLETED**: Campus Reuse Marketplace complete two-party lifecycle (offer -> request -> accept -> bilateral handoff confirmation) and verified SDG 12 impact calculation.
-6. **Phase 6 - NEXT**: Integrated cross-module student decision intelligence.
+6. **Phase 6 (P1) - COMPLETED**: Cross-module student decision intelligence synthesizing academic attendance risk, calendar/timetable schedule, and actionable deadline priorities with trade-off conflict detection.
+7. **Phase 7 - NEXT**: Opportunity matching and recommendation engine.
+8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.
 7. **Phase 7**: Opportunity matching and calendar conflict detection.
 8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.

@@ -388,7 +388,83 @@ def test_get_daily_plan_authenticated():
     assert "date" in data
     assert "total_actions" in data
     assert "actions" in data
+    assert "conflicts_count" in data
+    assert "recommended_focus" in data
     assert isinstance(data["actions"], list)
     if data["actions"]:
         # Verify plain-English reasons are provided
         assert any(len(a["reason"]) > 10 for a in data["actions"])
+
+
+def test_decision_matrix_and_schedule_conflict_detection():
+    # Construct scenario: Monday reference date, UCS301 at 60% attendance with a lecture on Monday,
+    # and a major assessment due on Monday or Tuesday.
+    ref_date = date(2024, 11, 11)  # 2024-11-11 is a Monday
+    courses_att = [
+        {"course_code": "UCS301", "course_name": "Data Structures", "attended_classes": 12, "total_classes": 20}, # 60% (crit)
+        {"course_code": "UCS405", "course_name": "Operating Systems", "attended_classes": 18, "total_classes": 20}, # 90% (safe)
+    ]
+    assessments = [
+        {"id": "a-crit-1", "name": "MST UCS405 Exam", "course_code": "UCS405", "weight_percent": 30.0, "due_date": "2024-11-12", "obtained_marks": None}
+    ]
+    tasks = [
+        {"id": "t-1", "title": "Submit Assignment 2", "status": "pending", "due_date": "2024-11-13"}
+    ]
+    timetable = [
+        {"id": "tt-1", "course_code": "UCS301", "course_name": "Data Structures", "day_of_week": "Monday", "start_time": "10:00", "end_time": "11:40", "venue": "LP105", "slot_type": "Lecture"},
+        {"id": "tt-2", "course_code": "UCS405", "course_name": "Operating Systems", "day_of_week": "Tuesday", "start_time": "09:00", "end_time": "09:50", "venue": "TS101", "slot_type": "Lecture"},
+    ]
+
+    plan = ActionPlanEngine.generate_daily_plan(
+        courses_attendance=courses_att,
+        assessments=assessments,
+        tasks=tasks,
+        timetable=timetable,
+        target_percent=75.0,
+        reference_date=ref_date,
+    )
+
+    # Must contain a schedule collision trade-off item
+    conflicts = [a for a in plan if a.get("category") == "conflict"]
+    assert len(conflicts) > 0
+    c = conflicts[0]
+    assert c["priority"] == "urgent"
+    assert c["course_code"] == "UCS301"
+    assert "conflict_warning" in c
+    assert c["risk_score"] == 99.0
+    assert "LP105" in c["reason"]
+
+    # Decision matrix generation
+    matrix = ActionPlanEngine.generate_decision_matrix(
+        courses_attendance=courses_att,
+        assessments=assessments,
+        tasks=tasks,
+        timetable=timetable,
+        target_percent=75.0,
+        reference_date=ref_date,
+    )
+
+    assert matrix["date"] == "2024-11-11"
+    assert len(matrix["conflicts"]) == 1
+    assert len(matrix["today_schedule"]) == 1
+    assert matrix["today_schedule"][0]["course_code"] == "UCS301"
+    assert matrix["today_schedule"][0]["is_attendance_mandatory"] is True
+    assert "Schedule Collision" in matrix["recommended_focus"]
+    assert matrix["academic_standing_summary"]["critical"] == 1
+    assert matrix["academic_standing_summary"]["safe"] == 1
+
+
+def test_get_decision_matrix_endpoint():
+    # Call authenticated decision-matrix endpoints
+    res1 = client.get("/academics/decision-matrix?reference_date=2024-11-11", headers=AUTH_HEADER)
+    assert res1.status_code == 200
+    data1 = res1.json()
+    assert "date" in data1
+    assert "recommended_focus" in data1
+    assert "conflicts" in data1
+    assert "today_schedule" in data1
+    assert "priorities" in data1
+    assert "academic_standing_summary" in data1
+
+    res2 = client.get("/academic/decision-matrix?reference_date=2024-11-11", headers=AUTH_HEADER)
+    assert res2.status_code == 200
