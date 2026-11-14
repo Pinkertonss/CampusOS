@@ -1532,7 +1532,7 @@ export async function fetchOfferingEnrollments(offeringId: string): Promise<Stud
 
 export async function enrollStudentInOffering(
   offeringId: string,
-  payload: { student_id: string; student_name?: string; student_roll_no?: string; student_email?: string }
+  payload: { student_id: string; student_name?: string; student_roll_no?: string; student_email?: string; effective_date?: string }
 ): Promise<StudentEnrollment> {
   const headers = await getAuthHeaders({ "Content-Type": "application/json" });
   const res = await fetch(
@@ -1546,6 +1546,26 @@ export async function enrollStudentInOffering(
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Failed to enroll student");
+  }
+  return await res.json();
+}
+
+export async function bulkEnrollStudentsInOffering(
+  offeringId: string,
+  payload: { student_ids: string[]; effective_date?: string }
+): Promise<{ enrolled_count: number; enrolled_students: StudentEnrollment[]; skipped_duplicates: string[] }> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/enroll-bulk`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to bulk enroll students");
   }
   return await res.json();
 }

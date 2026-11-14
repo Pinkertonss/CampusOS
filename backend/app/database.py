@@ -377,7 +377,7 @@ class CampusOSDatabase:
                     portfolio_link="https://arjunmehta.dev",
                     github_link="https://github.com/arjunmehta",
                     linkedin_link="https://linkedin.com/in/arjunmehta",
-                    discovery_opt_in=True,
+                    discovery_opt_in=True if is_arjun else False,
                     updated_at=datetime.utcnow().isoformat(),
                 )
                 self._save_experience_profiles()
@@ -674,20 +674,27 @@ class CampusOSDatabase:
         incomplete_profile_count = 0
         manual_review_count = 0
 
-        # Build list of student user IDs
-        student_ids = list(self.academic_rbac.student_directory.keys())
+        # Build list of student user IDs (canonicalized to prevent duplicate candidate listings)
+        raw_ids = list(self.academic_rbac.student_directory.keys())
         for sid in (self.default_user_id, "student-user-id", "user-student-1"):
-            if sid and sid not in student_ids:
-                student_ids.append(sid)
+            if sid:
+                raw_ids.append(sid)
         for sid in self.experience_profiles.keys():
-            if sid and sid not in student_ids:
-                student_ids.append(sid)
+            if sid:
+                raw_ids.append(sid)
+        student_ids = []
+        for sid in raw_ids:
+            c_sid = self._canonical_uid(sid)
+            if c_sid not in student_ids:
+                student_ids.append(c_sid)
 
         # Map existing applications for this opportunity
         applied_map = {}
         for s_uid, apps in self.user_applications.items():
+            c_uid = self._canonical_uid(s_uid)
             for a in apps:
                 if a.opportunity_id == opportunity_id:
+                    applied_map[c_uid] = a
                     applied_map[s_uid] = a
 
         # Check existing invitations
@@ -697,8 +704,9 @@ class CampusOSDatabase:
         }
 
         for sid in student_ids:
-            prof = self.get_student_experience_profile(sid)
-            is_applicant = sid in applied_map
+            canonical_sid = self._canonical_uid(sid)
+            prof = self.get_student_experience_profile(canonical_sid)
+            is_applicant = canonical_sid in applied_map or sid in applied_map
 
             # Discovery visibility setting:
             # Exclude students who opted out of discovery, unless they specifically applied to this opportunity
@@ -706,7 +714,7 @@ class CampusOSDatabase:
                 continue
 
             from .services.academic_profile_reader import get_canonical_academic_profile
-            canonical = get_canonical_academic_profile(sid)
+            canonical = get_canonical_academic_profile(canonical_sid)
             verified_cgpa = canonical.cgpa if canonical.is_verified else None
 
             eligibility = OpportunityEngine.evaluate_eligibility(
@@ -724,18 +732,20 @@ class CampusOSDatabase:
             if eligibility.manual_review_required:
                 manual_review_count += 1
 
-            has_resume = bool(prof.resume_file_name or self.get_student_resume(sid))
-            inv_sent = sid in invited_students
+            has_resume = bool(prof.resume_file_name or self.get_student_resume(canonical_sid))
+            inv_sent = (canonical_sid in invited_students or sid in invited_students)
             inv_at = None
             if inv_sent:
                 for inv in self.opportunity_invitations.get(opportunity_id, []):
-                    if inv.get("student_id") == sid:
+                    if inv.get("student_id") in (canonical_sid, sid):
                         inv_at = inv.get("created_at")
                         break
 
+            app_obj = applied_map.get(canonical_sid) or applied_map.get(sid)
+
             candidates.append(
                 CandidateMatch(
-                    student_id=sid,
+                    student_id=canonical_sid,
                     student_name=prof.full_name,
                     student_roll_no=prof.roll_no,
                     student_branch=prof.education[0].branch if prof.education else "COE",
@@ -746,7 +756,7 @@ class CampusOSDatabase:
                     eligibility=eligibility,
                     has_resume=has_resume,
                     is_applicant=is_applicant,
-                    application_id=applied_map[sid].id if is_applicant else None,
+                    application_id=app_obj.id if app_obj else None,
                     invitation_sent=inv_sent,
                     invitation_sent_at=inv_at,
                 )

@@ -85,12 +85,24 @@ class OpportunityEngine:
             missing_fields.append("Branch")
             reasons.append("Branch is required to determine eligibility.")
         else:
-            student_branch = edu.branch.strip().upper()
-            allowed_branches = [b.strip().upper() for b in opportunity.eligible_branches if b.strip()]
+            def _normalize_branch(b: str) -> str:
+                clean = b.strip().upper()
+                aliases = {
+                    "COMPUTER ENGINEERING": "COE",
+                    "COMPUTER SCIENCE AND ENGINEERING": "CSE",
+                    "COMPUTER SCIENCE": "CSE",
+                    "ELECTRONICS AND COMMUNICATION ENGINEERING": "ECE",
+                    "ELECTRONICS AND COMMUNICATION": "ECE",
+                    "ELECTRONICS AND COMPUTER ENGINEERING": "ENC",
+                }
+                return aliases.get(clean, clean)
+
+            student_branch = _normalize_branch(edu.branch)
+            allowed_branches = [_normalize_branch(b) for b in opportunity.eligible_branches if b.strip()]
             if allowed_branches and "ANY" not in allowed_branches and student_branch not in allowed_branches:
                 is_not_eligible = True
                 reasons.append(
-                    f"Recorded branch '{student_branch}' does not meet eligible branches: {', '.join(opportunity.eligible_branches)}."
+                    f"Recorded branch '{edu.branch.strip().upper()}' does not meet eligible branches: {', '.join(opportunity.eligible_branches)}."
                 )
 
         # 2. Semester Range Criteria

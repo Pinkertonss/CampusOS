@@ -60,6 +60,16 @@ class EnrollStudentRequest(BaseModel):
     student_name: Optional[str] = None
     student_roll_no: Optional[str] = None
     student_email: Optional[str] = None
+    effective_date: Optional[str] = None
+
+class BulkEnrollStudentRequest(BaseModel):
+    student_ids: List[str]
+    effective_date: Optional[str] = None
+
+class BulkEnrollResponse(BaseModel):
+    enrolled_count: int
+    enrolled_students: List[StudentEnrollment]
+    skipped_duplicates: List[str]
 
 class DisenrollStudentRequest(BaseModel):
     reason: str
@@ -125,8 +135,8 @@ class AssessmentCreate(BaseModel):
 
 class AssessmentUpdate(BaseModel):
     title: Optional[str] = None
-    max_marks: Optional[float] = None
-    weight_percent: Optional[float] = None
+    max_marks: Optional[float] = Field(None, gt=0)
+    weight_percent: Optional[float] = Field(None, ge=0, le=100)
     due_date: Optional[str] = None
     is_published: Optional[bool] = None
     answer_key_content: Optional[str] = None

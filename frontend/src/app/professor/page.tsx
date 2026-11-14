@@ -135,6 +135,11 @@ export default function ProfessorDashboardPage() {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [directorySearch, setDirectorySearch] = useState("");
   const [directoryResults, setDirectoryResults] = useState<StudentDirectoryItem[]>([]);
+  const [enrollEffectiveDate, setEnrollEffectiveDate] = useState("2026-02-15");
+  const [isSubmittingEnroll, setIsSubmittingEnroll] = useState(false);
+  const [isSubmittingSession, setIsSubmittingSession] = useState(false);
+  const [isSubmittingAssessment, setIsSubmittingAssessment] = useState(false);
+  const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
 
   // Load Assigned Offerings
   const loadOfferings = useCallback(async () => {
@@ -307,14 +312,17 @@ export default function ProfessorDashboardPage() {
 
   // Handlers
   const handleCreateSession = async () => {
-    if (!selectedOfferingId) return;
+    if (!selectedOfferingId || isSubmittingSession) return;
     try {
+      setIsSubmittingSession(true);
       await createAttendanceSession(selectedOfferingId, newSessionDate, newSessionSlot);
       setShowNewSessionModal(false);
       setActionMessage({ type: "success", text: `Session created for ${newSessionDate}` });
       loadSessions();
     } catch (err: any) {
       setActionMessage({ type: "error", text: err.message || "Failed to create session." });
+    } finally {
+      setIsSubmittingSession(false);
     }
   };
 
@@ -332,10 +340,19 @@ export default function ProfessorDashboardPage() {
   };
 
   const handleCreateAssessment = async () => {
-    if (!selectedOfferingId) return;
+    if (!selectedOfferingId || isSubmittingAssessment) return;
+    if (!newAssessmentTitle.trim()) {
+      setActionMessage({ type: "error", text: "Assessment title is required." });
+      return;
+    }
+    if (Number(newAssessmentMaxMarks) <= 0) {
+      setActionMessage({ type: "error", text: "Maximum marks must be greater than zero." });
+      return;
+    }
     try {
+      setIsSubmittingAssessment(true);
       await createOfferingAssessment(selectedOfferingId, {
-        title: newAssessmentTitle,
+        title: newAssessmentTitle.trim(),
         assessment_type: newAssessmentType,
         max_marks: Number(newAssessmentMaxMarks),
         weight_percent: Number(newAssessmentWeight),
@@ -348,6 +365,8 @@ export default function ProfessorDashboardPage() {
       loadAssessments();
     } catch (err: any) {
       setActionMessage({ type: "error", text: err.message || "Failed to create assessment." });
+    } finally {
+      setIsSubmittingAssessment(false);
     }
   };
 
@@ -395,11 +414,20 @@ export default function ProfessorDashboardPage() {
   };
 
   const handleCreateAssignment = async () => {
-    if (!selectedOfferingId) return;
+    if (!selectedOfferingId || isSubmittingAssignment) return;
+    if (!newAssignmentTitle.trim()) {
+      setActionMessage({ type: "error", text: "Assignment title is required." });
+      return;
+    }
+    if (!newAssignmentDueDate) {
+      setActionMessage({ type: "error", text: "Assignment due date is required." });
+      return;
+    }
     try {
+      setIsSubmittingAssignment(true);
       await createOfferingAssignment(selectedOfferingId, {
-        title: newAssignmentTitle,
-        instructions: newAssignmentInstructions,
+        title: newAssignmentTitle.trim(),
+        instructions: newAssignmentInstructions.trim(),
         due_date: newAssignmentDueDate,
         model_answer: newAssignmentModelAnswer || undefined,
         is_published: true,
@@ -411,6 +439,8 @@ export default function ProfessorDashboardPage() {
       loadAssignments();
     } catch (err: any) {
       setActionMessage({ type: "error", text: err.message });
+    } finally {
+      setIsSubmittingAssignment(false);
     }
   };
 
@@ -466,19 +496,24 @@ export default function ProfessorDashboardPage() {
   };
 
   const handleEnrollStudent = async (student: StudentDirectoryItem) => {
-    if (!selectedOfferingId) return;
+    if (!selectedOfferingId || isSubmittingEnroll) return;
     try {
+      setIsSubmittingEnroll(true);
       await enrollStudentInOffering(selectedOfferingId, {
         student_id: student.student_id,
         student_name: student.full_name,
         student_roll_no: student.roll_no,
         student_email: student.email,
+        effective_date: enrollEffectiveDate || undefined,
       });
       setShowEnrollModal(false);
       loadRoster();
+      loadOfferings();
       setActionMessage({ type: "success", text: `Enrolled ${student.full_name} (${student.roll_no})` });
     } catch (err: any) {
       setActionMessage({ type: "error", text: err.message });
+    } finally {
+      setIsSubmittingEnroll(false);
     }
   };
 
@@ -1407,31 +1442,58 @@ export default function ProfessorDashboardPage() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Enroll Eligible Student</h3>
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search name or roll number..."
-                value={directorySearch}
-                onChange={(e) => setDirectorySearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
-              />
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search name or roll number..."
+                  value={directorySearch}
+                  onChange={(e) => setDirectorySearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Effective Enrollment Date</label>
+                <input
+                  type="date"
+                  value={enrollEffectiveDate}
+                  onChange={(e) => setEnrollEffectiveDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
             </div>
             <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
               {!directoryResults.length ? (
                 <div className="py-4 text-center text-xs text-slate-500">No matching students found.</div>
               ) : (
-                directoryResults.map((s) => (
-                  <div key={s.student_id} className="py-2.5 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-white">{s.full_name}</div>
-                      <div className="text-xs text-slate-500">{s.roll_no} • {s.branch} Sem {s.semester}</div>
+                directoryResults.map((s) => {
+                  const isAlreadyEnrolled = rosterData?.students.some(
+                    (st) => st.student_id === s.student_id && st.enrollment_status === "active"
+                  );
+                  return (
+                    <div key={s.student_id} className="py-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">{s.full_name}</div>
+                        <div className="text-xs text-slate-500">{s.roll_no} • {s.branch} Sem {s.semester}</div>
+                      </div>
+                      {isAlreadyEnrolled ? (
+                        <Badge variant="primary" size="sm">
+                          Active Enrolled
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={isSubmittingEnroll}
+                          onClick={() => handleEnrollStudent(s)}
+                        >
+                          {isSubmittingEnroll ? "Enrolling..." : "Enroll"}
+                        </Button>
+                      )}
                     </div>
-                    <Button size="sm" variant="secondary" onClick={() => handleEnrollStudent(s)}>
-                      Enroll
-                    </Button>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             <div className="flex justify-end pt-2">

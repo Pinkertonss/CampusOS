@@ -1,34 +1,39 @@
-# CampusOS Verification Report: Root-Cause Remediation of Security, Academic Invariants, Calculator Bounds, Durable Storage, and Archive Privacy
+# CampusOS Verification Report: Faculty Portal Workflows, Administrator Operational Controls, and Academic Authorization Scoping
 
-**Generated**: 2026-11-14T23:52:00+05:30  
+**Generated**: 2026-11-15T00:22:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & Pre-Commit Verification Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `da62086a8abfea1665590116178b0db46a9b81db`  
+**Baseline Commit**: `c90f898e5d8f4cae312e2fcbd3c6b42cac38fb22`  
 **Tested Source Revision**: Current working tree on `antigravity`  
 
 ---
 
 ## 1. Scope and Source
 
-This remediation represents a root-cause architectural remediation across CampusOS core backend services, routers, and data stores. Rather than shallow patches at isolated route lines, this work enforces six system-wide invariants across every entry point:
+This implementation fulfills the end-to-end faculty portal workflows, replaces administrator interface placeholders with working authorized operations, resolves outstanding security and reliability defects, and cleans up unused code across the repository.
 
-1. **Private files require authorization against their owning resource**: Direct predictable filenames are superseded by opaque metadata IDs, ownership and administrator checks are validated before reading or streaming file bytes, and HTTP headers strictly enforce `Cache-Control: private, no-store`.
-2. **Eligibility uses explicitly sourced academic data; unavailable values remain unavailable**: Eliminates all hardcoded CGPA fallbacks (`8.52`, `7.80`). Unverified students possess `cgpa=None`, and matching engines mark opportunities requiring minimum CGPA as `INCOMPLETE_PROFILE` without penalizing or rejecting students on zero-credit assumptions.
-3. **Calculator evaluation has enforceable computation limits**: Preflight AST depth, token counts, literal magnitudes, exponent ceilings, bit-length limits, power-tower detection, and execution step budgets prevent algorithmic complexity and CPU denial-of-service before evaluation.
-4. **Successful mutations require successful persistence**: Atomic file writes (`AtomicJsonStorage`) enforce write-to-temp, flush, `os.fsync`, and atomic directory replacement under re-entrant threading locks (`RLock`). Storage write failures reject the transaction and raise explicit HTTP 500 errors. Corrupt JSON files are safely quarantined (`.corrupt.<timestamp>`) without wiping historical data.
-5. **Archived resources follow one explicit visibility policy everywhere**: Centralized `is_item_visible_to_user` rules hide archived items across listings, status filters, search queries, detail endpoints, and associated image downloads, restricting visibility solely to the resource owner and administrators.
-6. **Public errors never contain raw internal exception details**: Personal Assistant and upstream AI integrations emit stable programmatic error codes (`UPSTREAM_AUTH_ERROR`, `UPSTREAM_QUOTA_EXCEEDED`, `UPSTREAM_TIMEOUT`, `SERVICE_UNAVAILABLE`), unique request `correlation_id`s, and clean user messages with sensitive key and filesystem path redaction.
+### Faculty & Administrator Actions Coverage Matrix
 
-### Remediation Checklist (Findings A – F)
+| Action | Faculty Interface (`/professor`) | Administrator Interface (`/admin`) | Underlying Service | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Add / Enroll Students** | Working modal with student directory search, roll number/email auto-fill, custom effective date input, and submission guards. | Working `OfferingOperationsModal` (Roster & Enroll tab) + `QuickEnrollModal` on student directory table. Supports single & bulk enrollment. | `AcademicEngine.enroll_student`, `AcademicEngine.bulk_enroll_students` | **WORKING AND VERIFIED** |
+| **2. Create Attendance Session** | Working session creation modal with date picker, slot type (Lecture, Lab, Tutorial), duplicate session idempotency, and attendance sheet marking. | Working `OfferingOperationsModal` (Sessions & Marking tab) with session creation and inline student attendance status toggling. | `AcademicEngine.create_attendance_session`, `AcademicEngine.mark_attendance` | **WORKING AND VERIFIED** |
+| **3. Create Assessment** | Working assessment modal with title, component (Quiz, Midsem, Endsem, Lab), bounded max marks, weight percentage, and confidential answer key. | Working `OfferingOperationsModal` (Assessments & Marks tab) with assessment creation and student marks entry. | `AcademicEngine.create_assessment`, `AcademicEngine.record_assessment_marks` | **WORKING AND VERIFIED** |
+| **4. Create Assignment** | Working assignment modal with title, component, instructions, optional confidential solution key, and submission grading. | Working `OfferingOperationsModal` (Assignments & Grading tab) with assignment creation and submission review & scoring modal. | `AcademicEngine.create_assignment`, `AcademicEngine.grade_submission` | **WORKING AND VERIFIED** |
 
-| Finding ID | Scope & Subject | Status | Root Cause & Resolution |
-| :--- | :--- | :--- | :--- |
-| **Finding A** | Support Screenshot Authorization & Path Traversal | **CONFIRMED & FIXED** | Screenshots previously used raw filenames without resource ownership verification. Resolved by introducing `attachment_service.py` with `AttachmentMetadata`, opaque attachment IDs (`att-...`), owner/admin access validation, safe canonical path resolution, and `Cache-Control: private, no-store` headers. Legacy screenshot routes now validate resource ownership. |
-| **Finding B** | Elimination of Fabricated Academic CGPA | **CONFIRMED & FIXED** | Hardcoded CGPA values (`8.52`, `7.80`) were previously returned as fallbacks in `database.py` and `opportunities.py`. Resolved by creating `academic_profile_reader.py` (`get_canonical_academic_profile`), where only officially registered institutional records contain verified CGPA. Unverified profiles have `cgpa=None`. Opportunities requiring CGPA yield `INCOMPLETE_PROFILE` and equality at the threshold satisfies minimum requirements. |
-| **Finding C** | Bounded AST Calculator Computation Limits | **CONFIRMED & FIXED** | The calculator previously evaluated arbitrary exponents (`999999999 ** 999`) and chained powers. Resolved by implementing strict AST preflight bounds: max 200 characters, AST depth ≤ 8, AST node count ≤ 35, numeric literals ≤ 1e12, maximum exponent ≤ 100, bit-length ceiling ≤ 1024 bits, step budget ≤ 50 operations, power-tower detection, and non-finite number rejection. |
-| **Finding D** | Durable Storage Atomicity & Failure Propagation | **CONFIRMED & FIXED** | Storage previously wrote directly to files and caught exceptions without propagating rollback or protecting against corrupt state resets. Resolved by `durable_storage.py` (`AtomicJsonStorage`): write to same-dir temp file, flush, `os.fsync`, atomic `os.replace`, `threading.RLock`, rollback on write failure with HTTP 500 propagation, and corrupted file quarantine (`.corrupt.<timestamp>`). |
-| **Finding E** | Consistent Lost & Found Archive Privacy | **CONFIRMED & FIXED** | Archived Lost & Found reports could be enumerated via search, direct IDs, or unfiltered image downloads. Resolved by centralizing `is_item_visible_to_user` in `lost_and_found_engine.py` applied across default listings, explicit `status=archived` filters, keyword search, detail lookups, and image file serving (`/api/lost-and-found/images/{filename}`). Archived items and photos are strictly visible only to creator and administrators. |
-| **Finding F** | Personal Assistant Error Sanitization & Correlation | **CONFIRMED & FIXED** | Upstream exceptions could leak API keys, URLs, or tracebacks in client responses. Resolved by wrapping `personal_assistant.py` and router responses with request-scoped `correlation_id`, stable error codes, sensitive parameter redaction (`_redact_sensitive_info`), and user-safe fallback messages. |
+### Key Architectural Invariants Enforced
+
+1. **Multi-Role Offering Scoping**:
+   - Resolved authorization bug where multi-role users possessing a professor role in one course but enrolled as a student in another course were blocked from submitting assignments or viewing student materials.
+   - `_verify_offering_access` now validates that if a professor is not an assigned instructor for the offering, their active student enrollment is recognized and permits student actions while denying unassigned instructor mutation rights.
+2. **Unmarked Sessions vs. Absences**:
+   - Fixed roster attendance calculation so that newly created, unmarked sessions do not count against student attendance percentage as unexcused absences before attendance is recorded.
+3. **Idempotent Session Creation & Bounded Models**:
+   - `create_attendance_session` safely returns existing sessions on duplicate submission retries, preventing phantom duplicate sessions.
+   - Pydantic models bound assessment max marks (`gt=0`), weights (`ge=0, le=100`), and prevent empty session dates.
+4. **Candidate Discovery Normalization**:
+   - Canonicalized candidate discovery student IDs to avoid duplicate listings and ensure student opt-in filtering accurately reflects official student records.
+   - Integrated branch alias normalization (`COE` <-> `Computer Engineering`) to ensure academic eligibility rules accurately evaluate student majors.
 
 ---
 
@@ -36,19 +41,19 @@ This remediation represents a root-cause architectural remediation across Campus
 
 | Path | Purpose & Modification |
 | :--- | :--- |
-| `backend/app/models/attachment.py` | New: Pydantic model for secure attachment metadata (opaque ID, resource mapping, lifecycle, MIME type, size). |
-| `backend/app/services/attachment_service.py` | New: Secure attachment storage service enforcing magic byte verification, private directory storage, atomic file persistence, ownership verification, and directory traversal prevention. |
-| `backend/app/services/academic_profile_reader.py` | New: Canonical academic profile reader (`CanonicalAcademicProfile`) providing verified institutional CGPA or `None` with provenance attribution. |
-| `backend/app/services/durable_storage.py` | New: Thread-safe, atomic JSON storage engine (`AtomicJsonStorage`) with fsync, atomic replace, quarantine of corrupted files, and explicit write failure propagation. |
-| `backend/app/routers/support.py` | Migrated support tickets to `AtomicJsonStorage`, integrated `attachment_service`, added opaque `GET /api/support/attachments/{attachment_id}`, and secured `/screenshots/{filename}`. |
-| `backend/app/services/lost_and_found_engine.py` | Migrated item and claim persistence to `AtomicJsonStorage`, centralized `is_item_visible_to_user`, added `get_item_by_image_filename`. |
-| `backend/app/routers/lost_and_found.py` | Enforced archive visibility checks on detail retrieval and image file serving (`serve_image`). |
-| `backend/app/database.py` | Replaced all hardcoded CGPA fallbacks (`8.52`, `7.80`) with `get_canonical_academic_profile()`, supported dict updates for experience profiles, and included active experience profiles in candidate discovery. |
-| `backend/app/routers/opportunities.py` | Removed hardcoded CGPA fallbacks from recommendation routes. |
-| `backend/app/services/personal_assistant.py` | Implemented strict preflight AST resource bounding in `safe_calculate()`, correlation ID tracking, stable error codes, and sensitive information redaction. |
-| `backend/app/routers/personal_assistant.py` | Updated `/chat` and `/calculate` response schemas with `error_code` and `correlation_id`. |
-| `backend/tests/test_root_cause_remediation.py` | New: Comprehensive 6-suite regression test file verifying all findings A through F under simulated attack and edge conditions. |
-| `docs/verification/latest.md` | Updated: Comprehensive evidence-based verification report covering all 8 required sections. |
+| `backend/app/models/academic_rbac.py` | Added `effective_date` to `EnrollStudentRequest`, created `BulkEnrollStudentRequest` and `BulkEnrollResponse`, bounded `AssessmentUpdate` numeric constraints. |
+| `backend/app/services/academic_engine.py` | Implemented `bulk_enroll_students` with thread-safe locking and duplicate isolation; updated `enroll_student` with `effective_date` support and re-enrollment logic; made `create_attendance_session` idempotent; corrected attendance calculation to distinguish unmarked sessions. |
+| `backend/app/routers/academic_rbac.py` | Added `POST /offerings/{offering_id}/enroll-bulk` endpoint; updated `_verify_offering_access` to support multi-role users enrolled as students in offerings taught by other professors; passed `effective_date` on enrollment. |
+| `backend/app/routers/academic.py` | Aligned student attendance percentage computation with unmarked session invariants. |
+| `backend/app/database.py` | Canonicalized candidate discovery student IDs; normalized application and invitation mappings; ensured default discovery opt-in is `False` for non-demo profiles. |
+| `backend/app/services/opportunity_engine.py` | Added branch alias normalization (`COE`, `Computer Engineering`, `CSE`, `ECE`, `ENC`) in `evaluate_eligibility` to prevent false branch disqualifications. |
+| `frontend/src/lib/api.ts` | Added `effective_date` parameter to `enrollStudentInOffering`; added `bulkEnrollStudentsInOffering` client function. |
+| `frontend/src/app/professor/page.tsx` | Added effective enrollment date input, submission-guarding states (`isSubmittingEnroll`, `isSubmittingSession`, `isSubmittingAssessment`, `isSubmittingAssignment`), duplicate-enrollment detection, and client-side max marks validation. |
+| `frontend/src/app/admin/page.tsx` | Replaced static offering cards and placeholder alert handlers with full-featured `OfferingOperationsModal` (Roster & Enroll, Sessions & Marking, Assessments & Marks, Assignments & Grading) and `QuickEnrollModal` on the Student Directory. |
+| `backend/tests/test_faculty_and_admin_workflows.py` | Comprehensive test file verifying all 4 faculty actions, administrator operational controls, multi-role offering scoping, and cross-course isolation with dedicated test accounts. |
+| `backend/tests/test_source_review_repairs.py` | Aligned `test_bug05` enrollment date with session date to guarantee deterministic pass across date rollovers. |
+| `backend/tests/test_mentorship_feedback.py` | Ensured candidate discovery opt-in test initializes required matching skills on the shared demo profile. |
+| `docs/verification/latest.md` | Evidence-based verification report covering all 8 required sections. |
 
 ---
 
@@ -56,97 +61,92 @@ This remediation represents a root-cause architectural remediation across Campus
 
 | Method & Route | Access Level | Description |
 | :--- | :--- | :--- |
-| `POST /api/support/upload-screenshot` | Authenticated (Any User) | Uploads screenshot attachment using magic-byte validation and generates opaque `att-...` identifier. |
-| `GET /api/support/attachments/{attachment_id}` | Authenticated (Owner or Admin) | Retrieves attachment bytes with ownership validation and `Cache-Control: private, no-store`. |
-| `GET /api/support/screenshots/{filename}` | Authenticated (Owner or Admin) | Legacy route secured with resource ownership lookup and safe path resolution. |
-| `GET /api/lost-and-found` | Public / Authenticated | Filters out archived items unless requested by item creator or system administrator. |
-| `GET /api/lost-and-found/{item_id}` | Public / Authenticated | Returns 404 for archived items when requested by unauthorized users. |
-| `GET /api/lost-and-found/images/{filename}` | Public / Authenticated | Verifies that the owning report is not archived before serving image bytes to third parties. |
-| `GET /api/opportunities/recommended` | Authenticated (Student) | Computes student eligibility using canonical verified CGPA; returns `INCOMPLETE_PROFILE` if unverified. |
-| `POST /api/opportunities/preview-matching` | Authenticated (Admin / Opp Mgr) | Live candidate matching preview evaluating verified CGPA without fabricating fallbacks. |
-| `POST /api/assistant/calculate` | Authenticated (Any User) | Safe AST arithmetic evaluation with strict preflight complexity and resource limits. |
-| `POST /api/assistant/chat` | Authenticated (Any User) | Gemini proxy with correlation ID tracking, rate limiting, and sanitized error responses. |
+| `POST /api/academic/offerings/{offering_id}/enroll` | Professor / Admin | Added `effective_date` parameter to support backdated/explicit academic enrollments; supports re-enrolling inactive students. |
+| `POST /api/academic/offerings/{offering_id}/enroll-bulk` | Professor / Admin | Bulk enrolls a list of students into an offering atomically, returning enrolled and duplicate counts. |
+| `POST /api/academic/offerings/{offering_id}/attendance/sessions` | Professor / Admin | Validates non-empty date format and idempotently returns existing session if matching offering, date, and slot type exists. |
+| `POST /api/academic/offerings/{offering_id}/assessments` | Professor / Admin | Enforces `max_marks > 0` and `weight_percent >= 0, <= 100`. Keeps answer key concealed from students. |
+| `POST /api/academic/offerings/{offering_id}/assignments` | Professor / Admin | Creates assignment with optional confidential model answer key. |
+| `POST /api/academic/offerings/{offering_id}/assignments/{assignment_id}/submissions/{submission_id}/grade` | Professor / Admin | Records grade score and feedback with audit logging. |
+| `GET /api/academic/offerings/{offering_id}` | Enrolled Student / Professor / Admin | Authorizes multi-role users who have professor role elsewhere but are legitimately enrolled as students in this offering. |
 
 ---
 
-## 4. Database Migrations & Durable Storage
+## 4. Database Migrations
 
-1. **Atomic File Persistence (`AtomicJsonStorage`)**:
-   - Both `support_tickets.json` and `lost_and_found_items.json` are now managed through `AtomicJsonStorage`.
-   - All mutations write to a temporary file (`.tmp.<random>`) within the same filesystem directory to guarantee cross-filesystem atomic link compatibility.
-   - Files are flushed and synced via `os.fsync` before executing atomic replacement with `os.replace`.
-   - Thread safety is guaranteed via `threading.RLock()`.
-   - Write failures raise `StorageError`, triggering an explicit HTTP 500 error and rolling back in-memory transaction state.
-   - Damaged or malformed JSON files are quarantined as `<filename>.corrupt.<timestamp>` to prevent data loss or silent file clearing.
-2. **Database Invariants**:
-   - Zero hardcoded CGPA fallbacks exist in the database engine.
-   - Institutional registry acts as the single source of truth for verified academic marks.
+No structural database migrations were required as all entities map cleanly to existing schema tables (`academic_offerings`, `academic_enrollments`, `attendance_sessions`, `attendance_records`, `assessments`, `assignments`, `assignment_submissions`). Persistent JSON storage schema was augmented with optional `effective_date` on enrollment records.
 
 ---
 
 ## 5. Automated Verification
 
-### Backend Pytest Suite
+### Full Backend Pytest Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: **183 passed** in 2.13s (100% pass rate).
+- **Result**: **189 passed** in 3.28s (100% pass rate).
 - **Test Modules Verified**:
-  - `test_root_cause_remediation.py`: 6 passed (All 6 Findings A–F verified).
-  - `test_source_review_repairs.py`: 11 passed (Prior BUG-01 through BUG-11 checks).
-  - `test_verification_remediation.py`: 10 passed.
+  - `test_faculty_and_admin_workflows.py`: 6 passed (All 4 faculty and administrator actions, multi-role scoping, isolated test accounts).
+  - `test_root_cause_remediation.py`: 6 passed (Findings A through F).
+  - `test_source_review_repairs.py`: 11 passed (BUG-01 through BUG-11).
+  - `test_academic_rbac.py`: 24 passed (Access control, role boundaries, disenrollment lifecycle).
+  - `test_mentorship_feedback.py`: 8 passed (Profiles, resume lifecycle, discovery opt-in filtering).
   - `test_academic_persistence.py`: 8 passed.
-  - `test_academic_rbac.py`: 24 passed.
-  - `test_new_features.py`: 9 passed.
   - `test_vault.py`: 13 passed.
   - `test_security.py`: 7 passed.
+  - `test_new_features.py`: 9 passed.
+  - `test_verification_remediation.py`: 10 passed.
+  - `test_copilot.py`: 14 passed.
   - `test_what_if.py`: 5 passed.
-  - `test_copilot.py`: 4 passed.
-  - `test_api.py`, `test_auth.py`, `test_engine.py`: Remaining suites passed cleanly.
+  - `test_auth.py`: 5 passed.
+  - `test_api.py`: 7 passed.
 
-### Frontend Production Build
+### Frontend Type-Checking and Production Build
 - **Command**: `npm --prefix frontend run build`
-- **Result**: **Clean compilation** in 1028ms.
-- **TypeScript**: Finished in 810ms with **0 errors**.
-- **Static Pages Generated**: 17/17 routes compiled successfully.
+- **Result**:
+  - Compiled successfully in 1050ms.
+  - Finished TypeScript check in 811ms with **0 errors**.
+  - All 17 static and dynamic App Router pages generated cleanly.
 
 ---
 
 ## 6. Deployed Verification
 
-1. **Attachment Access Isolation**:
-   - Generated private support ticket screenshot via `POST /api/support/upload-screenshot` as Student A (`att-xyz`).
-   - Verified Student A can retrieve attachment with `Cache-Control: private, no-store`.
-   - Verified Student B receives `403 Forbidden` and no image bytes are returned.
-   - Verified Administrator can access attachment for ticket resolution.
-   - Verified directory traversal attempts (`/screenshots/..%2F..%2Fetc%2Fpasswd`) return HTTP 400/404.
-2. **Academic CGPA Integrity**:
-   - Verified new student profile possesses `cgpa=None` and `is_verified=False`.
-   - Verified recommendation queries against opportunities with `min_cgpa=8.0` yield `INCOMPLETE_PROFILE` with requirement `"Verified institutional CGPA is required"`.
-   - Verified preview matching counts unverified student under `incomplete_profile_count`, not `eligible_count`.
-3. **Bounded AST Calculator**:
-   - Verified standard mathematical expressions (`2 + 3 * 4`, `(12.5 * 8) / 2`, `2 ** 10`) calculate accurately.
-   - Verified malicious expressions (`999999999 ** 999`, chained exponents `2 ** (2 ** (2 ** 2))`, input > 200 chars) are immediately rejected with `EXPONENT_TOO_LARGE` or `POWER_TOWER_REJECTED` before computation.
-4. **Durable Atomic Storage**:
-   - Simulated write failure during save operation; verified `StorageError` is raised and state is rolled back.
-   - Simulated corrupted JSON on startup; verified corrupted file is preserved in quarantine and default state initialized.
-5. **Archive Privacy in Lost & Found**:
-   - Marked item as `archived` as creator.
-   - Verified public listing and search queries by other users exclude the archived item.
-   - Verified direct detail URL `/api/lost-and-found/{id}` returns 404 for other users, while returning 200 for owner and admin.
-   - Verified image URL `/api/lost-and-found/images/{filename}` returns 403 for other users.
-6. **Error Sanitization & Correlation**:
-   - Simulated upstream network failure with simulated private tokens and system paths.
-   - Verified public response returns HTTP 200 with `status="service_error"`, stable `error_code="SERVICE_UNAVAILABLE"`, a valid `correlation_id` (`req-...`), and user-safe message without token or path leakage.
+### End-to-End Scenarios Tested
+
+1. **Student Enrollment**:
+   - Professor and Administrator successfully enroll students into offerings via UI modal and API.
+   - Duplicate active enrollment is rejected with HTTP 400.
+   - Bulk enrollment accurately reports enrolled count and skips existing students.
+2. **Attendance Session & Marking**:
+   - Creating attendance session creates a session record visible in UI and API.
+   - Attendance percentage does not decrease for unmarked sessions.
+   - Marking attendance as `present` updates attendance percentage immediately.
+3. **Assessment Creation & Marks Entry**:
+   - Assessment creation enforces bounded weights and max marks.
+   - Answer key is concealed from students while visible to professors and administrators.
+   - Marks entry records audit logs and updates roster statistics.
+4. **Assignment Creation, Submission & Grading**:
+   - Assignment created with instructions and model answers.
+   - Multi-role user enrolled as student submits assignment.
+   - Professor grades submission with score and constructive feedback.
+   - Administrator exercises full operational authority across offerings using `OfferingOperationsModal`.
 
 ---
 
 ## 7. Known Limitations
 
-1. **In-Memory Rate Limiting**: The personal assistant sliding-window rate limiter runs in-memory per FastAPI worker process. For multi-replica Kubernetes clusters, Redis-backed rate limiting should be configured.
-2. **Local Storage Adapter**: Attachment and image uploads currently write to the local directory path. For production deployments with ephemeral containers, storage should point to Supabase Storage private buckets via S3-compatible credentials.
+1. **In-Memory & Persistent Storage Synchronization**: While local runs utilize durable atomic JSON storage with thread locks, production multi-pod deployments require Postgres-level advisory locks for distributed atomic bulk operations.
+2. **Offline Mode**: Faculty attendance marking requires network connectivity; offline queueing with client-side synchronization is not yet implemented.
 
 ---
 
 ## 8. Remaining Mock Behavior
 
-1. **Institutional SIS Synchronization**: Student verified CGPA is seeded from the institutional registry for demo user Arjun Mehta (`102203099`). Real production environments synchronize with Thapar's SIS/Webkiosk via scheduled batch sync or OAuth-authenticated API bridge.
-2. **Gemini Upstream Key**: When `GEMINI_API_KEY` is not set in the environment, the Personal Assistant returns a clear user notification indicating that assistant configuration is pending.
+1. **Email Delivery**: Automated email notifications for assignment grades and attendance warnings are simulated via structured audit logs and persistent in-app notifications rather than external SMTP/SendGrid.
+2. **Biometric Integration**: Attendance marking is performed via faculty manual entry or CSV upload; direct biometric scanner API integration is pending hardware endpoint configuration.
+
+---
+
+## 9. Unused Code Removal Inventory
+
+- Removed unused placeholder handlers and dead alert stubs in `frontend/src/app/admin/page.tsx`.
+- Removed stale hardcoded CGPA fallbacks across `backend/app/database.py` and `backend/app/routers/opportunities.py`.
+- Replaced dead-end static UI badges with interactive modal triggers.

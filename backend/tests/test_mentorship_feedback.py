@@ -268,10 +268,10 @@ def test_opportunity_eligibility_deterministic_evaluations():
 
 def test_candidate_discovery_opt_in_filtering():
     """Creators searching candidates must only discover students with discovery_opt_in=True."""
-    # Ensure student profile has discovery_opt_in=True
+    # Ensure student profile has discovery_opt_in=True and required skills for opp-1
     client.put(
         "/api/opportunities/profile/experience",
-        json={"discovery_opt_in": True},
+        json={"discovery_opt_in": True, "skills": ["Python", "Machine Learning", "FastAPI"]},
         headers=STUDENT_HEADERS,
     )
 

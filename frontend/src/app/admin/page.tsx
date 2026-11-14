@@ -18,6 +18,14 @@ import {
   ChevronRight,
   X,
   GraduationCap,
+  ClipboardList,
+  Calendar,
+  FileText,
+  Clock,
+  Eye,
+  EyeOff,
+  Award,
+  Key,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -39,6 +47,23 @@ import {
   fetchSubjects,
   createAdminAccount,
   fetchStudentDirectory,
+  fetchOfferingRoster,
+  enrollStudentInOffering,
+  disenrollStudentFromOffering,
+  fetchAttendanceSessions,
+  createAttendanceSession,
+  fetchSessionAttendanceRecords,
+  markSessionAttendance,
+  fetchOfferingAssessments,
+  createOfferingAssessment,
+  updateOfferingAssessment,
+  fetchAssessmentMarks,
+  updateAssessmentMarks,
+  fetchOfferingAssignments,
+  createOfferingAssignment,
+  updateOfferingAssignment,
+  fetchAssignmentSubmissions,
+  gradeAssignmentSubmission,
 } from "../../lib/api";
 import {
   SubjectOffering,
@@ -46,6 +71,14 @@ import {
   AcademicAuditLog,
   Subject,
   StudentDirectoryItem,
+  RosterResponse,
+  RosterStudent,
+  AttendanceSession,
+  SessionAttendanceRecord,
+  Assessment,
+  StudentAssessmentMark,
+  OfferingAssignment,
+  AssignmentSubmission,
 } from "../../types";
 
 export default function AdminConsolePage() {
@@ -89,6 +122,60 @@ export default function AdminConsolePage() {
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentPage, setStudentPage] = useState(1);
   const STUDENTS_PAGE_SIZE = 8;
+
+  // 5. Admin Offering Operations State
+  const [activeOpsOffering, setActiveOpsOffering] = useState<SubjectOffering | null>(null);
+  const [opsActiveTab, setOpsActiveTab] = useState<"roster" | "sessions" | "assessments" | "assignments">("roster");
+  const [opsLoading, setOpsLoading] = useState(false);
+
+  // Operations: Roster
+  const [opsRoster, setOpsRoster] = useState<RosterResponse | null>(null);
+  const [showOpsEnrollModal, setShowOpsEnrollModal] = useState(false);
+  const [opsDirectorySearch, setOpsDirectorySearch] = useState("");
+  const [opsDirectoryResults, setOpsDirectoryResults] = useState<StudentDirectoryItem[]>([]);
+  const [opsEnrollEffectiveDate, setOpsEnrollEffectiveDate] = useState("2026-02-15");
+  const [isOpsSubmittingEnroll, setIsOpsSubmittingEnroll] = useState(false);
+
+  // Operations: Sessions
+  const [opsSessions, setOpsSessions] = useState<AttendanceSession[]>([]);
+  const [opsSelectedSessionId, setOpsSelectedSessionId] = useState("");
+  const [opsSessionRecords, setOpsSessionRecords] = useState<SessionAttendanceRecord[]>([]);
+  const [showOpsNewSessionModal, setShowOpsNewSessionModal] = useState(false);
+  const [opsNewSessionDate, setOpsNewSessionDate] = useState("2026-02-15");
+  const [opsNewSessionSlot, setOpsNewSessionSlot] = useState("Lecture");
+  const [isOpsSubmittingSession, setIsOpsSubmittingSession] = useState(false);
+
+  // Operations: Assessments
+  const [opsAssessments, setOpsAssessments] = useState<Assessment[]>([]);
+  const [opsSelectedAssessmentId, setOpsSelectedAssessmentId] = useState("");
+  const [opsAssessmentMarks, setOpsAssessmentMarks] = useState<StudentAssessmentMark[]>([]);
+  const [showOpsNewAssessmentModal, setShowOpsNewAssessmentModal] = useState(false);
+  const [opsNewAssessmentTitle, setOpsNewAssessmentTitle] = useState("");
+  const [opsNewAssessmentType, setOpsNewAssessmentType] = useState("Quiz");
+  const [opsNewAssessmentMaxMarks, setOpsNewAssessmentMaxMarks] = useState<number>(20);
+  const [opsNewAssessmentWeight, setOpsNewAssessmentWeight] = useState<number>(10);
+  const [opsNewAssessmentAnswerKey, setOpsNewAssessmentAnswerKey] = useState("");
+  const [isOpsSubmittingAssessment, setIsOpsSubmittingAssessment] = useState(false);
+
+  // Operations: Assignments
+  const [opsAssignments, setOpsAssignments] = useState<OfferingAssignment[]>([]);
+  const [opsSelectedAssignmentId, setOpsSelectedAssignmentId] = useState("");
+  const [opsSubmissions, setOpsSubmissions] = useState<AssignmentSubmission[]>([]);
+  const [showOpsNewAssignmentModal, setShowOpsNewAssignmentModal] = useState(false);
+  const [opsNewAssignmentTitle, setOpsNewAssignmentTitle] = useState("");
+  const [opsNewAssignmentInstructions, setOpsNewAssignmentInstructions] = useState("");
+  const [opsNewAssignmentDueDate, setOpsNewAssignmentDueDate] = useState("2026-03-15T23:59:00");
+  const [opsNewAssignmentModelAnswer, setOpsNewAssignmentModelAnswer] = useState("");
+  const [isOpsSubmittingAssignment, setIsOpsSubmittingAssignment] = useState(false);
+  const [opsGradingSubmission, setOpsGradingSubmission] = useState<AssignmentSubmission | null>(null);
+  const [opsGradeScoreInput, setOpsGradeScoreInput] = useState<number>(0);
+  const [opsGradeFeedbackInput, setOpsGradeFeedbackInput] = useState<string>("");
+
+  // Quick Enroll from Student Directory
+  const [quickEnrollStudent, setQuickEnrollStudent] = useState<StudentDirectoryItem | null>(null);
+  const [quickEnrollOfferingId, setQuickEnrollOfferingId] = useState("");
+  const [quickEnrollEffectiveDate, setQuickEnrollEffectiveDate] = useState("2026-02-15");
+  const [isSubmittingQuickEnroll, setIsSubmittingQuickEnroll] = useState(false);
 
   // Debounce search input and reset page to 1
   useEffect(() => {
@@ -219,6 +306,372 @@ export default function AdminConsolePage() {
       setFeedbackMessage({ type: "success", text: `Professor assigned to offering ${assignOfferingId}.` });
     } catch (err: any) {
       setFeedbackMessage({ type: "error", text: err.message || "Failed to assign professor." });
+    }
+  };
+
+  // Operations Loaders
+  const loadOpsRoster = useCallback(async () => {
+    if (!activeOpsOffering) return;
+    try {
+      setOpsLoading(true);
+      const data = await fetchOfferingRoster(activeOpsOffering.id);
+      setOpsRoster(data);
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load offering roster." });
+    } finally {
+      setOpsLoading(false);
+    }
+  }, [activeOpsOffering]);
+
+  const loadOpsSessions = useCallback(async () => {
+    if (!activeOpsOffering) return;
+    try {
+      setOpsLoading(true);
+      const data = await fetchAttendanceSessions(activeOpsOffering.id);
+      setOpsSessions(data);
+      if (data.length > 0 && !opsSelectedSessionId) {
+        setOpsSelectedSessionId(data[0].id);
+      }
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load sessions." });
+    } finally {
+      setOpsLoading(false);
+    }
+  }, [activeOpsOffering, opsSelectedSessionId]);
+
+  const loadOpsSessionRecords = useCallback(async () => {
+    if (!activeOpsOffering || !opsSelectedSessionId) return;
+    try {
+      const data = await fetchSessionAttendanceRecords(activeOpsOffering.id, opsSelectedSessionId);
+      setOpsSessionRecords(data);
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load session records." });
+    }
+  }, [activeOpsOffering, opsSelectedSessionId]);
+
+  const loadOpsAssessments = useCallback(async () => {
+    if (!activeOpsOffering) return;
+    try {
+      setOpsLoading(true);
+      const data = await fetchOfferingAssessments(activeOpsOffering.id);
+      setOpsAssessments(data);
+      if (data.length > 0 && !opsSelectedAssessmentId) {
+        setOpsSelectedAssessmentId(data[0].id);
+      }
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load assessments." });
+    } finally {
+      setOpsLoading(false);
+    }
+  }, [activeOpsOffering, opsSelectedAssessmentId]);
+
+  const loadOpsAssessmentMarks = useCallback(async () => {
+    if (!activeOpsOffering || !opsSelectedAssessmentId) return;
+    try {
+      const data = await fetchAssessmentMarks(activeOpsOffering.id, opsSelectedAssessmentId);
+      setOpsAssessmentMarks(data);
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load marks." });
+    }
+  }, [activeOpsOffering, opsSelectedAssessmentId]);
+
+  const loadOpsAssignments = useCallback(async () => {
+    if (!activeOpsOffering) return;
+    try {
+      setOpsLoading(true);
+      const data = await fetchOfferingAssignments(activeOpsOffering.id);
+      setOpsAssignments(data);
+      if (data.length > 0 && !opsSelectedAssignmentId) {
+        setOpsSelectedAssignmentId(data[0].id);
+      }
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load assignments." });
+    } finally {
+      setOpsLoading(false);
+    }
+  }, [activeOpsOffering, opsSelectedAssignmentId]);
+
+  const loadOpsSubmissions = useCallback(async () => {
+    if (!activeOpsOffering || !opsSelectedAssignmentId) return;
+    try {
+      const data = await fetchAssignmentSubmissions(activeOpsOffering.id, opsSelectedAssignmentId);
+      setOpsSubmissions(data);
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to load submissions." });
+    }
+  }, [activeOpsOffering, opsSelectedAssignmentId]);
+
+  useEffect(() => {
+    if (!activeOpsOffering) return;
+    if (opsActiveTab === "roster") loadOpsRoster();
+    if (opsActiveTab === "sessions") loadOpsSessions();
+    if (opsActiveTab === "assessments") loadOpsAssessments();
+    if (opsActiveTab === "assignments") loadOpsAssignments();
+  }, [activeOpsOffering, opsActiveTab, loadOpsRoster, loadOpsSessions, loadOpsAssessments, loadOpsAssignments]);
+
+  useEffect(() => {
+    if (activeOpsOffering && opsSelectedSessionId) {
+      loadOpsSessionRecords();
+    }
+  }, [activeOpsOffering, opsSelectedSessionId, loadOpsSessionRecords]);
+
+  useEffect(() => {
+    if (activeOpsOffering && opsSelectedAssessmentId) {
+      loadOpsAssessmentMarks();
+    }
+  }, [activeOpsOffering, opsSelectedAssessmentId, loadOpsAssessmentMarks]);
+
+  useEffect(() => {
+    if (activeOpsOffering && opsSelectedAssignmentId) {
+      loadOpsSubmissions();
+    }
+  }, [activeOpsOffering, opsSelectedAssignmentId, loadOpsSubmissions]);
+
+  useEffect(() => {
+    if (showOpsEnrollModal) {
+      fetchStudentDirectory(opsDirectorySearch)
+        .then(setOpsDirectoryResults)
+        .catch(() => {});
+    }
+  }, [showOpsEnrollModal, opsDirectorySearch]);
+
+  const handleOpenOfferingOperations = (off: SubjectOffering) => {
+    setActiveOpsOffering(off);
+    setOpsActiveTab("roster");
+    setOpsSelectedSessionId("");
+    setOpsSelectedAssessmentId("");
+    setOpsSelectedAssignmentId("");
+  };
+
+  const handleOpsCreateSession = async () => {
+    if (!activeOpsOffering || isOpsSubmittingSession) return;
+    try {
+      setIsOpsSubmittingSession(true);
+      await createAttendanceSession(activeOpsOffering.id, opsNewSessionDate, opsNewSessionSlot);
+      setShowOpsNewSessionModal(false);
+      setFeedbackMessage({ type: "success", text: `Session created for ${opsNewSessionDate}` });
+      loadOpsSessions();
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to create session." });
+    } finally {
+      setIsOpsSubmittingSession(false);
+    }
+  };
+
+  const handleOpsMarkStatus = async (studentId: string, newStatus: string, reason?: string) => {
+    if (!activeOpsOffering || !opsSelectedSessionId) return;
+    try {
+      await markSessionAttendance(activeOpsOffering.id, opsSelectedSessionId, [
+        { student_id: studentId, status: newStatus, correction_reason: reason },
+      ]);
+      loadOpsSessionRecords();
+      setFeedbackMessage({ type: "success", text: `Attendance updated to ${newStatus}` });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to update attendance." });
+    }
+  };
+
+  const handleOpsCreateAssessment = async () => {
+    if (!activeOpsOffering || isOpsSubmittingAssessment) return;
+    if (!opsNewAssessmentTitle.trim()) {
+      setFeedbackMessage({ type: "error", text: "Assessment title is required." });
+      return;
+    }
+    if (Number(opsNewAssessmentMaxMarks) <= 0) {
+      setFeedbackMessage({ type: "error", text: "Maximum marks must be greater than zero." });
+      return;
+    }
+    try {
+      setIsOpsSubmittingAssessment(true);
+      await createOfferingAssessment(activeOpsOffering.id, {
+        title: opsNewAssessmentTitle.trim(),
+        assessment_type: opsNewAssessmentType,
+        max_marks: Number(opsNewAssessmentMaxMarks),
+        weight_percent: Number(opsNewAssessmentWeight),
+        answer_key_content: opsNewAssessmentAnswerKey || undefined,
+        is_published: false,
+      });
+      setShowOpsNewAssessmentModal(false);
+      setOpsNewAssessmentTitle("");
+      setFeedbackMessage({ type: "success", text: "Draft assessment created successfully." });
+      loadOpsAssessments();
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to create assessment." });
+    } finally {
+      setIsOpsSubmittingAssessment(false);
+    }
+  };
+
+  const handleOpsToggleAssessmentPublish = async (asm: Assessment) => {
+    if (!activeOpsOffering) return;
+    try {
+      await updateOfferingAssessment(activeOpsOffering.id, asm.id, {
+        is_published: !asm.is_published,
+      });
+      loadOpsAssessments();
+      setFeedbackMessage({
+        type: "success",
+        text: `Assessment "${asm.title}" is now ${!asm.is_published ? "Published" : "Draft"}.`,
+      });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message });
+    }
+  };
+
+  const handleOpsToggleAnswerKeyRelease = async (asm: Assessment) => {
+    if (!activeOpsOffering) return;
+    try {
+      await updateOfferingAssessment(activeOpsOffering.id, asm.id, {
+        answer_key_released: !asm.answer_key_released,
+      });
+      loadOpsAssessments();
+      setFeedbackMessage({
+        type: "success",
+        text: `Answer key is now ${!asm.answer_key_released ? "Released to students" : "Concealed"}.`,
+      });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message });
+    }
+  };
+
+  const handleOpsUpdateStudentMark = async (studentId: string, marksVal: number, feedbackVal?: string) => {
+    if (!activeOpsOffering || !opsSelectedAssessmentId) return;
+    try {
+      await updateAssessmentMarks(activeOpsOffering.id, opsSelectedAssessmentId, [
+        { student_id: studentId, obtained_marks: marksVal, feedback: feedbackVal, status: "graded" },
+      ]);
+      loadOpsAssessmentMarks();
+      setFeedbackMessage({ type: "success", text: "Mark updated successfully." });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message });
+    }
+  };
+
+  const handleOpsCreateAssignment = async () => {
+    if (!activeOpsOffering || isOpsSubmittingAssignment) return;
+    if (!opsNewAssignmentTitle.trim()) {
+      setFeedbackMessage({ type: "error", text: "Assignment title is required." });
+      return;
+    }
+    try {
+      setIsOpsSubmittingAssignment(true);
+      await createOfferingAssignment(activeOpsOffering.id, {
+        title: opsNewAssignmentTitle.trim(),
+        instructions: opsNewAssignmentInstructions.trim(),
+        due_date: opsNewAssignmentDueDate,
+        model_answer: opsNewAssignmentModelAnswer || undefined,
+        is_published: true,
+      });
+      setShowOpsNewAssignmentModal(false);
+      setOpsNewAssignmentTitle("");
+      setOpsNewAssignmentInstructions("");
+      setFeedbackMessage({ type: "success", text: "Assignment created and published." });
+      loadOpsAssignments();
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message });
+    } finally {
+      setIsOpsSubmittingAssignment(false);
+    }
+  };
+
+  const handleOpsToggleModelAnswerRelease = async (asg: OfferingAssignment) => {
+    if (!activeOpsOffering) return;
+    try {
+      await updateOfferingAssignment(activeOpsOffering.id, asg.id, {
+        model_answer_released: !asg.model_answer_released,
+      });
+      loadOpsAssignments();
+      setFeedbackMessage({
+        type: "success",
+        text: `Model answer is now ${!asg.model_answer_released ? "Released to students" : "Concealed"}.`,
+      });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message });
+    }
+  };
+
+  const handleOpsGradeSubmission = async () => {
+    if (!activeOpsOffering || !opsSelectedAssignmentId || !opsGradingSubmission) return;
+    try {
+      await gradeAssignmentSubmission(
+        activeOpsOffering.id,
+        opsSelectedAssignmentId,
+        opsGradingSubmission.id,
+        opsGradeScoreInput,
+        opsGradeFeedbackInput
+      );
+      setOpsGradingSubmission(null);
+      loadOpsSubmissions();
+      setFeedbackMessage({ type: "success", text: "Grade and feedback saved." });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to save grade." });
+    }
+  };
+
+  const handleOpsEnrollStudent = async (student: StudentDirectoryItem) => {
+    if (!activeOpsOffering || isOpsSubmittingEnroll) return;
+    try {
+      setIsOpsSubmittingEnroll(true);
+      await enrollStudentInOffering(activeOpsOffering.id, {
+        student_id: student.student_id,
+        student_name: student.full_name,
+        student_roll_no: student.roll_no,
+        student_email: student.email,
+        effective_date: opsEnrollEffectiveDate || undefined,
+      });
+      setShowOpsEnrollModal(false);
+      loadOpsRoster();
+      loadOfferingsAndSubjects();
+      setFeedbackMessage({ type: "success", text: `Enrolled ${student.full_name} (${student.roll_no}) into offering.` });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to enroll student." });
+    } finally {
+      setIsOpsSubmittingEnroll(false);
+    }
+  };
+
+  const handleOpsDisenrollStudent = async (studentId: string, name: string) => {
+    if (!activeOpsOffering) return;
+    const reason = window.prompt(`Reason for disenrolling ${name}:`, "Course transfer or withdrawal");
+    if (!reason) return;
+    try {
+      await disenrollStudentFromOffering(activeOpsOffering.id, studentId, reason);
+      loadOpsRoster();
+      loadOfferingsAndSubjects();
+      setFeedbackMessage({ type: "success", text: `Disenrolled ${name} (history preserved).` });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message });
+    }
+  };
+
+  const handleOpenQuickEnroll = (student: StudentDirectoryItem) => {
+    setQuickEnrollStudent(student);
+    if (offerings.length > 0 && !quickEnrollOfferingId) {
+      setQuickEnrollOfferingId(offerings[0].id);
+    }
+  };
+
+  const handleConfirmQuickEnroll = async () => {
+    if (!quickEnrollStudent || !quickEnrollOfferingId || isSubmittingQuickEnroll) return;
+    try {
+      setIsSubmittingQuickEnroll(true);
+      await enrollStudentInOffering(quickEnrollOfferingId, {
+        student_id: quickEnrollStudent.student_id,
+        student_name: quickEnrollStudent.full_name,
+        student_roll_no: quickEnrollStudent.roll_no,
+        student_email: quickEnrollStudent.email,
+        effective_date: quickEnrollEffectiveDate || undefined,
+      });
+      setQuickEnrollStudent(null);
+      loadOfferingsAndSubjects();
+      setFeedbackMessage({
+        type: "success",
+        text: `Successfully enrolled ${quickEnrollStudent.full_name} into offering.`,
+      });
+    } catch (err: any) {
+      setFeedbackMessage({ type: "error", text: err.message || "Failed to enroll student." });
+    } finally {
+      setIsSubmittingQuickEnroll(false);
     }
   };
 
@@ -451,6 +904,18 @@ export default function AdminConsolePage() {
                     <span className="font-semibold">Threshold:</span> {off.attendance_threshold}%
                   </div>
                 </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-full text-xs font-semibold"
+                    onClick={() => handleOpenOfferingOperations(off)}
+                  >
+                    <ClipboardList className="w-3.5 h-3.5 mr-1 text-teal-600 dark:text-teal-400" />
+                    Academic Operations
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -543,7 +1008,7 @@ export default function AdminConsolePage() {
                         <th className="py-3 px-4">Roll Number</th>
                         <th className="py-3 px-4">Branch &amp; Term</th>
                         <th className="py-3 px-4">Institutional Email</th>
-                        <th className="py-3 px-4 text-right">Academic Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -570,9 +1035,14 @@ export default function AdminConsolePage() {
                               {s.email}
                             </td>
                             <td className="py-3 px-4 text-right">
-                              <Badge variant="primary" size="sm">
-                                Active Enrolled
-                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleOpenQuickEnroll(s)}
+                              >
+                                <Plus className="w-3.5 h-3.5 mr-1" />
+                                Enroll in Offering
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -869,6 +1339,773 @@ export default function AdminConsolePage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Quick Enroll from Student Directory */}
+      {quickEnrollStudent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Enroll Student in Offering</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Assign {quickEnrollStudent.full_name} ({quickEnrollStudent.roll_no}) to an institutional subject offering.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Target Offering</label>
+                <select
+                  value={quickEnrollOfferingId}
+                  onChange={(e) => setQuickEnrollOfferingId(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                >
+                  {offerings.map((off) => (
+                    <option key={off.id} value={off.id}>
+                      {off.subject_code} - {off.subject_name} ({off.section})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Effective Enrollment Date</label>
+                <input
+                  type="date"
+                  value={quickEnrollEffectiveDate}
+                  onChange={(e) => setQuickEnrollEffectiveDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setQuickEnrollStudent(null)}>
+                Cancel
+              </Button>
+              <Button size="sm" disabled={isSubmittingQuickEnroll} onClick={handleConfirmQuickEnroll}>
+                {isSubmittingQuickEnroll ? "Enrolling..." : "Confirm Enrollment"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Comprehensive Offering Academic Operations */}
+      {activeOpsOffering && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm font-bold text-teal-600 dark:text-teal-400">
+                    {activeOpsOffering.subject_code}
+                  </span>
+                  <Badge variant="default">{activeOpsOffering.section}</Badge>
+                  <span className="text-xs text-slate-500">• {activeOpsOffering.term}</span>
+                </div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                  {activeOpsOffering.subject_name}
+                </h2>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setActiveOpsOffering(null)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Modal Sub-Tabs */}
+            <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4">
+              {[
+                { id: "roster", label: "Roster & Enrollment", icon: Users },
+                { id: "sessions", label: "Attendance Sessions", icon: Calendar },
+                { id: "assessments", label: "Assessments & Marks", icon: FileText },
+                { id: "assignments", label: "Assignments & Submissions", icon: ClipboardList },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = opsActiveTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setOpsActiveTab(tab.id as any)}
+                    className={`flex items-center gap-1.5 py-2.5 px-3 text-xs font-semibold border-b-2 -mb-px transition-colors ${
+                      isActive
+                        ? "border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400"
+                        : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Modal Content Body */}
+            <div className="p-5 overflow-y-auto flex-1 space-y-4">
+              {/* TAB A: ROSTER & ENROLLMENT */}
+              {opsActiveTab === "roster" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="primary">
+                        {opsRoster?.students.filter((s) => s.enrollment_status === "active").length || 0} Active
+                      </Badge>
+                      <Badge variant="default">
+                        {opsRoster?.students.filter((s) => s.enrollment_status === "disenrolled").length || 0} Disenrolled
+                      </Badge>
+                    </div>
+                    <Button size="sm" onClick={() => setShowOpsEnrollModal(true)}>
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Enroll Student
+                    </Button>
+                  </div>
+
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-semibold uppercase">
+                        <tr>
+                          <th className="py-2.5 px-3">Student Name</th>
+                          <th className="py-2.5 px-3">Roll Number</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3">Enrolled On</th>
+                          <th className="py-2.5 px-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {opsLoading ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-slate-500">Loading roster...</td>
+                          </tr>
+                        ) : !opsRoster?.students.length ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-slate-500">No students enrolled yet.</td>
+                          </tr>
+                        ) : (
+                          opsRoster.students.map((st) => (
+                            <tr key={st.student_id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                              <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">{st.student_name}</td>
+                              <td className="py-2.5 px-3 font-mono">{st.student_roll_no}</td>
+                              <td className="py-2.5 px-3">
+                                <Badge variant={st.enrollment_status === "active" ? "primary" : "default"} size="sm">
+                                  {st.enrollment_status.toUpperCase()}
+                                </Badge>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500">{st.enrolled_at ? st.enrolled_at.slice(0, 10) : "-"}</td>
+                              <td className="py-2.5 px-3 text-right">
+                                {st.enrollment_status === "active" ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-rose-600 hover:text-rose-700 h-7 text-xs"
+                                    onClick={() => handleOpsDisenrollStudent(st.student_id, st.student_name)}
+                                  >
+                                    Disenroll
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">Disenrolled</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB B: ATTENDANCE SESSIONS */}
+              {opsActiveTab === "sessions" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {opsSessions.length} Scheduled Sessions
+                    </span>
+                    <Button size="sm" onClick={() => setShowOpsNewSessionModal(true)}>
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      New Session
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Session Selector List */}
+                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                      {!opsSessions.length ? (
+                        <div className="py-6 text-center text-xs text-slate-500">No attendance sessions.</div>
+                      ) : (
+                        opsSessions.map((sess) => (
+                          <div
+                            key={sess.id}
+                            onClick={() => setOpsSelectedSessionId(sess.id)}
+                            className={`p-2.5 rounded-lg border cursor-pointer text-xs transition ${
+                              opsSelectedSessionId === sess.id
+                                ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white">
+                              <span>{sess.session_date}</span>
+                              <Badge variant="default" size="sm">{sess.slot_type}</Badge>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1">
+                              {sess.records_count} records recorded
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Attendance Marking Sheet */}
+                    <div className="md:col-span-2 border border-slate-200 dark:border-slate-800 rounded-lg p-3 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Session Attendance Sheet
+                      </h4>
+                      {!opsSelectedSessionId ? (
+                        <div className="py-8 text-center text-xs text-slate-400">Select a session to view or record attendance.</div>
+                      ) : (
+                        <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                          {opsRoster?.students
+                            .filter((st) => st.enrollment_status === "active")
+                            .map((st) => {
+                              const rec = opsSessionRecords.find((r) => r.student_id === st.student_id);
+                              const currentStatus = rec?.status || "unmarked";
+                              return (
+                                <div key={st.student_id} className="py-2 flex items-center justify-between text-xs">
+                                  <div>
+                                    <div className="font-semibold text-slate-900 dark:text-white">{st.student_name}</div>
+                                    <div className="text-[11px] text-slate-500 font-mono">{st.student_roll_no}</div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {["present", "absent", "late", "excused"].map((stOption) => (
+                                      <button
+                                        key={stOption}
+                                        onClick={() => handleOpsMarkStatus(st.student_id, stOption)}
+                                        className={`px-2 py-1 rounded text-[11px] font-semibold transition ${
+                                          currentStatus === stOption
+                                            ? stOption === "present"
+                                              ? "bg-teal-600 text-white"
+                                              : stOption === "absent"
+                                              ? "bg-rose-600 text-white"
+                                              : stOption === "late"
+                                              ? "bg-amber-500 text-white"
+                                              : "bg-blue-600 text-white"
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                                        }`}
+                                      >
+                                        {stOption.charAt(0).toUpperCase() + stOption.slice(1)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB C: ASSESSMENTS & MARKS */}
+              {opsActiveTab === "assessments" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {opsAssessments.length} Configured Assessments
+                    </span>
+                    <Button size="sm" onClick={() => setShowOpsNewAssessmentModal(true)}>
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      New Assessment
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Assessment Selector */}
+                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                      {!opsAssessments.length ? (
+                        <div className="py-6 text-center text-xs text-slate-500">No assessments created.</div>
+                      ) : (
+                        opsAssessments.map((asm) => (
+                          <div
+                            key={asm.id}
+                            onClick={() => setOpsSelectedAssessmentId(asm.id)}
+                            className={`p-2.5 rounded-lg border cursor-pointer text-xs transition ${
+                              opsSelectedAssessmentId === asm.id
+                                ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                          >
+                            <div className="font-semibold text-slate-900 dark:text-white">{asm.title}</div>
+                            <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500">
+                              <span>Max: {asm.max_marks} • Wt: {asm.weight_percent}%</span>
+                              <Badge variant={asm.is_published ? "primary" : "default"} size="sm">
+                                {asm.is_published ? "Published" : "Draft"}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpsToggleAssessmentPublish(asm);
+                                }}
+                                className="text-teal-600 hover:underline font-semibold"
+                              >
+                                {asm.is_published ? "Unpublish" : "Publish"}
+                              </button>
+                              <span>•</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpsToggleAnswerKeyRelease(asm);
+                                }}
+                                className="text-slate-500 hover:underline"
+                              >
+                                {asm.answer_key_released ? "Conceal Answers" : "Release Answers"}
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Marks Entry Sheet */}
+                    <div className="md:col-span-2 border border-slate-200 dark:border-slate-800 rounded-lg p-3 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Assessment Marks Record
+                      </h4>
+                      {!opsSelectedAssessmentId ? (
+                        <div className="py-8 text-center text-xs text-slate-400">Select an assessment to enter marks.</div>
+                      ) : (
+                        <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                          {opsRoster?.students
+                            .filter((st) => st.enrollment_status === "active")
+                            .map((st) => {
+                              const markRec = opsAssessmentMarks.find((m) => m.student_id === st.student_id);
+                              return (
+                                <div key={st.student_id} className="py-2 flex items-center justify-between text-xs">
+                                  <div>
+                                    <div className="font-semibold text-slate-900 dark:text-white">{st.student_name}</div>
+                                    <div className="text-[11px] text-slate-500 font-mono">{st.student_roll_no}</div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      step="0.5"
+                                      defaultValue={markRec?.obtained_marks ?? ""}
+                                      onBlur={(e) => {
+                                        const val = parseFloat(e.target.value);
+                                        if (!isNaN(val)) {
+                                          handleOpsUpdateStudentMark(st.student_id, val);
+                                        }
+                                      }}
+                                      className="w-16 px-2 py-1 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                                      placeholder="0"
+                                    />
+                                    <span className="text-[11px] text-slate-400">
+                                      / {opsAssessments.find((a) => a.id === opsSelectedAssessmentId)?.max_marks || 20}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB D: ASSIGNMENTS & SUBMISSIONS */}
+              {opsActiveTab === "assignments" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {opsAssignments.length} Assignments
+                    </span>
+                    <Button size="sm" onClick={() => setShowOpsNewAssignmentModal(true)}>
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      New Assignment
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Assignment Selector */}
+                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                      {!opsAssignments.length ? (
+                        <div className="py-6 text-center text-xs text-slate-500">No assignments created.</div>
+                      ) : (
+                        opsAssignments.map((asg) => (
+                          <div
+                            key={asg.id}
+                            onClick={() => setOpsSelectedAssignmentId(asg.id)}
+                            className={`p-2.5 rounded-lg border cursor-pointer text-xs transition ${
+                              opsSelectedAssignmentId === asg.id
+                                ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                          >
+                            <div className="font-semibold text-slate-900 dark:text-white">{asg.title}</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              Due: {asg.due_date ? asg.due_date.slice(0, 10) : "-"}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpsToggleModelAnswerRelease(asg);
+                                }}
+                                className="text-teal-600 hover:underline font-semibold"
+                              >
+                                {asg.model_answer_released ? "Conceal Model Answer" : "Release Model Answer"}
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Submissions List */}
+                    <div className="md:col-span-2 border border-slate-200 dark:border-slate-800 rounded-lg p-3 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Student Submissions &amp; Grading
+                      </h4>
+                      {!opsSelectedAssignmentId ? (
+                        <div className="py-8 text-center text-xs text-slate-400">Select an assignment to review submissions.</div>
+                      ) : !opsSubmissions.length ? (
+                        <div className="py-8 text-center text-xs text-slate-400">No student submissions yet.</div>
+                      ) : (
+                        <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                          {opsSubmissions.map((sub) => (
+                            <div key={sub.id} className="py-2.5 flex items-center justify-between text-xs">
+                              <div>
+                                <div className="font-semibold text-slate-900 dark:text-white">{sub.student_name}</div>
+                                <div className="text-[11px] text-slate-500">
+                                  Submitted: {sub.submitted_at.slice(0, 10)} {sub.is_late && <span className="text-rose-500 font-bold">(Late)</span>}
+                                </div>
+                                {sub.feedback && (
+                                  <div className="text-[11px] text-teal-600 mt-0.5 italic">Feedback: {sub.feedback}</div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {sub.score !== null && sub.score !== undefined ? (
+                                  <span className="font-bold text-teal-600">{sub.score} pts</span>
+                                ) : (
+                                  <Badge variant="default" size="sm">Ungraded</Badge>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 text-xs"
+                                  onClick={() => {
+                                    setOpsGradingSubmission(sub);
+                                    setOpsGradeScoreInput(sub.score ?? 10);
+                                    setOpsGradeFeedbackInput(sub.feedback ?? "");
+                                  }}
+                                >
+                                  Grade
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end">
+              <Button size="sm" variant="ghost" onClick={() => setActiveOpsOffering(null)}>
+                Close Operations Console
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODAL: Enroll Student into Offering */}
+      {showOpsEnrollModal && activeOpsOffering && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Enroll Eligible Student</h3>
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search name or roll number..."
+                  value={opsDirectorySearch}
+                  onChange={(e) => setOpsDirectorySearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Effective Enrollment Date</label>
+                <input
+                  type="date"
+                  value={opsEnrollEffectiveDate}
+                  onChange={(e) => setOpsEnrollEffectiveDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+              {!opsDirectoryResults.length ? (
+                <div className="py-4 text-center text-xs text-slate-500">No matching students found.</div>
+              ) : (
+                opsDirectoryResults.map((s) => {
+                  const isAlreadyEnrolled = opsRoster?.students.some(
+                    (st) => st.student_id === s.student_id && st.enrollment_status === "active"
+                  );
+                  return (
+                    <div key={s.student_id} className="py-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">{s.full_name}</div>
+                        <div className="text-xs text-slate-500">{s.roll_no} • {s.branch} Sem {s.semester}</div>
+                      </div>
+                      {isAlreadyEnrolled ? (
+                        <Badge variant="primary" size="sm">Active Enrolled</Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={isOpsSubmittingEnroll}
+                          onClick={() => handleOpsEnrollStudent(s)}
+                        >
+                          {isOpsSubmittingEnroll ? "Enrolling..." : "Enroll"}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowOpsEnrollModal(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODAL: Create New Session */}
+      {showOpsNewSessionModal && activeOpsOffering && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Attendance Session</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Session Date</label>
+                <input
+                  type="date"
+                  value={opsNewSessionDate}
+                  onChange={(e) => setOpsNewSessionDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Slot Type</label>
+                <select
+                  value={opsNewSessionSlot}
+                  onChange={(e) => setOpsNewSessionSlot(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                >
+                  <option value="Lecture">Lecture</option>
+                  <option value="Tutorial">Tutorial</option>
+                  <option value="Lab">Lab Practical</option>
+                  <option value="Extra">Extra Session</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowOpsNewSessionModal(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" disabled={isOpsSubmittingSession} onClick={handleOpsCreateSession}>
+                {isOpsSubmittingSession ? "Creating..." : "Create Session"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODAL: Create New Assessment */}
+      {showOpsNewAssessmentModal && activeOpsOffering && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Create New Assessment</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Quiz 2: Dynamic Programming"
+                  value={opsNewAssessmentTitle}
+                  onChange={(e) => setOpsNewAssessmentTitle(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Type</label>
+                  <select
+                    value={opsNewAssessmentType}
+                    onChange={(e) => setOpsNewAssessmentType(e.target.value)}
+                    className="w-full mt-1 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  >
+                    <option value="Quiz">Quiz</option>
+                    <option value="MST">MST Exam</option>
+                    <option value="EST">EST Exam</option>
+                    <option value="Lab">Lab Practical</option>
+                    <option value="Project">Project</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Max Marks</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={opsNewAssessmentMaxMarks}
+                    onChange={(e) => setOpsNewAssessmentMaxMarks(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Weight (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={opsNewAssessmentWeight}
+                    onChange={(e) => setOpsNewAssessmentWeight(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Answer Key / Model Solution (Optional)</label>
+                <textarea
+                  rows={2}
+                  value={opsNewAssessmentAnswerKey}
+                  onChange={(e) => setOpsNewAssessmentAnswerKey(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  placeholder="Concealed until released to students."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowOpsNewAssessmentModal(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" disabled={isOpsSubmittingAssessment} onClick={handleOpsCreateAssessment}>
+                {isOpsSubmittingAssessment ? "Creating..." : "Create Draft Assessment"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODAL: Create New Assignment */}
+      {showOpsNewAssignmentModal && activeOpsOffering && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Create New Assignment</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Assignment 3: Process Synchronization"
+                  value={opsNewAssignmentTitle}
+                  onChange={(e) => setOpsNewAssignmentTitle(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Instructions &amp; Problem Statement</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={opsNewAssignmentInstructions}
+                  onChange={(e) => setOpsNewAssignmentInstructions(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  placeholder="Instructions for students..."
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Due Date &amp; Time (UTC)</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={opsNewAssignmentDueDate}
+                  onChange={(e) => setOpsNewAssignmentDueDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Model Answer (Optional)</label>
+                <textarea
+                  rows={2}
+                  value={opsNewAssignmentModelAnswer}
+                  onChange={(e) => setOpsNewAssignmentModelAnswer(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  placeholder="Solution concealed until explicitly released."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowOpsNewAssignmentModal(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" disabled={isOpsSubmittingAssignment} onClick={handleOpsCreateAssignment}>
+                {isOpsSubmittingAssignment ? "Creating..." : "Create &amp; Publish"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODAL: Grade Assignment Submission */}
+      {opsGradingSubmission && activeOpsOffering && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Grade Submission</h3>
+            <p className="text-xs text-slate-500">Student: {opsGradingSubmission.student_name}</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Score</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={opsGradeScoreInput}
+                  onChange={(e) => setOpsGradeScoreInput(Number(e.target.value))}
+                  className="w-full mt-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Feedback</label>
+                <textarea
+                  rows={2}
+                  value={opsGradeFeedbackInput}
+                  onChange={(e) => setOpsGradeFeedbackInput(e.target.value)}
+                  className="w-full mt-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                  placeholder="Constructive feedback for student..."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setOpsGradingSubmission(null)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleOpsGradeSubmission}>
+                Save Grade
+              </Button>
+            </div>
           </div>
         </div>
       )}

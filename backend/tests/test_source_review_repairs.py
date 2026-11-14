@@ -274,6 +274,7 @@ def test_bug05_attendance_rejects_unenrolled_or_cancelled():
             "student_name": "Enrolled Student",
             "student_roll_no": "102299001",
             "student_email": "enrolled@thapar.edu",
+            "effective_date": "2026-11-01",
         },
         headers={"Authorization": f"Bearer {admin_token}"},
     )

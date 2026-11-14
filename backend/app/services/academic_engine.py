@@ -922,6 +922,7 @@ class AcademicRBACEngine:
         student_name: Optional[str] = None,
         student_roll_no: Optional[str] = None,
         student_email: Optional[str] = None,
+        effective_date: Optional[str] = None,
     ) -> StudentEnrollment:
         off = self.get_offering(offering_id)
         if offering_id not in self.offering_enrollments:
@@ -942,6 +943,7 @@ class AcademicRBACEngine:
 
         # If re-enrolling a previously disenrolled student, create or update record
         enr_id = existing.id if existing else f"enr-{uuid.uuid4().hex[:8]}"
+        enrolled_dt = effective_date or datetime.now().isoformat()
         enr = StudentEnrollment(
             id=enr_id,
             offering_id=offering_id,
@@ -950,7 +952,7 @@ class AcademicRBACEngine:
             student_roll_no=roll,
             student_email=email,
             status="active",
-            enrolled_at=datetime.now().isoformat(),
+            enrolled_at=enrolled_dt,
             disenrolled_at=None,
             disenroll_reason=None,
         )
@@ -966,11 +968,73 @@ class AcademicRBACEngine:
             action="ENROLLMENT",
             offering_id=offering_id,
             resource_id=student_id,
-            details={"student_id": student_id, "student_name": name, "roll_no": roll},
+            details={"student_id": student_id, "student_name": name, "roll_no": roll, "effective_date": enrolled_dt},
             reason=f"Enrolled student {roll} in offering {offering_id}",
         )
         self._save_persisted_data()
         return enr
+
+    def bulk_enroll_students(
+        self,
+        actor_id: str,
+        actor_role: str,
+        offering_id: str,
+        student_ids: List[str],
+        effective_date: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        off = self.get_offering(offering_id)
+        if offering_id not in self.offering_enrollments:
+            self.offering_enrollments[offering_id] = {}
+
+        enrolled_dt = effective_date or datetime.now().isoformat()
+        enrolled_list: List[StudentEnrollment] = []
+        skipped: List[str] = []
+
+        for sid in student_ids:
+            existing = self.offering_enrollments[offering_id].get(sid)
+            if existing and existing.status == "active":
+                skipped.append(sid)
+                continue
+
+            dir_item = self.student_directory.get(sid)
+            name = dir_item.full_name if dir_item else f"Student {sid[:8]}"
+            roll = dir_item.roll_no if dir_item else sid[-9:]
+            email = dir_item.email if dir_item else f"{sid}@thapar.edu"
+
+            enr_id = existing.id if existing else f"enr-{uuid.uuid4().hex[:8]}"
+            enr = StudentEnrollment(
+                id=enr_id,
+                offering_id=offering_id,
+                student_id=sid,
+                student_name=name,
+                student_roll_no=roll,
+                student_email=email,
+                status="active",
+                enrolled_at=enrolled_dt,
+                disenrolled_at=None,
+                disenroll_reason=None,
+            )
+            self.offering_enrollments[offering_id][sid] = enr
+            enrolled_list.append(enr)
+
+            self.log_audit(
+                actor_id=actor_id,
+                actor_role=actor_role,
+                action="ENROLLMENT",
+                offering_id=offering_id,
+                resource_id=sid,
+                details={"student_id": sid, "student_name": name, "roll_no": roll, "effective_date": enrolled_dt},
+                reason=f"Bulk enrolled student {roll} in offering {offering_id}",
+            )
+
+        active_count = sum(1 for e in self.offering_enrollments[offering_id].values() if e.status == "active")
+        off.enrolled_count = active_count
+        self._save_persisted_data()
+        return {
+            "enrolled_count": len(enrolled_list),
+            "enrolled_students": enrolled_list,
+            "skipped_duplicates": skipped,
+        }
 
     def disenroll_student(
         self, actor_id: str, actor_role: str, offering_id: str, student_id: str, reason: str, effective_date: Optional[str] = None
@@ -1015,14 +1079,32 @@ class AcademicRBACEngine:
         self, actor_id: str, actor_role: str, offering_id: str, session_date: str, slot_type: str = "Lecture"
     ) -> AttendanceSession:
         self.get_offering(offering_id)
+        if not session_date or not session_date.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Session date cannot be empty.",
+            )
+
+        clean_date = session_date.strip()
+        clean_slot = slot_type.strip() if slot_type else "Lecture"
+
         if offering_id not in self.attendance_sessions:
             self.attendance_sessions[offering_id] = []
+
+        # Prevent accidental duplicates and make retries safe
+        for existing in self.attendance_sessions[offering_id]:
+            if (
+                not existing.is_cancelled
+                and existing.session_date == clean_date
+                and existing.slot_type.lower() == clean_slot.lower()
+            ):
+                return existing
 
         sess = AttendanceSession(
             id=f"sess-{uuid.uuid4().hex[:8]}",
             offering_id=offering_id,
-            session_date=session_date,
-            slot_type=slot_type,
+            session_date=clean_date,
+            slot_type=clean_slot,
             is_cancelled=False,
             created_by=actor_id,
             created_at=datetime.now().isoformat(),
@@ -1037,8 +1119,8 @@ class AcademicRBACEngine:
             action="CREATE_ATTENDANCE_SESSION",
             offering_id=offering_id,
             resource_id=sess.id,
-            details={"session_date": session_date, "slot_type": slot_type},
-            reason=f"Created {slot_type} session on {session_date}",
+            details={"session_date": clean_date, "slot_type": clean_slot},
+            reason=f"Created {clean_slot} session on {clean_date}",
         )
         self._save_persisted_data()
         return sess
@@ -1722,14 +1804,13 @@ class AcademicRBACEngine:
 
                 rec = self.session_attendance_records.get(s.id, {}).get(enr.student_id)
                 if rec:
-                    if rec.status == "excused":
-                        # Excused sessions do not count against student
+                    if rec.status in ("excused", "unmarked"):
+                        # Excused and unmarked sessions do not count against student
                         continue
                     counted_count += 1
                     if rec.status in ("present", "late"):
                         attended_count += 1
-                else:
-                    counted_count += 1
+                # If rec is None (session attendance unmarked), do not silently mark absent
 
             if counted_count > 0:
                 att_pct = round((attended_count / counted_count) * 100.0, 1)

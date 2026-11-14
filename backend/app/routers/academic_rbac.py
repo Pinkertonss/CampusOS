@@ -17,6 +17,8 @@ from ..models.academic_rbac import (
     TeachingAssignmentRequest,
     StudentEnrollment,
     EnrollStudentRequest,
+    BulkEnrollStudentRequest,
+    BulkEnrollResponse,
     DisenrollStudentRequest,
     StudentDirectoryItem,
     AttendanceSession,
@@ -86,12 +88,15 @@ def _verify_offering_access(
 
     # View permissions
     if role == "professor" or claims.get("is_professor"):
-        if not db.academic_rbac.is_professor_assigned(offering_id, actor_id):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied: You are not assigned to view offering '{offering_id}'.",
-            )
-        return
+        if db.academic_rbac.is_professor_assigned(offering_id, actor_id):
+            return
+        # If not assigned as instructor, check if legitimately enrolled as student (multi-role user)
+        if db.academic_rbac.is_student_enrolled(offering_id, actor_id):
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied: You are not assigned to view or enrolled in offering '{offering_id}'.",
+        )
 
     # Student check: must be enrolled
     if not db.academic_rbac.is_student_enrolled(offering_id, actor_id):
@@ -206,6 +211,26 @@ def enroll_student_in_offering(
         student_name=payload.student_name,
         student_roll_no=payload.student_roll_no,
         student_email=payload.student_email,
+        effective_date=payload.effective_date,
+    )
+
+
+@router.post("/offerings/{offering_id}/enroll-bulk", response_model=BulkEnrollResponse, status_code=status.HTTP_201_CREATED)
+def bulk_enroll_students_in_offering(
+    offering_id: str,
+    payload: BulkEnrollStudentRequest,
+    claims: Dict[str, Any] = Depends(require_professor_or_admin),
+):
+    """Bulk enroll multiple students into an offering with duplicate isolation and audit trail."""
+    _verify_offering_access(offering_id, claims, require_manage=True)
+    actor_id = str(claims["sub"])
+    actor_role = "admin" if claims.get("is_admin") else "professor"
+    return db.academic_rbac.bulk_enroll_students(
+        actor_id=actor_id,
+        actor_role=actor_role,
+        offering_id=offering_id,
+        student_ids=payload.student_ids,
+        effective_date=payload.effective_date,
     )
 
 

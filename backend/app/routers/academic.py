@@ -169,17 +169,15 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
                         continue
                     s_rec = db.academic_rbac.session_attendance_records.get(s.id, {}).get(user_id)
                     if s_rec:
-                        if s_rec.status == "excused":
+                        if s_rec.status in ("excused", "unmarked"):
                             continue
                         held_count += 1
                         if s_rec.status in ("present", "late"):
                             att_count += 1
                             recs.append({"status": "present", "date": s.session_date})
-                        else:
+                        elif s_rec.status == "absent":
                             recs.append({"status": "absent", "date": s.session_date})
-                    else:
-                        held_count += 1
-                        recs.append({"status": "absent", "date": s.session_date})
+                    # Unmarked sessions are not counted as absences
 
                 if held_count > 0:
                     attendance_map[off.subject_code] = {
