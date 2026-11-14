@@ -52,21 +52,23 @@ jobs:
     name: Supabase Database Migration
     needs: verify
     runs-on: ubuntu-latest
-    if: vars.SUPABASE_DB_URL != '' || secrets.SUPABASE_DB_URL != ''
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Apply Incremental Migrations
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          if [ -z "$DB_URL" ]; then
+            echo "Notice: SUPABASE_DB_URL secret not configured. Skipping remote database migration step."
+            exit 0
+          fi
           echo "Applying pending incremental database migrations without schema reset..."
-          # Uses psql with SSL required against Supabase Postgres pooler
           # Controlled migration: does not drop or seed production data
           for f in $(ls -1 supabase/migrations/*.sql | sort); do
             echo "Checking migration: $f"
           done
-        env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
   deploy-backend:
     name: Deploy Backend API
