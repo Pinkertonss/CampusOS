@@ -5,7 +5,7 @@ import shutil
 import threading
 from pathlib import Path
 from datetime import datetime, date, timedelta
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple, Any, Set, Union
 from .models.academic import Course, AttendanceRecord, TimetableSlot, DeadlineTask
 from .models.vault import VaultDocument
 from .models.reuse import ReuseItem
