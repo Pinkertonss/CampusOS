@@ -17,6 +17,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import ProfileModal from "./ProfileModal";
 import { Badge } from "./ui";
+import { getReuseNotifications } from "../lib/api";
 
 interface NavItem {
   href: string;
@@ -37,6 +38,13 @@ export default function Navigation() {
   const { user, profile } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [reuseUnreadCount, setReuseUnreadCount] = useState(0);
+
+  React.useEffect(() => {
+    getReuseNotifications()
+      .then((data) => setReuseUnreadCount(data.unread_count || 0))
+      .catch(() => {});
+  }, [pathname]);
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || "Arjun Mehta";
   const rollNo = profile?.roll_no || "102203099";
@@ -111,11 +119,15 @@ export default function Navigation() {
                   />
                   <span>{item.label}</span>
                 </div>
-                {item.badge && (
+                {item.href === "/reuse" && reuseUnreadCount > 0 ? (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-600 text-white shadow-sm">
+                    {reuseUnreadCount}
+                  </span>
+                ) : item.badge ? (
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300">
                     {item.badge}
                   </span>
-                )}
+                ) : null}
               </Link>
             );
           })}
@@ -214,6 +226,11 @@ export default function Navigation() {
                       isActive ? "scale-110" : ""
                     }`}
                   />
+                  {item.href === "/reuse" && reuseUnreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 px-1 text-[9px] font-bold rounded-full bg-teal-600 text-white leading-tight">
+                      {reuseUnreadCount}
+                    </span>
+                  )}
                   {isActive && (
                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-teal-600 dark:text-teal-400" />
                   )}

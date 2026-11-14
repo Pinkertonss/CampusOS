@@ -160,3 +160,17 @@ def test_vault_delete_item():
     # Accessing download url after deletion must return 404
     dl_res = client.get(f"/api/vault/items/{item_id}/download-url", headers=AUTH_HEADER)
     assert dl_res.status_code == 404
+
+
+def test_vault_raw_file_serving():
+    """Validates raw streaming endpoint returns valid PDF/SVG content without mock domains."""
+    res_seed = client.get("/api/vault/raw/v-seed-1")
+    assert res_seed.status_code == 200
+    assert "application/pdf" in res_seed.headers["content-type"]
+    assert b"%PDF" in res_seed.content
+
+    # Image seed returns SVG
+    res_img = client.get("/api/vault/raw/v-seed-3")
+    assert res_img.status_code == 200
+    assert "image/svg+xml" in res_img.headers["content-type"]
+    assert b"<svg" in res_img.content

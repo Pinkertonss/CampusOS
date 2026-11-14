@@ -38,6 +38,9 @@ class Settings(BaseModel):
     supabase_service_role_key: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     supabase_jwt_secret: str = os.getenv("SUPABASE_JWT_SECRET", "")
     
+    # Security & Auth Settings
+    allow_dev_tokens: bool = (os.getenv("ALLOW_DEV_TOKENS", "true" if os.getenv("ENVIRONMENT", "development") in ("development", "test") else "false").lower() == "true")
+    
     # LLM keys (optional)
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")

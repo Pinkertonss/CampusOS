@@ -23,9 +23,11 @@ app.add_middleware(
 app.include_router(academic.router)
 app.include_router(academic.academics_router)
 app.include_router(copilot.router)
+app.include_router(copilot.copilot_public_router)
 app.include_router(vault.router)
 app.include_router(vault.vault_public_router)
 app.include_router(reuse.router)
+app.include_router(reuse.reuse_public_router)
 
 @app.get("/")
 def root():

@@ -3,6 +3,7 @@ from app.main import app
 from app.database import db
 
 client = TestClient(app)
+AUTH_HEADER = {"Authorization": "Bearer dev-user-102203099"}
 
 def test_health_endpoint():
     res = client.get("/api/health")
@@ -10,14 +11,14 @@ def test_health_endpoint():
     assert res.json()["status"] == "ok"
 
 def test_get_courses():
-    res = client.get("/api/academic/courses")
+    res = client.get("/api/academic/courses", headers=AUTH_HEADER)
     assert res.status_code == 200
     courses = res.json()
     assert len(courses) >= 5
     assert any(c["course_code"] == "UCS301" for c in courses)
 
 def test_get_attendance():
-    res = client.get("/api/academic/attendance")
+    res = client.get("/api/academic/attendance", headers=AUTH_HEADER)
     assert res.status_code == 200
     records = res.json()
     assert len(records) >= 5
@@ -78,7 +79,8 @@ def test_vault_consent_and_upload():
     upload_res = client.post(
         "/api/vault/upload",
         files={"file": ("test_cert.pdf", file_content, "application/pdf")},
-        data={"title": "Test Certificate", "category": "certificates", "tags": "test,cert"}
+        data={"title": "Test Certificate", "category": "certificates", "tags": "test,cert"},
+        headers=AUTH_HEADER,
     )
     assert upload_res.status_code == 200
     uploaded_doc = upload_res.json()

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Optional
 from .models.academic import Course, AttendanceRecord, TimetableSlot, DeadlineTask
 from .models.vault import VaultDocument
@@ -20,7 +20,132 @@ class CampusOSDatabase:
         self.deadlines: List[DeadlineTask] = []
         self.vault_docs: Dict[str, VaultDocument] = {}
         self.reuse_items: Dict[str, ReuseItem] = {}
+        # Multi-tenant isolated storage maps (scoped by authenticated user_id)
+        self.user_courses: Dict[str, Dict[str, Course]] = {}
+        self.user_attendance: Dict[str, Dict[str, AttendanceRecord]] = {}
+        self.user_deadlines: Dict[str, List[DeadlineTask]] = {}
+        self.user_timetable: Dict[str, List[TimetableSlot]] = {}
         self._seed_sample_data()
+
+    def _canonical_uid(self, uid: str) -> str:
+        if not uid or uid in ("102203099-tiet-user", "dev-user-102203099", "dev-user", "mock-token"):
+            return self.default_user_id
+        return uid
+
+    def get_courses(self, user_id: str) -> List[Course]:
+        uid = self._canonical_uid(user_id)
+        if uid == self.default_user_id:
+            return list(self.courses.values())
+        return list(self.user_courses.get(uid, {}).values())
+
+    def add_course(self, user_id: str, course: Course) -> Course:
+        uid = self._canonical_uid(user_id)
+        if uid not in self.user_courses:
+            self.user_courses[uid] = {}
+        self.user_courses[uid][course.id] = course
+
+        # Initialize attendance tracking for this course
+        if uid not in self.user_attendance:
+            self.user_attendance[uid] = {}
+        if course.course_code not in self.user_attendance[uid]:
+            pct, status_val, safe_bunks, needed = WhatIfEngine.calculate_attendance_status(0, 0)
+            rec = AttendanceRecord(
+                id=f"att-{course.course_code}-{uuid.uuid4().hex[:4]}",
+                course_code=course.course_code,
+                course_name=course.course_name,
+                attended_classes=0,
+                total_classes=0,
+                percentage=pct,
+                status=status_val,
+                safe_bunks=safe_bunks,
+                classes_needed_for_75=needed,
+            )
+            self.user_attendance[uid][course.course_code] = rec
+
+        if uid == self.default_user_id:
+            self.courses[course.id] = course
+            self.attendance[course.course_code] = self.user_attendance[uid][course.course_code]
+        return course
+
+    def delete_course(self, user_id: str, course_id: str) -> bool:
+        uid = self._canonical_uid(user_id)
+        if uid in self.user_courses and course_id in self.user_courses[uid]:
+            del self.user_courses[uid][course_id]
+            if uid == self.default_user_id and course_id in self.courses:
+                del self.courses[course_id]
+            return True
+        if uid == self.default_user_id and course_id in self.courses:
+            del self.courses[course_id]
+            return True
+        return False
+
+    def get_attendance(self, user_id: str) -> List[AttendanceRecord]:
+        uid = self._canonical_uid(user_id)
+        if uid == self.default_user_id:
+            return list(self.attendance.values())
+        return list(self.user_attendance.get(uid, {}).values())
+
+    def update_attendance(self, user_id: str, course_code: str, attended_classes: int, total_classes: int) -> AttendanceRecord:
+        uid = self._canonical_uid(user_id)
+        code = course_code.upper().strip()
+        pct, status_val, safe_bunks, needed = WhatIfEngine.calculate_attendance_status(attended_classes, total_classes)
+
+        course_name = "Course"
+        user_c_map = self.user_courses.get(uid, {}) if uid != self.default_user_id else self.courses
+        for c in user_c_map.values():
+            if c.course_code == code:
+                course_name = c.course_name
+                break
+
+        rec = AttendanceRecord(
+            id=f"att-{code}-{uuid.uuid4().hex[:4]}",
+            course_code=code,
+            course_name=course_name,
+            attended_classes=attended_classes,
+            total_classes=total_classes,
+            percentage=pct,
+            status=status_val,
+            safe_bunks=safe_bunks,
+            classes_needed_for_75=needed,
+        )
+
+        if uid not in self.user_attendance:
+            self.user_attendance[uid] = {}
+        self.user_attendance[uid][code] = rec
+
+        if uid == self.default_user_id:
+            self.attendance[code] = rec
+        return rec
+
+    def get_timetable(self, user_id: str) -> List[TimetableSlot]:
+        uid = self._canonical_uid(user_id)
+        if uid == self.default_user_id:
+            return list(self.timetable)
+        return list(self.user_timetable.get(uid, []))
+
+    def get_deadlines(self, user_id: str) -> List[DeadlineTask]:
+        uid = self._canonical_uid(user_id)
+        if uid == self.default_user_id:
+            return list(self.deadlines)
+        return list(self.user_deadlines.get(uid, []))
+
+    def add_deadline(self, user_id: str, task: DeadlineTask) -> DeadlineTask:
+        uid = self._canonical_uid(user_id)
+        if uid not in self.user_deadlines:
+            self.user_deadlines[uid] = []
+        self.user_deadlines[uid].append(task)
+        if uid == self.default_user_id:
+            self.deadlines.append(task)
+        return task
+
+    def toggle_deadline(self, user_id: str, task_id: str) -> Optional[DeadlineTask]:
+        uid = self._canonical_uid(user_id)
+        task_list = self.user_deadlines.get(uid, []) if uid != self.default_user_id else self.deadlines
+        for t in task_list:
+            if t.id == task_id:
+                t.status = "completed" if t.status == "pending" else "pending"
+                return t
+        return None
 
     def _seed_sample_data(self):
         # 1. Seed realistic Thapar Courses for 5th Semester COE (Computer Engineering)
@@ -166,13 +291,14 @@ class CampusOSDatabase:
             ),
         ]
 
-        # 4. Seed Deadlines & Academic Tasks
+        # 4. Seed Deadlines & Academic Tasks (Dynamic relative dates)
+        today = date.today()
         self.deadlines = [
             DeadlineTask(
                 id="dl-1",
                 title="UCS301 Assignment 3: Red-Black Trees Implementation",
                 course_code="UCS301",
-                due_date="2024-11-20T23:59:00",
+                due_date=(today + timedelta(days=3)).strftime("%Y-%m-%d"),
                 status="pending",
                 priority="high",
                 source="syllabus"
@@ -181,7 +307,7 @@ class CampusOSDatabase:
                 id="dl-2",
                 title="DBMS Mid-Term Project Phase 1 Report",
                 course_code="UCS310",
-                due_date="2024-11-24T17:00:00",
+                due_date=(today + timedelta(days=7)).strftime("%Y-%m-%d"),
                 status="pending",
                 priority="medium",
                 source="manual"
@@ -190,7 +316,7 @@ class CampusOSDatabase:
                 id="dl-3",
                 title="Mathematics Tutorial Sheet 4 Submission",
                 course_code="UMA010",
-                due_date="2024-11-18T10:00:00",
+                due_date=(today - timedelta(days=2)).strftime("%Y-%m-%d"),
                 status="completed",
                 priority="low",
                 source="manual"

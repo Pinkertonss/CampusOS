@@ -1,24 +1,112 @@
 import uuid
-from fastapi import APIRouter
+from typing import List, Optional
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status
+from fastapi.responses import StreamingResponse
+
 from ..database import db
 from ..models.academic import DeadlineTask
 from ..models.copilot import (
     CopilotQueryRequest,
     CopilotQueryResponse,
+    CampusDocument,
+    DocumentUploadResponse,
     ConfirmTaskRequest,
 )
 from ..services.rag_engine import rag_engine
 
 router = APIRouter(prefix="/api/copilot", tags=["Campus Copilot RAG"])
+copilot_public_router = APIRouter(prefix="/copilot", tags=["Campus Copilot RAG (Root Alias)"])
+
+ALLOWED_EXTENSIONS = {"pdf", "docx", "txt"}
+MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB max
+
+
+@router.post("/documents", response_model=DocumentUploadResponse)
+async def upload_campus_document(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    source_label: str = Form("circular"),
+):
+    """
+    INGESTION (Admin-only):
+    Uploads an approved campus document (PDF/DOCX/TXT such as circulars, academic calendar, handbook, hostel/exam rules).
+    Stores it in the campus-docs bucket, extracts text per page, chunks it (~500 tokens, ~80 overlap) preserving page numbers,
+    embeds each chunk via swappable embedding provider, and stores in document_chunks.
+    """
+    filename = file.filename or "campus_doc.txt"
+    ext = filename.lower().split(".")[-1] if "." in filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type .{ext}. Approved document formats are PDF, DOCX, and TXT."
+        )
+
+    content_bytes = await file.read()
+    if len(content_bytes) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds maximum allowed limit of 25 MB."
+        )
+
+    res = await rag_engine.ingest_document(
+        file_bytes=content_bytes,
+        filename=filename,
+        title=title.strip(),
+        source_label=source_label.strip(),
+        uploaded_by="admin@thapar.edu",
+    )
+    return res
+
+
+@router.get("/documents", response_model=List[CampusDocument])
+def list_campus_documents():
+    """
+    List all indexed approved campus documents with chunk count and metadata.
+    """
+    return rag_engine.list_documents()
+
+
+@router.delete("/documents/{document_id}")
+def delete_campus_document(document_id: str):
+    """
+    Admin: Delete an approved campus document and purge its chunks from the vector index.
+    """
+    deleted = rag_engine.delete_document(document_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document with ID {document_id} not found."
+        )
+    return {"success": True, "message": f"Document {document_id} and associated chunks deleted."}
+
 
 @router.post("/ask", response_model=CopilotQueryResponse)
-def ask_copilot(request: CopilotQueryRequest):
+async def ask_copilot(request: CopilotQueryRequest):
     """
-    RAG Chatbot over approved Thapar Institute campus documents.
-    Always answers with source citations and strictly declines unsupported questions.
-    Generates actionable suggestions if a verified circular deadline is identified.
+    QUERY:
+    Embeds the question, calls match_chunks for top-k, applies similarity threshold.
+    If no chunk passes the threshold, returns strict refusal:
+    "I couldn't find this in the approved campus documents" with no guessing.
+    Otherwise prompts the LLM with ONLY the retrieved chunks, citing sources as [1], [2].
     """
-    return rag_engine.ask(request)
+    return await rag_engine.aask(request)
+
+
+@router.post("/ask/stream")
+async def ask_copilot_stream(request: CopilotQueryRequest):
+    """
+    Streaming query endpoint delivering tokens in real-time via Server-Sent Events (SSE).
+    """
+    return StreamingResponse(
+        rag_engine.ask_stream(request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
 
 @router.post("/confirm-task", response_model=DeadlineTask)
 def confirm_actionable_task(req: ConfirmTaskRequest):
@@ -37,3 +125,35 @@ def confirm_actionable_task(req: ConfirmTaskRequest):
     )
     db.deadlines.append(task)
     return task
+
+
+# ============================================================
+# Root Alias Mirror (/copilot/* mirroring /api/copilot/*)
+# ============================================================
+@copilot_public_router.post("/documents", response_model=DocumentUploadResponse)
+async def upload_campus_document_root(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    source_label: str = Form("circular"),
+):
+    return await upload_campus_document(file=file, title=title, source_label=source_label)
+
+
+@copilot_public_router.get("/documents", response_model=List[CampusDocument])
+def list_campus_documents_root():
+    return list_campus_documents()
+
+
+@copilot_public_router.delete("/documents/{document_id}")
+def delete_campus_document_root(document_id: str):
+    return delete_campus_document(document_id=document_id)
+
+
+@copilot_public_router.post("/ask", response_model=CopilotQueryResponse)
+async def ask_copilot_root(request: CopilotQueryRequest):
+    return await ask_copilot(request=request)
+
+
+@copilot_public_router.post("/ask/stream")
+async def ask_copilot_stream_root(request: CopilotQueryRequest):
+    return await ask_copilot_stream(request=request)

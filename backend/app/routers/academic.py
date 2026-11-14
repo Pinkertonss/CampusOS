@@ -48,12 +48,24 @@ academics_router = APIRouter(prefix="/academics", tags=["Academic Planning Engin
 # Helper: Fetch Student Data from Supabase with In-Memory Fallback
 # ============================================================
 
+def _to_db_user_id(uid: str) -> str:
+    if not uid:
+        return "00000000-0000-0000-0000-000102203099"
+    if uid in ("102203099-tiet-user", "dev-user-102203099", "dev-user", "mock-token"):
+        return "00000000-0000-0000-0000-000102203099"
+    try:
+        return str(uuid.UUID(str(uid)))
+    except (ValueError, AttributeError):
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(uid)))
+
+
 def _fetch_student_data(user_id: str) -> Dict[str, Any]:
     """
     Fetches courses, attendance, assessments, and tasks for user_id.
     Queries Supabase if available; gracefully falls back to seeded in-memory store.
     """
     client = get_supabase_client()
+    db_uid = _to_db_user_id(user_id)
     profile = {
         "full_name": "Arjun Mehta",
         "roll_no": "102203099",
@@ -68,15 +80,15 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
     # Attempt Supabase query if client is present
     if client:
         try:
-            p_res = client.table("profiles").select("*").eq("user_id", user_id).execute()
+            p_res = client.table("profiles").select("*").in_("user_id", [user_id, db_uid]).execute()
             if p_res.data:
                 profile.update(p_res.data[0])
 
-            c_res = client.table("courses").select("*").eq("user_id", user_id).execute()
+            c_res = client.table("courses").select("*").in_("user_id", [user_id, db_uid]).execute()
             if c_res.data:
                 courses_list = c_res.data
 
-            a_res = client.table("attendance_records").select("*").eq("user_id", user_id).execute()
+            a_res = client.table("attendance_records").select("*").in_("user_id", [user_id, db_uid]).execute()
             if a_res.data:
                 for rec in a_res.data:
                     cid = rec.get("course_id") or rec.get("course_code")
@@ -84,19 +96,19 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
                         attendance_map[cid] = {"records": []}
                     attendance_map[cid]["records"].append(rec)
 
-            ass_res = client.table("assessments").select("*").eq("user_id", user_id).execute()
+            ass_res = client.table("assessments").select("*").in_("user_id", [user_id, db_uid]).execute()
             if ass_res.data:
                 assessments_list = ass_res.data
 
-            t_res = client.table("tasks").select("*").eq("user_id", user_id).execute()
+            t_res = client.table("tasks").select("*").in_("user_id", [user_id, db_uid]).execute()
             if t_res.data:
                 tasks_list = t_res.data
         except Exception:
             pass
 
-    # Fallback to in-memory db if Supabase returned empty
+    # Fallback to user-isolated in-memory db if Supabase returned empty
     if not courses_list:
-        for c in db.courses.values():
+        for c in db.get_courses(user_id):
             courses_list.append({
                 "id": c.id,
                 "code": c.course_code,
@@ -108,7 +120,8 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
             })
 
     if not attendance_map:
-        for code, att in db.attendance.items():
+        for att in db.get_attendance(user_id):
+            code = att.course_code
             attendance_map[code] = {
                 "attended": att.attended_classes,
                 "total_held": att.total_classes,
@@ -120,18 +133,19 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
             }
 
     if not assessments_list:
+        today = date.today()
         assessments_list = [
-            {"id": "ass-1", "course_code": "UCS301", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 24.0, "due_date": "2024-09-20"},
-            {"id": "ass-2", "course_code": "UCS301", "name": "MST-2", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": "2024-10-25"},
-            {"id": "ass-3", "course_code": "UCS301", "name": "Assignment 1", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": "2024-09-15"},
-            {"id": "ass-4", "course_code": "UCS301", "name": "Assignment 2", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": "2024-10-20"},
-            {"id": "ass-5", "course_code": "UCS301", "name": "End Semester", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": "2024-12-05"},
-            {"id": "ass-6", "course_code": "UCS405", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 18.0, "due_date": "2024-09-20"},
-            {"id": "ass-7", "course_code": "UCS405", "name": "Lab Eval 2", "weight_percent": 10.0, "max_marks": 25.0, "obtained_marks": None, "due_date": (date.today() + timedelta(days=3)).isoformat()},
+            {"id": "ass-1", "course_code": "UCS301", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 24.0, "due_date": (today - timedelta(days=40)).isoformat()},
+            {"id": "ass-2", "course_code": "UCS301", "name": "MST-2", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=15)).isoformat()},
+            {"id": "ass-3", "course_code": "UCS301", "name": "Assignment 1", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=45)).isoformat()},
+            {"id": "ass-4", "course_code": "UCS301", "name": "Assignment 2", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=20)).isoformat()},
+            {"id": "ass-5", "course_code": "UCS301", "name": "End Semester", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
+            {"id": "ass-6", "course_code": "UCS405", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=40)).isoformat()},
+            {"id": "ass-7", "course_code": "UCS405", "name": "Lab Eval 2", "weight_percent": 10.0, "max_marks": 25.0, "obtained_marks": None, "due_date": (today + timedelta(days=3)).isoformat()},
         ]
 
     if not tasks_list:
-        for t in db.deadlines:
+        for t in db.get_deadlines(user_id):
             tasks_list.append({
                 "id": t.id,
                 "title": t.title,
@@ -467,188 +481,325 @@ def get_daily_plan(
 
 
 # ============================================================
-# Legacy Endpoints (Kept for full backward compatibility)
+# ============================================================
+# Academic Management Endpoints (Secured & Tenant Isolated)
 # ============================================================
 
 @router.get("/courses", response_model=List[Course])
-def get_courses():
-    return list(db.courses.values())
+def get_courses(user_id: str = Depends(get_current_user_id)):
+    """Returns courses belonging to the authenticated student."""
+    return db.get_courses(user_id)
 
 @router.post("/courses", response_model=Course)
-def add_course(course_in: CourseCreate):
+def add_course(course_in: CourseCreate, user_id: str = Depends(get_current_user_id)):
+    """Registers a new course for the authenticated student with duplicate check."""
+    code = course_in.course_code.upper().strip()
+    name = course_in.course_name.strip()
+
+    if not code or len(code) < 2 or not code.isalnum():
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid course code. Must be alphanumeric and at least 2 characters.",
+        )
+    if not name:
+        raise HTTPException(status_code=400, detail="Course name cannot be empty.")
+
+    # Duplicate check per tenant
+    existing_courses = db.get_courses(user_id)
+    if any(c.course_code == code for c in existing_courses):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Course '{code}' is already registered for this student account.",
+        )
+
     course_id = f"c-{uuid.uuid4().hex[:6]}"
     course = Course(
         id=course_id,
-        course_code=course_in.course_code.upper().strip(),
-        course_name=course_in.course_name.strip(),
+        course_code=code,
+        course_name=name,
         credits=course_in.credits,
         grade=course_in.grade,
         target_grade=course_in.target_grade,
         semester=course_in.semester,
     )
-    db.courses[course_id] = course
 
-    if course.course_code not in db.attendance:
-        pct, status_val, safe_bunks, needed = WhatIfEngine.calculate_attendance_status(0, 0)
-        db.attendance[course.course_code] = AttendanceRecord(
-            id=f"att-{course.course_code}",
-            course_code=course.course_code,
-            course_name=course.course_name,
-            attended_classes=0,
-            total_classes=0,
-            percentage=pct,
-            status=status_val,
-            safe_bunks=safe_bunks,
-            classes_needed_for_75=needed,
-        )
-    return course
+    client = get_supabase_client()
+    if client:
+        try:
+            db_uid = _to_db_user_id(user_id)
+            client.table("courses").insert({
+                "id": str(uuid.uuid4()),
+                "user_id": db_uid,
+                "code": code,
+                "name": name,
+                "credits": int(course_in.credits),
+                "target_attendance": 75.0,
+            }).execute()
+        except Exception:
+            pass
+
+    return db.add_course(user_id, course)
 
 @router.delete("/courses/{course_id}")
-def delete_course(course_id: str):
-    if course_id in db.courses:
-        del db.courses[course_id]
+def delete_course(course_id: str, user_id: str = Depends(get_current_user_id)):
+    """Deletes a course owned by the authenticated student."""
+    client = get_supabase_client()
+    if client:
+        try:
+            db_uid = _to_db_user_id(user_id)
+            client.table("courses").delete().in_("user_id", [user_id, db_uid]).or_(f"id.eq.{course_id},code.eq.{course_id.upper()}").execute()
+        except Exception:
+            pass
+
+    success = db.delete_course(user_id, course_id)
+    if success:
         return {"success": True, "message": "Course deleted"}
-    raise HTTPException(status_code=404, detail="Course not found")
+    raise HTTPException(status_code=404, detail="Course not found or not owned by student")
 
 @router.get("/attendance", response_model=List[AttendanceRecord])
-def get_attendance():
-    return list(db.attendance.values())
+def get_attendance(user_id: str = Depends(get_current_user_id)):
+    """Returns attendance records for the authenticated student."""
+    return db.get_attendance(user_id)
 
 @router.post("/attendance/update", response_model=AttendanceRecord)
-def update_attendance(course_code: str, attended_classes: int, total_classes: int):
-    code = course_code.upper().strip()
+def update_attendance(
+    course_code: str,
+    attended_classes: int,
+    total_classes: int,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Updates attendance for a course owned by the authenticated student.
+    Enforces invariant: 0 <= attended_classes <= total_classes.
+    """
+    if attended_classes < 0:
+        raise HTTPException(status_code=400, detail="Attended classes cannot be negative")
+    if total_classes < 0:
+        raise HTTPException(status_code=400, detail="Total classes cannot be negative")
     if attended_classes > total_classes:
         raise HTTPException(status_code=400, detail="Attended classes cannot exceed total classes")
 
-    course_name = "Course"
-    for c in db.courses.values():
-        if c.course_code == code:
-            course_name = c.course_name
-            break
+    code = course_code.upper().strip()
 
-    pct, status_val, safe_bunks, needed = WhatIfEngine.calculate_attendance_status(attended_classes, total_classes)
-    record = AttendanceRecord(
-        id=f"att-{code}",
-        course_code=code,
-        course_name=course_name,
-        attended_classes=attended_classes,
-        total_classes=total_classes,
-        percentage=pct,
-        status=status_val,
-        safe_bunks=safe_bunks,
-        classes_needed_for_75=needed,
-    )
-    db.attendance[code] = record
-    return record
+    client = get_supabase_client()
+    if client:
+        try:
+            db_uid = _to_db_user_id(user_id)
+            client.table("courses").update({
+                "attended_classes": attended_classes,
+                "total_classes": total_classes,
+            }).in_("user_id", [user_id, db_uid]).eq("code", code).execute()
+        except Exception:
+            pass
+
+    return db.update_attendance(user_id, code, attended_classes, total_classes)
 
 @router.post("/what-if/attendance", response_model=WhatIfAttendanceResponse)
 def simulate_attendance(req: WhatIfAttendanceRequest):
+    """Read-only mathematical simulation of projected attendance."""
     return WhatIfEngine.simulate_attendance(req)
 
 @router.post("/what-if/grades", response_model=WhatIfGradeResponse)
 def simulate_grades(req: WhatIfGradeRequest):
+    """Read-only mathematical simulation of projected grades."""
     return WhatIfEngine.simulate_grades(req)
 
 @router.get("/timetable", response_model=List[TimetableSlot])
-def get_timetable():
-    return db.timetable
+def get_timetable(user_id: str = Depends(get_current_user_id)):
+    """Returns the timetable slots for the authenticated student."""
+    return db.get_timetable(user_id)
 
 @router.get("/deadlines", response_model=List[DeadlineTask])
-def get_deadlines():
-    return sorted(db.deadlines, key=lambda x: x.due_date)
+def get_deadlines(user_id: str = Depends(get_current_user_id)):
+    """Returns deadlines and tasks belonging to the authenticated student."""
+    return sorted(db.get_deadlines(user_id), key=lambda x: x.due_date)
 
 @router.post("/deadlines", response_model=DeadlineTask)
-def create_deadline(task_in: DeadlineTaskCreate):
+def create_deadline(task_in: DeadlineTaskCreate, user_id: str = Depends(get_current_user_id)):
+    """Creates a new deadline task for the authenticated student with validation."""
+    title = task_in.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Task title cannot be empty")
+
+    if task_in.priority not in ("urgent", "high", "medium", "low"):
+        raise HTTPException(status_code=400, detail="Invalid priority. Must be urgent, high, medium, or low")
+
+    # Validate due_date format
+    date_str = task_in.due_date.strip()
+    try:
+        # Check standard ISO or YYYY-MM-DD
+        if "T" in date_str:
+            datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        else:
+            datetime.strptime(date_str[:10], "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid due_date format. Must be YYYY-MM-DD or ISO 8601")
+
     task = DeadlineTask(
         id=f"task-{uuid.uuid4().hex[:6]}",
-        title=task_in.title,
-        course_code=task_in.course_code,
-        due_date=task_in.due_date,
+        title=title,
+        course_code=task_in.course_code.upper().strip() if task_in.course_code else None,
+        due_date=date_str,
         status="pending",
         priority=task_in.priority,
         source=task_in.source,
     )
-    db.deadlines.append(task)
-    return task
+
+    client = get_supabase_client()
+    if client:
+        try:
+            db_uid = _to_db_user_id(user_id)
+            client.table("tasks").insert({
+                "id": str(uuid.uuid4()),
+                "user_id": db_uid,
+                "title": title,
+                "due_date": date_str[:10],
+                "source": task_in.source if task_in.source in ("manual", "notice", "assessment", "copilot_action") else "manual",
+                "status": "pending",
+                "priority": task_in.priority,
+                "course_code": task.course_code,
+            }).execute()
+        except Exception:
+            pass
+
+    return db.add_deadline(user_id, task)
 
 @router.patch("/deadlines/{task_id}/toggle", response_model=DeadlineTask)
-def toggle_deadline_status(task_id: str):
-    for t in db.deadlines:
-        if t.id == task_id:
-            t.status = "completed" if t.status == "pending" else "pending"
-            return t
-    raise HTTPException(status_code=404, detail="Task not found")
+def toggle_deadline_status(task_id: str, user_id: str = Depends(get_current_user_id)):
+    """Toggles task status between pending and completed for the authenticated student."""
+    task = db.toggle_deadline(user_id, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found or not owned by student")
+
+    client = get_supabase_client()
+    if client:
+        try:
+            db_uid = _to_db_user_id(user_id)
+            new_status = "done" if task.status == "completed" else "pending"
+            client.table("tasks").update({"status": new_status}).in_("user_id", [user_id, db_uid]).eq("id", task_id).execute()
+        except Exception:
+            pass
+
+    return task
 
 @router.post("/import-csv", response_model=CSVImportResult)
 async def import_academic_csv(
     file: UploadFile = File(...),
-    import_type: str = Form("attendance")
+    import_type: str = Form("attendance"),
+    user_id: str = Depends(get_current_user_id),
 ):
+    """
+    Parses and imports academic records strictly into the authenticated student's store.
+    Validates row-level invariants, checks for duplicates, and reports row errors.
+    """
     try:
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded CSV file is empty.")
+
         decoded = content.decode("utf-8")
         reader = csv.DictReader(io.StringIO(decoded))
+        if not reader.fieldnames:
+            raise HTTPException(status_code=400, detail="Invalid CSV format: no headers found.")
 
         imported_count = 0
         errors: List[str] = []
+        seen_batch_codes = set()
 
         for idx, row in enumerate(reader, start=1):
             try:
                 if import_type == "attendance":
-                    code = row.get("course_code") or row.get("code") or row.get("Subject Code")
-                    name = row.get("course_name") or row.get("name") or row.get("Subject Name", "Course")
-                    attended = int(row.get("attended") or row.get("attended_classes", 0))
-                    total = int(row.get("total") or row.get("total_classes", 0))
-
-                    if not code:
+                    code_raw = row.get("course_code") or row.get("code") or row.get("Subject Code")
+                    if not code_raw or not code_raw.strip():
                         errors.append(f"Row {idx}: Missing course code")
                         continue
 
-                    code = code.upper().strip()
-                    pct, status_val, safe_bunks, needed = WhatIfEngine.calculate_attendance_status(attended, total)
-                    db.attendance[code] = AttendanceRecord(
-                        id=f"att-{code}",
-                        course_code=code,
-                        course_name=name.strip(),
-                        attended_classes=attended,
-                        total_classes=total,
-                        percentage=pct,
-                        status=status_val,
-                        safe_bunks=safe_bunks,
-                        classes_needed_for_75=needed,
-                    )
+                    code = code_raw.upper().strip()
+                    if code in seen_batch_codes:
+                        errors.append(f"Row {idx}: Duplicate course code '{code}' in import batch")
+                        continue
+
+                    att_val = row.get("attended") or row.get("attended_classes")
+                    tot_val = row.get("total") or row.get("total_classes")
+
+                    if att_val is None or tot_val is None:
+                        errors.append(f"Row {idx}: Missing attendance counters for '{code}'")
+                        continue
+
+                    try:
+                        attended = int(att_val)
+                        total = int(tot_val)
+                    except ValueError:
+                        errors.append(f"Row {idx}: Attendance counters must be integers for '{code}'")
+                        continue
+
+                    if attended < 0 or total < 0:
+                        errors.append(f"Row {idx}: Attendance numbers cannot be negative for '{code}'")
+                        continue
+
+                    if attended > total:
+                        errors.append(f"Row {idx}: Attended classes ({attended}) cannot exceed total classes ({total}) for '{code}'")
+                        continue
+
+                    db.update_attendance(user_id, code, attended, total)
+                    seen_batch_codes.add(code)
                     imported_count += 1
 
                 elif import_type == "courses":
-                    code = row.get("course_code") or row.get("code")
-                    name = row.get("course_name") or row.get("name")
-                    credits = float(row.get("credits", 4.0))
-                    grade = row.get("grade") or None
-                    target = row.get("target_grade", "A")
+                    code_raw = row.get("course_code") or row.get("code")
+                    name_raw = row.get("course_name") or row.get("name")
 
-                    if not code or not name:
-                        errors.append(f"Row {idx}: Missing course code or name")
+                    if not code_raw or not code_raw.strip():
+                        errors.append(f"Row {idx}: Missing course code")
+                        continue
+                    if not name_raw or not name_raw.strip():
+                        errors.append(f"Row {idx}: Missing course name")
                         continue
 
+                    code = code_raw.upper().strip()
+                    if code in seen_batch_codes:
+                        errors.append(f"Row {idx}: Duplicate course code '{code}' in import batch")
+                        continue
+
+                    credits_raw = row.get("credits", 4.0)
+                    try:
+                        credits = float(credits_raw)
+                        if credits < 1.0 or credits > 8.0:
+                            errors.append(f"Row {idx}: Credits ({credits}) must be between 1.0 and 8.0 for '{code}'")
+                            continue
+                    except ValueError:
+                        errors.append(f"Row {idx}: Credits must be a valid number for '{code}'")
+                        continue
+
+                    grade = row.get("grade")
+                    target = row.get("target_grade", "A")
+
                     cid = f"c-{uuid.uuid4().hex[:6]}"
-                    db.courses[cid] = Course(
+                    c_obj = Course(
                         id=cid,
-                        course_code=code.upper().strip(),
-                        course_name=name.strip(),
+                        course_code=code,
+                        course_name=name_raw.strip(),
                         credits=credits,
                         grade=grade.strip() if grade else None,
-                        target_grade=target.strip(),
+                        target_grade=target.strip() if target else "A",
                         semester=5,
                     )
+                    db.add_course(user_id, c_obj)
+                    seen_batch_codes.add(code)
                     imported_count += 1
+                else:
+                    errors.append(f"Unknown import type: {import_type}")
+                    break
             except Exception as e:
                 errors.append(f"Row {idx}: Error processing row - {str(e)}")
 
         return CSVImportResult(
-            success=True,
+            success=(imported_count > 0 or len(errors) == 0),
             records_imported=imported_count,
             errors=errors,
-            message=f"Successfully imported {imported_count} {import_type} record(s)."
+            message=f"Successfully imported {imported_count} {import_type} record(s)." if imported_count > 0 else "No records imported."
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV file: {str(e)}")

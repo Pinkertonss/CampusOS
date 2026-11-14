@@ -83,10 +83,12 @@ export interface DeadlineTask {
 
 export interface Citation {
   document_title: string;
-  section_title: string;
-  page_number: number;
-  source_ref: string;
-  excerpt: string;
+  page_ref?: string;
+  snippet?: string;
+  section_title?: string;
+  page_number?: number;
+  source_ref?: string;
+  excerpt?: string;
 }
 
 export interface ActionableSuggestion {
@@ -103,7 +105,27 @@ export interface CopilotQueryResponse {
   answered: boolean;
   answer: string;
   citations: Citation[];
+  confidence?: number;
+  grounded?: boolean;
   actionable_suggestion?: ActionableSuggestion | null;
+}
+
+export interface CampusDocument {
+  id: string;
+  title: string;
+  source_label: string;
+  storage_path: string;
+  uploaded_by: string;
+  is_approved: boolean;
+  chunk_count: number;
+  file_size_bytes: number;
+  created_at: string;
+}
+
+export interface DocumentUploadResponse {
+  document: CampusDocument;
+  chunks_created: number;
+  message: string;
 }
 
 export interface VaultDocument {
@@ -315,3 +337,107 @@ export interface DownloadUrlResponse {
   expires_in_seconds: number;
   title: string;
 }
+
+// --- Campus Reuse End-to-End Types ---
+
+export type ListingCategory = "book" | "calculator" | "labcoat" | "other";
+export type ListingMode = "exchange" | "donate" | "borrow";
+export type ListingStatus = "available" | "reserved" | "completed";
+export type ItemCondition = "like_new" | "good" | "fair";
+
+export interface Listing {
+  id: string;
+  owner_id: string;
+  owner_name: string;
+  title: string;
+  description: string;
+  category: ListingCategory | string;
+  mode: ListingMode | string;
+  condition: ItemCondition | string;
+  status: ListingStatus | string;
+  image_url?: string | null;
+  contact_info?: string | null;
+  estimated_retail_price?: number;
+  estimated_weight_kg?: number;
+  created_at: string;
+  requests_count?: number;
+  user_has_requested?: boolean;
+  active_request_id?: string | null;
+}
+
+export interface ListingCreate {
+  title: string;
+  description?: string;
+  category: string;
+  mode: string;
+  condition: string;
+  image_url?: string | null;
+  contact_info?: string | null;
+  estimated_retail_price?: number;
+  estimated_weight_kg?: number;
+}
+
+export interface ExchangeRequest {
+  id: string;
+  listing_id: string;
+  listing_title: string;
+  listing_mode: string;
+  listing_category: string;
+  requester_id: string;
+  requester_name: string;
+  requester_contact?: string | null;
+  message?: string | null;
+  owner_id: string;
+  owner_name: string;
+  status: "pending" | "accepted" | "declined" | "completed" | string;
+  owner_confirmed: boolean;
+  requester_confirmed: boolean;
+  created_at: string;
+  completed_at?: string | null;
+}
+
+export interface MyListingItem {
+  listing: Listing;
+  requests: ExchangeRequest[];
+}
+
+export interface MonthlyImpactSeries {
+  month: string;
+  exchanges: number;
+  donations: number;
+  loans: number;
+  total: number;
+  co2_kg: number;
+  waste_kg: number;
+  money_saved_inr: number;
+}
+
+export interface ReuseImpactResponse {
+  exchanges_completed: number;
+  donations_completed: number;
+  loans_completed: number;
+  total_completed: number;
+  items_kept_in_use: number;
+  total_money_saved_inr: number;
+  total_waste_diverted_kg: number;
+  co2_avoided_kg: number;
+  sdg_framework: string;
+  per_month_series: MonthlyImpactSeries[];
+}
+
+export interface ReuseNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  listing_id: string;
+  request_id?: string | null;
+  created_at: string;
+  read: boolean;
+}
+
+export interface NotificationsResponse {
+  unread_count: number;
+  notifications: ReuseNotification[];
+}
+

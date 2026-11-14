@@ -14,12 +14,16 @@ export function middleware(request: NextRequest) {
   }
 
   // Read auth and onboarding cookies
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const isMockSupabase = !supabaseUrl || supabaseUrl.includes("mock-project");
+
   const authToken =
     request.cookies.get("campusos_auth_token")?.value ||
     request.cookies.get("sb-access-token")?.value;
   const isOnboarded = request.cookies.get("campusos_onboarded")?.value === "true";
+  const isLoggedOut = request.cookies.get("campusos_logged_out")?.value === "true";
 
-  const isAuthenticated = Boolean(authToken && authToken.length > 0);
+  const isAuthenticated = !isLoggedOut && (isMockSupabase || Boolean(authToken && authToken.length > 0));
 
   const isPublicAuthRoute =
     pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/callback");
