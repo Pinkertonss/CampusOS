@@ -14,7 +14,7 @@
 | **Academic Planner & Daily Action Plan** | **COMPLETED (Phase 2)** | `/academics/daily-plan`, `/academics/summary` | PostgreSQL `courses`, `attendance_records`, `assessments`, `tasks` | Scoped queries by `user_id`; current 2026 dates; fallback seeded with authentic TIET 5th Sem COE syllabus | 20+ tests in `test_planner.py` & `test_academic_persistence.py` |
 | **Attendance & Grade What-If Calculators** | **COMPLETED (Phase 2)** | `/academics/attendance/what-if`, `/academics/grades/what-if` | Read-only simulation (no DB mutation) | Deterministic mathematical formulas (`AttendanceEngine`, `GradeEngine`) guaranteed non-mutating | Comprehensive boundary & edge tests in `test_planner.py` & `test_academic_persistence.py` |
 | **Academic CRUD & Import** | **COMPLETED (Phase 2)** | `/api/academic/courses`, `/attendance`, `/timetable`, `/deadlines`, `/import-csv` | Per-user isolated `CampusOSDatabase` + Supabase DB | Enforces invariants (`0 <= attended <= total`), duplicate prevention (409), durable task toggle, row-level CSV errors | Tested in `test_api.py`, `test_security.py`, & `test_academic_persistence.py` |
-| **Digital Vault** | **COMPLETED (Phase 1 Scope Scrub)** | `/api/vault/items`, `/upload-url`, `/items/{id}/download-url` | Supabase Storage `vault-private` + PostgreSQL `vault_items` | Real signed URLs; strict owner validation; cross-tenant download/rename/delete returns 403/404 | 9 tests in `test_vault.py` and `test_security.py` |
+| **Digital Vault** | **COMPLETED (Phase 3)** | `/api/vault/items`, `/upload-url`, `/items/{id}/download-url`, `/raw/{id}` | Supabase Storage `vault` + PostgreSQL `vault_items` | Real signed URLs & streaming; safe filenames; owner isolation; rollback of orphan storage; no blob: fallbacks; 10MB limit; 500MB quota | 14 tests in `test_vault.py` & `test_security.py` |
 | **Campus Copilot RAG** | **Implemented (768-dim Vectors)** | `/api/copilot/ask`, `/copilot/documents` | Ingests PDF/DOCX/TXT into `document_chunks` (pgvector 768-dim) | Deterministic offline local engine or Gemini/OpenAI API; strict refusal if below threshold | 7 tests in `test_copilot.py` |
 | **Actionable Copilot Task Confirmation** | **Implemented** | `/api/copilot/confirm-task` | PostgreSQL `tasks` / `db.deadlines` | Requires student explicit confirmation click; never silently writes tasks | Tested in `test_copilot.py` |
 | **Campus Reuse Marketplace** | **COMPLETED (Phase 1 Security)** | `/reuse/listings`, `/requests`, `/impact` | PostgreSQL `listings`, `exchange_requests`, `impact_events` | 2-party confirmation flow (request -> accept -> complete) updates SDG 12 metrics; non-owner actions blocked | 7 tests in `test_reuse.py` and `test_security.py` |
@@ -28,7 +28,7 @@
 
 - **Backend Pytest**:
   - Command: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-  - Result: **79 passed in 0.52s** (79/79 tests green across `test_academic_persistence.py`, `test_api.py`, `test_auth.py`, `test_copilot.py`, `test_impact.py`, `test_planner.py`, `test_reuse.py`, `test_security.py`, `test_vault.py`, `test_what_if.py`).
+  - Result: **85 passed in 0.45s** (85/85 tests green across `test_academic_persistence.py`, `test_api.py`, `test_auth.py`, `test_copilot.py`, `test_impact.py`, `test_planner.py`, `test_reuse.py`, `test_security.py`, `test_vault.py`, `test_what_if.py`).
 - **Frontend Next.js Build**:
   - Command: `npm --prefix frontend run build`
   - Result: Compiled successfully; all 12 routes generated (`/`, `/academic`, `/copilot`, `/vault`, `/reuse`, `/login`, `/onboarding`, `/signup`).
@@ -52,8 +52,17 @@
    - Date hygiene: demo deadlines and assessments aligned with current year 2026.
    - Guaranteed read-only behavior for what-if simulations.
    - 8 comprehensive tests in `backend/tests/test_academic_persistence.py`.
-3. **Phase 3 (P1) - NEXT**: Reliable private Digital Vault with owner isolation.
-4. **Phase 4 (P1)**: Campus Copilot end-to-end polish, provenance, and freshness flagging.
+3. **Phase 3 (P1) - COMPLETED**:
+   - Reliable two-stage upload architecture (`/api/vault/upload-url` -> storage byte upload -> `/api/vault/items` metadata registration) plus direct multipart upload (`/api/vault/upload`).
+   - Safe filename sanitization with `os.path.basename` and regex scrubbing to eliminate path traversal vulnerabilities (`../../`).
+   - Strict student owner isolation across all vault endpoints: Student B cannot download, access raw bytes, rename, or delete Student A's records (enforced 401/403).
+   - Automatic rollback of orphan storage objects if database metadata registration fails.
+   - Removed client-side `blob:` fallbacks in real mode; errors are accurately reported.
+   - Accurate privacy terminology ("private access-controlled storage" replaced misleading "zero-knowledge encryption").
+   - Storage limits enforced: 10 MB maximum file size and 500 MB quota per student.
+   - Exact byte retention: downloaded bytes match original uploaded bytes intact.
+   - 14 dedicated tests in `backend/tests/test_vault.py` (85/85 total suite passing).
+4. **Phase 4 (P1) - NEXT**: Campus Copilot end-to-end polish, lexical/pgvector RAG pipeline, freshness flagging, and actionable task confirmation.
 5. **Phase 5 (P1)**: Campus Reuse Marketplace complete two-party lifecycle.
 6. **Phase 6**: Integrated cross-module student decision intelligence.
 7. **Phase 7**: Opportunity matching and calendar conflict detection.

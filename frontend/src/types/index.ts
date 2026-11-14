@@ -304,7 +304,9 @@ export interface VaultListResponse {
   items: VaultItem[];
   total_count: number;
   total_storage_bytes: number;
+  total_size_bytes?: number;
   storage_limit_bytes: number;
+  max_storage_bytes?: number;
 }
 
 export interface UploadUrlRequest {

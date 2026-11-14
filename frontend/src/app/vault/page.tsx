@@ -397,11 +397,11 @@ export default function DigitalVaultPage() {
               Digital Vault
             </h1>
             <Badge variant="primary" size="md">
-              Encrypted Private Storage
+              Private Access-Controlled Storage
             </Badge>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Zero-knowledge, user-scoped cloud storage for your lecture notes, grade cards, certificates, and academic credentials.
+            Private access-controlled, user-scoped cloud storage for your lecture notes, grade cards, certificates, and academic credentials.
           </p>
         </div>
 

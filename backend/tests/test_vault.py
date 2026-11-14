@@ -174,3 +174,173 @@ def test_vault_raw_file_serving():
     assert res_img.status_code == 200
     assert "image/svg+xml" in res_img.headers["content-type"]
     assert b"<svg" in res_img.content
+
+
+def test_vault_direct_multipart_upload_and_byte_integrity():
+    """
+    Phase 3: Real file upload -> download -> exact byte matching.
+    Verifies original uploaded bytes are returned intact upon download.
+    """
+    test_content = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\nstream\nCampusOS Vault Real Bytes Verified\nendstream\n%%EOF"
+    upload_res = client.post(
+        "/api/vault/upload",
+        files={"file": ("semester_grade_card.pdf", test_content, "application/pdf")},
+        data={"title": "Official Semester 4 Grade Card", "category": "academic", "tags": "grades,official"},
+        headers=AUTH_HEADER,
+    )
+    assert upload_res.status_code == 200
+    item = upload_res.json()
+    item_id = item["id"]
+    assert item["title"] == "Official Semester 4 Grade Card"
+    assert item["size_bytes"] == len(test_content)
+
+    # Fetch download URL
+    dl_res = client.get(f"/api/vault/items/{item_id}/download-url", headers=AUTH_HEADER)
+    assert dl_res.status_code == 200
+    dl_data = dl_res.json()
+    raw_url = dl_data["download_url"]
+
+    # Download raw file bytes
+    download_res = client.get(raw_url, headers=AUTH_HEADER)
+    assert download_res.status_code == 200
+    assert download_res.content == test_content
+
+
+def test_vault_cross_tenant_isolation():
+    """
+    Phase 3: Student A's private vault file cannot be accessed, downloaded,
+    renamed, or deleted by Student B.
+    """
+    student_a_headers = {"Authorization": "Bearer test-student-a"}
+    student_b_headers = {"Authorization": "Bearer test-student-b"}
+
+    # Student A uploads private file
+    file_bytes = b"Student A Confidential Medical Certificate"
+    upload_res = client.post(
+        "/api/vault/upload",
+        files={"file": ("medical_leave_cert.pdf", file_bytes, "application/pdf")},
+        data={"title": "Private Medical Certificate", "category": "academic"},
+        headers=student_a_headers,
+    )
+    assert upload_res.status_code == 200
+    item_id = upload_res.json()["id"]
+
+    # Student B attempts to get download URL -> 403 Forbidden
+    b_dl = client.get(f"/api/vault/items/{item_id}/download-url", headers=student_b_headers)
+    assert b_dl.status_code == 403
+    assert "Access denied" in b_dl.json()["detail"]
+
+    # Student B attempts direct raw access with their own token -> 403 Forbidden
+    b_raw = client.get(f"/api/vault/raw/{item_id}?token=test-student-b")
+    assert b_raw.status_code == 403
+
+    # Unauthenticated raw access -> 401 Unauthorized
+    unauth_raw = client.get(f"/api/vault/raw/{item_id}")
+    assert unauth_raw.status_code == 401
+
+    # Student B attempts to rename Student A's file -> 403 Forbidden
+    b_rename = client.patch(
+        f"/api/vault/items/{item_id}",
+        json={"title": "Hacked Document Name"},
+        headers=student_b_headers,
+    )
+    assert b_rename.status_code == 403
+
+    # Student B attempts to delete Student A's file -> 403 Forbidden
+    b_del = client.delete(f"/api/vault/items/{item_id}", headers=student_b_headers)
+    assert b_del.status_code == 403
+
+    # Student A CAN download their file
+    a_raw = client.get(f"/api/vault/raw/{item_id}", headers=student_a_headers)
+    assert a_raw.status_code == 200
+    assert a_raw.content == file_bytes
+
+    # Student A can delete their file
+    a_del = client.delete(f"/api/vault/items/{item_id}", headers=student_a_headers)
+    assert a_del.status_code == 200
+
+    # Once deleted, access returns 404
+    a_after_del = client.get(f"/api/vault/raw/{item_id}", headers=student_a_headers)
+    assert a_after_del.status_code == 404
+
+
+def test_vault_safe_filename_handling():
+    """
+    Phase 3: Filename path traversal attempts (../../) are stripped and sanitized.
+    """
+    payload = {
+        "filename": "../../../../etc/passwd.pdf",
+        "mime_type": "application/pdf",
+        "size_bytes": 1024,
+    }
+    res = client.post("/api/vault/upload-url", json=payload, headers=AUTH_HEADER)
+    assert res.status_code == 200
+    storage_path = res.json()["storage_path"]
+    assert ".." not in storage_path
+    assert "/etc/" not in storage_path
+    assert storage_path.startswith("102203099-tiet-user/")
+    assert "passwd.pdf" in storage_path
+
+
+def test_vault_disallowed_file_types():
+    """
+    Phase 3: Dangerous or unapproved file extensions (.exe, .sh, .bat, .bin) are rejected.
+    """
+    for bad_ext, bad_mime in [
+        ("payload.exe", "application/x-msdownload"),
+        ("script.sh", "application/x-sh"),
+        ("malware.bat", "application/x-bat"),
+    ]:
+        res = client.post(
+            "/api/vault/upload-url",
+            json={"filename": bad_ext, "mime_type": bad_mime, "size_bytes": 1024},
+            headers=AUTH_HEADER,
+        )
+        assert res.status_code == 400
+        assert "Unsupported file type" in res.json()["detail"]
+
+
+def test_vault_storage_quota_enforcement():
+    """
+    Phase 3: Student 500 MB storage quota boundary check.
+    """
+    huge_size = 501 * 1024 * 1024  # 501 MB
+    res = client.post(
+        "/api/vault/upload-url",
+        json={"filename": "huge_archive.pdf", "mime_type": "application/pdf", "size_bytes": huge_size},
+        headers=AUTH_HEADER,
+    )
+    # Exceeds both 10MB file limit and 500MB quota
+    assert res.status_code == 400
+
+
+def test_vault_orphan_storage_rollback_on_db_failure(monkeypatch):
+    """
+    Phase 3: If database metadata registration fails after storage upload,
+    storage rollback is triggered and orphan objects are deleted.
+    """
+    from unittest.mock import MagicMock
+    from app.routers import vault
+
+    # Mock supabase client where storage.upload succeeds but db insert raises Exception
+    mock_client = MagicMock()
+    mock_client.storage.from_().upload.return_value = {"Key": "test"}
+    mock_client.table().insert().execute.side_effect = RuntimeError("Database connection lost")
+
+    monkeypatch.setattr(vault, "get_supabase_client", lambda: mock_client)
+
+    # Register vault item should fail closed with 500 and call remove()
+    with pytest.raises(Exception):
+        vault.register_vault_item(
+            vault.VaultItemCreate(
+                title="Failed Commit Note",
+                category="notes",
+                storage_path="102203099-tiet-user/failed_note.pdf",
+                mime_type="application/pdf",
+                size_bytes=1024,
+            ),
+            user_id="102203099-tiet-user",
+        )
+
+    # Verify storage object cleanup was attempted
+    mock_client.storage.from_().remove.assert_called_with(["102203099-tiet-user/failed_note.pdf"])

@@ -3,10 +3,10 @@ import uuid
 import re
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, Query, status, Response
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, Query, status, Response, Header
 from fastapi.responses import JSONResponse
 
-from ..core.auth import get_current_user_id, get_optional_user_id
+from ..core.auth import get_current_user_id, get_optional_user_id, verify_supabase_jwt
 from ..core.supabase import get_supabase_client
 from ..database import db
 from ..models.vault import (
@@ -34,8 +34,8 @@ def _generate_sample_pdf(title: str) -> bytes:
     clean_title = re.sub(r"[^a-zA-Z0-9 _.-]", "", title)[:60]
     stream_text = (
         f"BT /F1 18 Tf 50 720 Td ({clean_title}) Tj ET\n"
-        f"BT /F1 12 Tf 50 690 Td (CampusOS Encrypted Vault - Thapar Institute of Eng. & Tech.) Tj ET\n"
-        f"BT /F1 10 Tf 50 665 Td (Status: Active Student Academic Document - Zero Knowledge Vault) Tj ET\n"
+        f"BT /F1 12 Tf 50 690 Td (CampusOS Private Vault - Thapar Institute of Eng. & Tech.) Tj ET\n"
+        f"BT /F1 10 Tf 50 665 Td (Status: Active Student Academic Document - Private Access-Controlled Vault) Tj ET\n"
         f"BT /F1 9 Tf 50 640 Td (Verified for roll no. 102203099 - COE Dept.) Tj ET\n"
     )
     stream_bytes = stream_text.encode("latin1", errors="replace")
@@ -138,6 +138,7 @@ def _validate_file_metadata(filename: str, mime_type: str, size_bytes: int):
         )
 
 DEMO_USER_UUID = "00000000-0000-0000-0000-000102203099"
+MAX_STUDENT_STORAGE_BYTES = 500 * 1024 * 1024  # 500 MB limit per student
 
 def _to_db_user_id(uid: str) -> str:
     """Ensures user_id is a valid UUID for PostgreSQL uuid column while maintaining strict tenant isolation."""
@@ -149,6 +150,35 @@ def _to_db_user_id(uid: str) -> str:
         return str(uuid.UUID(str(uid)))
     except (ValueError, AttributeError):
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(uid)))
+
+def _check_user_storage_quota(user_id: str, new_bytes: int):
+    """Enforces the student's 500 MB storage quota across in-memory and Supabase storage."""
+    db_uid = _to_db_user_id(user_id)
+    user_keys = {user_id, db_uid}
+    if user_id in ("102203099-tiet-user", "dev-user-102203099", DEMO_USER_UUID):
+        user_keys.update(["102203099-tiet-user", DEMO_USER_UUID])
+
+    current_total = sum(
+        int(item.get("size_bytes", 0))
+        for item in _in_memory_vault_items.values()
+        if item.get("user_id") in user_keys
+    )
+
+    client = get_supabase_client()
+    if client:
+        try:
+            res = client.table("vault_items").select("size_bytes").in_("user_id", [user_id, db_uid]).execute()
+            if res.data:
+                db_total = sum(int(r.get("size_bytes", 0)) for r in res.data)
+                current_total = max(current_total, db_total)
+        except Exception:
+            pass
+
+    if current_total + new_bytes > MAX_STUDENT_STORAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Storage quota exceeded: 500 MB limit per student. Current usage: {round(current_total / (1024*1024), 2)} MB.",
+        )
 
 def _normalize_category(cat: str) -> str:
     if not cat:
@@ -177,11 +207,13 @@ def create_upload_url(
     """
     Generates a pre-signed upload URL for Supabase Storage (vault bucket),
     scoped to the user's isolated folder: {user_id}/{unique_filename}.
-    Validates file type and size (max 10 MB).
+    Validates file type and size (max 10 MB) and verifies 500 MB student quota.
     """
     _validate_file_metadata(req.filename, req.mime_type, req.size_bytes)
+    _check_user_storage_quota(user_id, req.size_bytes)
 
-    clean_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", req.filename)
+    safe_filename = os.path.basename(req.filename.strip())
+    clean_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", safe_filename)
     unique_prefix = uuid.uuid4().hex[:8]
     storage_path = f"{user_id}/{unique_prefix}_{clean_name}"
 
@@ -219,12 +251,14 @@ def register_vault_item(
     """
     Registers a new vault item after successful upload to Supabase storage.
     Enforces that storage_path belongs to the authenticated user.
+    Rolls back storage object on database commit failure.
     """
     _validate_file_metadata(req.storage_path, req.mime_type, req.size_bytes)
 
-    # Security: Enforce path scoping to user's folder
+    # Security: Enforce path scoping to user's folder and prevent traversal
+    safe_path = os.path.basename(req.storage_path.strip())
     if not req.storage_path.startswith(f"{user_id}/") and not req.storage_path.startswith("vault-private/"):
-        req.storage_path = f"{user_id}/{os.path.basename(req.storage_path)}"
+        req.storage_path = f"{user_id}/{safe_path}"
 
     category = _normalize_category(req.category)
     item_id = f"v-{uuid.uuid4().hex[:8]}"
@@ -254,8 +288,16 @@ def register_vault_item(
                 "mime_type": req.mime_type,
                 "size_bytes": req.size_bytes,
             }).execute()
-        except Exception:
-            pass
+        except Exception as e:
+            # Clean up orphan storage object on DB failure
+            try:
+                client.storage.from_("vault").remove([req.storage_path])
+            except Exception:
+                pass
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to commit document metadata: {str(e)}"
+            )
 
     _in_memory_vault_items[item_id] = item_dict
 
@@ -358,7 +400,9 @@ def list_vault_items(
         items=result_items,
         total_count=len(result_items),
         total_size_bytes=total_size,
+        total_storage_bytes=total_size,
         max_storage_bytes=500 * 1024 * 1024,
+        storage_limit_bytes=500 * 1024 * 1024,
     )
 
 
@@ -371,10 +415,11 @@ def list_vault_items(
 def get_download_url(
     item_id: str,
     user_id: str = Depends(get_current_user_id),
+    authorization: Optional[str] = Header(None),
 ):
     """
     Generates a short-lived (300 seconds) signed download URL.
-    Validates that the file belongs to the authenticated user.
+    Validates that the file belongs strictly to the authenticated user.
     """
     item: Optional[Dict[str, Any]] = None
 
@@ -400,7 +445,11 @@ def get_download_url(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: file belongs to another student")
 
     storage_path = item.get("storage_path", "")
-    download_url = f"http://localhost:8000/api/vault/raw/{item_id}"
+    token_param = ""
+    if authorization and authorization.startswith("Bearer "):
+        token_param = f"?token={authorization.split('Bearer ', 1)[1].strip()}"
+
+    download_url = f"/api/vault/raw/{item_id}{token_param}"
 
     if client:
         try:
@@ -423,31 +472,77 @@ def get_download_url(
 
 @router.get("/raw/{item_id}")
 @vault_public_router.get("/raw/{item_id}")
-def serve_raw_vault_file(item_id: str):
+def serve_raw_vault_file(
+    item_id: str,
+    token: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None),
+):
     """
     Direct raw file streaming endpoint for browser previews and downloads.
-    Avoids unresolvable mock hosts by serving from memory or verified Supabase storage.
+    Enforces student authentication and strict owner isolation.
+    Returns exact original uploaded bytes intact.
     """
-    # 1. Check in-memory uploaded file bytes
+    item: Optional[Dict[str, Any]] = None
+
+    client = get_supabase_client()
+    if client:
+        try:
+            res = client.table("vault_items").select("*").eq("id", item_id).execute()
+            if res.data:
+                item = res.data[0]
+        except Exception:
+            pass
+
+    if not item:
+        item = _in_memory_vault_items.get(item_id)
+
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vault item not found")
+
+    # Authenticate requester
+    user_id: Optional[str] = None
+    if authorization and authorization.startswith("Bearer "):
+        user_id = verify_supabase_jwt(authorization.split("Bearer ", 1)[1].strip())
+    elif token:
+        user_id = verify_supabase_jwt(token)
+    elif item_id.startswith("v-seed-"):
+        user_id = "102203099-tiet-user"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token required to access private vault document",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Check ownership
+    item_user_id = str(item.get("user_id", ""))
+    db_uid = _to_db_user_id(user_id)
+    is_owner = (item_user_id == user_id) or (item_user_id == db_uid)
+    if item_id.startswith("v-seed-") and user_id in ("102203099-tiet-user", "dev-user-102203099", DEMO_USER_UUID):
+        is_owner = True
+
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: file belongs to another student",
+        )
+
+    title = str(item.get("title", "document"))
+    mime = str(item.get("mime_type", "application/pdf"))
+
+    # 1. Return exact in-memory uploaded file bytes if available
     if item_id in _in_memory_file_bytes:
-        content, mime = _in_memory_file_bytes[item_id]
-        item = _in_memory_vault_items.get(item_id, {})
-        title = item.get("title", "document")
+        content, mem_mime = _in_memory_file_bytes[item_id]
         return Response(
             content=content,
-            media_type=mime,
+            media_type=mem_mime or mime,
             headers={
-                "Content-Disposition": f'inline; filename="{title}"',
-                "Cache-Control": "public, max-age=3600",
+                "Content-Disposition": f'attachment; filename="{title}"',
+                "Cache-Control": "private, no-cache",
             },
         )
 
-    item = _in_memory_vault_items.get(item_id, {})
-    title = str(item.get("title", "Document"))
-    mime = str(item.get("mime_type", "application/pdf"))
-
     # 2. Check Supabase Storage if client is connected
-    client = get_supabase_client()
     storage_path = item.get("storage_path")
     if client and storage_path:
         try:
@@ -456,7 +551,10 @@ def serve_raw_vault_file(item_id: str):
                 return Response(
                     content=data,
                     media_type=mime,
-                    headers={"Content-Disposition": f'inline; filename="{title}"'},
+                    headers={
+                        "Content-Disposition": f'attachment; filename="{title}"',
+                        "Cache-Control": "private, no-cache",
+                    },
                 )
         except Exception:
             pass
@@ -578,7 +676,7 @@ def delete_vault_item(
 
     storage_path = item.get("storage_path", "")
 
-    if client and storage_path:
+    if storage_path and client:
         try:
             client.storage.from_("vault").remove([storage_path])
             client.table("vault_items").delete().eq("id", item_id).execute()
@@ -587,6 +685,8 @@ def delete_vault_item(
 
     if item_id in _in_memory_vault_items:
         del _in_memory_vault_items[item_id]
+    _in_memory_file_bytes.pop(item_id, None)
+    db.vault_docs.pop(item_id, None)
 
     return {
         "success": True,
@@ -611,26 +711,31 @@ async def upload_direct_document(
     Direct multipart file upload with validation for local dev & production.
     Validates file type (PDF, images, DOCX, PPTX, TXT) and size (max 10 MB).
     Enforces authenticated student ownership.
+    Performs reliable upload with rollback of orphan storage objects on metadata failure.
     """
     effective_user_id = user_id
     content = await file.read()
     file_size = len(content)
 
     _validate_file_metadata(file.filename or "file", file.content_type or "", file_size)
+    _check_user_storage_quota(effective_user_id, file_size)
 
-    clean_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", file.filename or "doc")
+    safe_name = os.path.basename(file.filename or "doc")
+    clean_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", safe_name)
     doc_id = f"v-{uuid.uuid4().hex[:8]}"
     storage_path = f"{effective_user_id}/{doc_id}_{clean_name}"
     cat = _normalize_category(category)
 
     client = get_supabase_client()
     if client:
+        upload_success = False
         try:
             client.storage.from_("vault").upload(
                 storage_path,
                 content,
                 file_options={"content-type": file.content_type or "application/octet-stream"},
             )
+            upload_success = True
             db_uid = _to_db_user_id(effective_user_id)
             client.table("vault_items").insert({
                 "id": str(uuid.uuid4()),
@@ -641,8 +746,15 @@ async def upload_direct_document(
                 "mime_type": file.content_type or "application/octet-stream",
                 "size_bytes": file_size,
             }).execute()
-        except Exception:
-            pass
+        except Exception as e:
+            if upload_success:
+                try:
+                    client.storage.from_("vault").remove([storage_path])
+                except Exception:
+                    pass
+            from ..core.config import settings
+            if settings.supabase_url and "mock" not in settings.supabase_url:
+                raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
     now_iso = datetime.now(timezone.utc).isoformat()
     new_doc = {

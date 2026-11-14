@@ -544,8 +544,6 @@ export async function getVaultItems(
   category?: string,
   query?: string
 ): Promise<VaultListResponse> {
-  const localItems = getLocalVaultItems();
-
   try {
     const headers = await getAuthHeaders();
     const params = new URLSearchParams();
@@ -560,37 +558,24 @@ export async function getVaultItems(
 
     if (res.ok) {
       const data: VaultListResponse = await res.json();
-      // Merge server items with any locally cached items that may not be on the server yet
-      const serverIds = new Set((data.items || []).map((i) => i.id));
-      const combined = [...(data.items || [])];
-
-      for (const loc of localItems) {
-        if (!serverIds.has(loc.id)) {
-          if (category && category !== "all" && loc.category.toLowerCase() !== category.toLowerCase()) {
-            continue;
-          }
-          if (query && query.trim() && !loc.title.toLowerCase().includes(query.trim().toLowerCase())) {
-            continue;
-          }
-          combined.push(loc);
-        }
-      }
-
-      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      const totalBytes = combined.reduce((acc, i) => acc + (i.size_bytes || 0), 0);
-
       return {
-        items: combined,
-        total_count: combined.length,
-        total_storage_bytes: totalBytes,
-        storage_limit_bytes: data.storage_limit_bytes || 500 * 1024 * 1024,
+        items: data.items || [],
+        total_count: data.total_count,
+        total_storage_bytes: data.total_storage_bytes ?? data.total_size_bytes ?? 0,
+        storage_limit_bytes: data.storage_limit_bytes ?? data.max_storage_bytes ?? 500 * 1024 * 1024,
       };
     }
-  } catch (e) {
-    console.warn("Backend offline, loading local vault cache:", e);
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load vault items");
+  } catch (e: any) {
+    if (e.message && !e.message.includes("fetch")) {
+      throw e;
+    }
+    console.warn("Backend offline, falling back to local storage:", e);
   }
 
-  // Fallback when backend is unreachable or not started:
+  // Fallback ONLY when backend is completely unreachable
+  const localItems = getLocalVaultItems();
   const mockBase: VaultItem[] = [
     {
       id: "v-seed-1",
@@ -692,42 +677,24 @@ export async function registerVaultItem(
 export async function getVaultDownloadUrl(
   itemId: string
 ): Promise<DownloadUrlResponse> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/vault/items/${itemId}/download-url`, {
-      headers,
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data: DownloadUrlResponse = await res.json();
-      let url = data.download_url;
-      if (url.includes("mock-storage.supabase.co") || url.startsWith("/")) {
-        url = `${API_BASE}/api/vault/raw/${itemId}`;
-      }
-      return {
-        ...data,
-        download_url: url,
-      };
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/vault/items/${itemId}/download-url`, {
+    headers,
+    cache: "no-store",
+  });
+  if (res.ok) {
+    const data: DownloadUrlResponse = await res.json();
+    let url = data.download_url;
+    if (url.startsWith("/")) {
+      url = `${API_BASE}${url}`;
     }
-  } catch (err) {
-    console.warn("Backend download url failed, checking local items:", err);
-  }
-
-  // Fallback for local / demo items
-  const local = getLocalVaultItems().find((i) => i.id === itemId);
-  if (local && local.download_url && local.download_url !== "#" && !local.download_url.includes("mock-storage")) {
     return {
-      download_url: local.download_url,
-      expires_in_seconds: 3600,
-      title: local.title,
+      ...data,
+      download_url: url,
     };
   }
-
-  return {
-    download_url: `${API_BASE}/api/vault/raw/${itemId}`,
-    expires_in_seconds: 300,
-    title: local?.title || "Document",
-  };
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || "Could not retrieve secure download link");
 }
 
 export async function renameVaultItem(
@@ -735,74 +702,42 @@ export async function renameVaultItem(
   title: string,
   category?: string
 ): Promise<VaultItem> {
-  // Update in local storage
-  const localItems = getLocalVaultItems();
-  const existing = localItems.find((i) => i.id === itemId);
-  if (existing) {
-    const updated: VaultItem = {
-      ...existing,
-      title: title.trim(),
-      category: category || existing.category,
-    };
-    saveLocalVaultItem(updated);
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const payload: VaultItemUpdate = { title: title.trim() };
+  if (category) payload.category = category;
+
+  const res = await fetch(`${API_BASE}/api/vault/items/${itemId}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to rename vault document");
   }
-
-  try {
-    const headers = await getAuthHeaders({ "Content-Type": "application/json" });
-    const payload: VaultItemUpdate = { title };
-    if (category) payload.category = category;
-
-    const res = await fetch(`${API_BASE}/api/vault/items/${itemId}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      const data: VaultItem = await res.json();
-      saveLocalVaultItem(data);
-      return data;
-    }
-  } catch (err) {
-    console.warn("Backend rename failed, saved locally:", err);
-  }
-
-  if (existing) {
-    return { ...existing, title: title.trim(), category: category || existing.category };
-  }
-
-  return {
-    id: itemId,
-    title,
-    category: category || "other",
-    storage_path: `102203099-tiet-user/${itemId}`,
-    mime_type: "application/pdf",
-    size_bytes: 1024,
-    created_at: new Date().toISOString(),
-  };
+  const data: VaultItem = await res.json();
+  saveLocalVaultItem(data);
+  return data;
 }
 
 export async function deleteVaultItem(itemId: string): Promise<void> {
-  // Always remove from local cache immediately
   removeLocalVaultItem(itemId);
 
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/vault/items/${itemId}`, {
-      method: "DELETE",
-      headers,
-    });
-    if (!res.ok) {
-      await fetch(`${API_BASE}/vault/items/${itemId}`, { method: "DELETE", headers });
-    }
-  } catch (err) {
-    console.warn("Backend delete request failed (removed from local cache):", err);
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/vault/items/${itemId}`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to delete vault document");
   }
 }
 
 /**
  * End-to-end file upload helper:
  * Attempts signed URL upload or multipart upload to FastAPI/Supabase backend.
- * Falls back to offline browser storage if backend is temporarily disconnected.
+ * Never fabricates fake blob: URLs on failure; propagates real server errors.
  */
 export async function uploadVaultFile(
   file: File,
@@ -814,18 +749,11 @@ export async function uploadVaultFile(
     throw new Error("File size exceeds 10 MB limit.");
   }
 
-  let localPreviewUrl: string | undefined;
-  if (typeof window !== "undefined") {
-    try {
-      localPreviewUrl = URL.createObjectURL(file);
-    } catch {}
-  }
-
   // Attempt 1: Direct multipart upload
   try {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("title", title);
+    formData.append("title", title.trim());
     formData.append("category", category);
 
     const headers = await getAuthHeaders();
@@ -846,65 +774,52 @@ export async function uploadVaultFile(
         mime_type: data.mime_type,
         size_bytes: data.size_bytes || file.size,
         created_at: data.created_at,
-        download_url: localPreviewUrl || `/api/vault/items/${data.id}/download-url`,
+        download_url: `/api/vault/items/${data.id}/download-url`,
       };
       saveLocalVaultItem(item);
       return item;
     }
-  } catch (directErr) {
-    console.warn("Direct upload failed, trying signed URL flow:", directErr);
+
+    const err = await res.json().catch(() => ({}));
+    if (res.status >= 400 && res.status < 500) {
+      // Definitive validation/auth error from server
+      throw new Error(err.detail || "Failed to upload document");
+    }
+  } catch (directErr: any) {
+    if (directErr.message && !directErr.message.includes("fetch")) {
+      throw directErr;
+    }
+    console.warn("Direct upload error, attempting signed URL flow:", directErr);
   }
 
-  // Attempt 2: Signed upload URL flow
-  try {
-    const uploadInfo = await createVaultUploadUrl(
-      file.name,
-      file.type || "application/octet-stream",
-      file.size
-    );
+  // Attempt 2: Two-stage signed upload URL flow
+  const uploadInfo = await createVaultUploadUrl(
+    file.name,
+    file.type || "application/octet-stream",
+    file.size
+  );
 
-    if (uploadInfo.upload_url && uploadInfo.upload_url.startsWith("http")) {
-      try {
-        await fetch(uploadInfo.upload_url, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file,
-        });
-      } catch (putErr) {
-        console.warn("Signed URL put error:", putErr);
-      }
-    }
-
-    const item = await registerVaultItem({
-      title,
-      category,
-      storage_path: uploadInfo.storage_path,
-      mime_type: file.type || "application/octet-stream",
-      size_bytes: file.size,
+  if (uploadInfo.upload_url && uploadInfo.upload_url.startsWith("http")) {
+    const putRes = await fetch(uploadInfo.upload_url, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
     });
-    if (localPreviewUrl) {
-      item.download_url = localPreviewUrl;
+    if (!putRes.ok) {
+      throw new Error("Failed to upload file bytes to secure storage");
     }
-    saveLocalVaultItem(item);
-    return item;
-  } catch (flowErr) {
-    console.warn("Signed URL flow failed, using client-side offline storage:", flowErr);
   }
 
-  // Attempt 3: Client-side offline fallback
-  const offlineItem: VaultItem = {
-    id: `v-local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    user_id: "102203099-tiet-user",
+  const item = await registerVaultItem({
     title: title.trim(),
     category,
-    storage_path: `102203099-tiet-user/local_${file.name}`,
+    storage_path: uploadInfo.storage_path,
     mime_type: file.type || "application/octet-stream",
     size_bytes: file.size,
-    created_at: new Date().toISOString(),
-    download_url: localPreviewUrl || "#",
-  };
-  saveLocalVaultItem(offlineItem);
-  return offlineItem;
+  });
+
+  saveLocalVaultItem(item);
+  return item;
 }
 
 // --- Campus Reuse API ---

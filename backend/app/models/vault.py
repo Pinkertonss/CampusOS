@@ -107,4 +107,6 @@ class VaultListResponse(BaseModel):
     items: List[VaultItem]
     total_count: int
     total_size_bytes: int
+    total_storage_bytes: Optional[int] = None
     max_storage_bytes: int = 500 * 1024 * 1024  # 500 MB student quota
+    storage_limit_bytes: Optional[int] = None
