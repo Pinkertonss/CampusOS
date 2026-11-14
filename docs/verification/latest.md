@@ -1,16 +1,16 @@
-# CampusOS Verification Report: New Capabilities, Support Desk, Lost & Found, Gemini Assistant, and Deployment Portal
+# CampusOS Verification Report: New Capabilities, Support Desk, Lost & Found, Gemini Assistant, and Dynamic Env Loading
 
-**Generated**: 2026-11-14T22:21:00+05:30  
+**Generated**: 2026-11-14T22:36:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & Pre-Commit Verification Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `c5cd40e4a1c305d2624e493355574e0bd88a3440`  
-**Tested Source Revision**: Current `antigravity` branch with 7 capability, design, and deployment enhancements  
+**Baseline Commit**: `cf2b9b41a32b94a161cdd7174af7b23902a746f2`  
+**Tested Source Revision**: Current `antigravity` branch with dynamic environment loading resilience  
 
 ---
 
 ## 1. Scope and Source
 
-This implementation addresses and verifies the 7 core feature, design, and infrastructure requirements for CampusOS:
+This implementation addresses and verifies the 7 core feature, design, and infrastructure requirements for CampusOS, along with dynamic environment loading resilience for the Gemini Personal Assistant:
 
 1. **Lost & Found Section**:
    - Prominent navigation item positioned immediately after Dashboard on desktop sidebar and mobile header.
@@ -32,9 +32,10 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 4. **Campus Guide Renaming**:
    - Renamed user-facing "Campus Copilot" to "Campus Guide" across navigation, headers, descriptions, buttons, tooltips, and empty states.
    - Preserved backward compatibility with `/copilot` and `/api/copilot` while introducing canonical `/guide` and `/api/guide` routes.
-5. **Gemini-Powered Personal Assistant**:
+5. **Gemini-Powered Personal Assistant with Dynamic Env Discovery**:
    - Floating chat bubble (`PersonalAssistant.tsx`) docked on all authenticated pages, separate from the institutional Campus Guide.
-   - Restful proxy service (`/api/assistant/chat`, `/api/assistant/calculate`) with sliding-window rate limiting, timeout handling, and graceful error handling when API keys are absent or exhausted.
+   - Restful proxy service (`/api/assistant/chat`, `/api/assistant/calculate`) with sliding-window rate limiting, timeout handling, and graceful error handling.
+   - **Dynamic Environment Discovery**: Implemented `get_api_key()` to inspect runtime environment and auto-reload `backend/.env` or `./.env` on-demand with `override=True`, ensuring running servers immediately recognize newly configured keys without requiring manual process restarts.
    - Safe arithmetic evaluation via Python `ast` syntax inspection (supporting Python 3.14 without deprecated `ast.Num`) preventing any use of `eval()`.
    - Clear institutional boundary disclaimer directing official policy and academic queries to Campus Guide.
 6. **Student Resale Marketplace Visual Assets**:
@@ -58,20 +59,21 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 
 | Path | Purpose & Modification |
 | :--- | :--- |
+| `backend/app/services/personal_assistant.py` | Added dynamic `get_api_key()` inspecting environment and auto-reloading `.env` on demand; updated `chat()`. |
+| `backend/app/routers/personal_assistant.py` | Updated `/status` to dynamically check active key state via `personal_assistant_service.get_api_key()`. |
+| `backend/app/core/config.py` | Added `override=True` to `load_dotenv` for robust precedence of configured `.env` variables. |
+| `docker-compose.yml` | Passed through `GEMINI_API_KEY` and `GEMINI_MODEL` environment variables to backend container. |
 | `backend/app/models/lost_and_found.py` | Data models for Lost & Found items, claims, updates, and masked public projections. |
 | `backend/app/services/lost_and_found_engine.py` | Durable JSON storage engine, CRUD, claim management, email masking, and private proof access controls. |
 | `backend/app/routers/lost_and_found.py` | API endpoints for Lost & Found listings, detail view, creation, status mutation, claim verification, and image upload. |
 | `backend/app/models/support.py` | Pydantic data models for Support tickets, updates, priorities, categories, and screenshot uploads. |
 | `backend/app/routers/support.py` | API endpoints for ticket submission, isolated ticket listing, screenshot attachment, and administrative resolution. |
-| `backend/app/services/personal_assistant.py` | Gemini REST proxy service, sliding-window rate limiting, AST-based safe calculation engine without `eval`. |
-| `backend/app/routers/personal_assistant.py` | API endpoints `/api/assistant/status`, `/api/assistant/chat`, and `/api/assistant/calculate`. |
 | `backend/app/models/opportunity.py` | Extended Opportunity models with mandatory criteria, preferred qualifications, and preview response statistics. |
 | `backend/app/database.py` | Added `update_opportunity()`, `preview_matching()`, and extended candidate discovery filtering. |
 | `backend/app/routers/opportunities.py` | Reordered static routes before parameterized routes, added matching preview and opportunity lifecycle endpoints. |
 | `backend/app/routers/copilot.py` | Added `/api/guide` and `/guide` router mirrors for Campus Guide. |
 | `backend/app/routers/reuse.py` | Replaced Unsplash hotlinks with local project-owned SVG illustration paths. |
 | `backend/app/core/auth.py` | Added `get_optional_user_claims` dependency for unauthenticated/authenticated mixed routes. |
-| `backend/app/core/config.py` | Added `gemini_model` configuration setting. |
 | `backend/app/main.py` | Registered `lost_and_found`, `support`, `personal_assistant`, and `guide` routers. |
 | `frontend/public/images/resell/*.svg` | 9 clean, project-owned SVG vector illustrations for student reuse listings. |
 | `frontend/src/app/lost-and-found/page.tsx` | Complete Lost & Found interface with tabs, filters, search, reporting modal, and private claim workflow. |
@@ -108,7 +110,7 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 | `GET /api/support/tickets/{ticket_id}` | Ticket Owner / Admin | Retrieves ticket details and response history. |
 | `PUT /api/support/tickets/{ticket_id}` | Admin | Adds admin response and updates ticket status (`in_progress`, `resolved`, `closed`). |
 | `POST /api/support/upload-screenshot` | Authenticated | Uploads and registers an error screenshot for support tickets. |
-| `GET /api/assistant/status` | Public / Authenticated | Returns availability status of the Gemini assistant service. |
+| `GET /api/assistant/status` | Public / Authenticated | Returns availability status of the Gemini assistant service (dynamically verified). |
 | `POST /api/assistant/chat` | Authenticated | Proxies conversational queries to Gemini with rate limiting and campus disclaimer. |
 | `POST /api/assistant/calculate` | Authenticated | Evaluates mathematical and GPA expressions safely via Python AST without `eval`. |
 | `POST /api/opportunities/preview-matching` | Opportunity Manager / Admin | Evaluates live candidate pool matching counts prior to opportunity publication. |
@@ -149,7 +151,7 @@ This implementation addresses and verifies the 7 core feature, design, and infra
 
 ### A. Backend Pytest Test Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: **PASS** (177 passed in 1.86s across 16 test suites)
+- **Result**: **PASS** (177 passed in 1.90s across 16 test suites)
 - **Suite Breakdown**:
   - `backend/tests/test_new_features.py`: **9 passed** (Lost & Found CRUD and privacy masking, distinguishing claim proof isolation, Support ticket lifecycle and student isolation, Gemini assistant status, AST safe calculation and injection rejection, Guide endpoint aliasing)
   - `backend/tests/test_source_review_repairs.py`: **10 passed** (BUG-01 through BUG-11 repairs verified)
@@ -201,6 +203,8 @@ This implementation addresses and verifies the 7 core feature, design, and infra
    - Verified desktop sidebar and mobile navigation header include "Lost & Found" directly following Dashboard.
    - Verified Help & Support button is accessible across all authenticated pages, correctly toggling the slide-over modal.
    - Verified floating Gemini Assistant launcher is accessible on all authenticated views without blocking core page content.
+3. **Dynamic Key Resolution**:
+   - Verified that `get_assistant_status()` dynamically retrieves the active API key and reports `configured: True` without requiring process restarts.
 
 ---
 

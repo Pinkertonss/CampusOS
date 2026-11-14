@@ -36,7 +36,7 @@ def get_assistant_status(claims: Optional[Dict[str, Any]] = Depends(get_optional
     """
     Returns public capabilities of the Personal Assistant without leaking credentials.
     """
-    has_key = bool(settings.gemini_api_key.strip())
+    has_key = bool(personal_assistant_service.get_api_key())
     return {
         "name": "Personal Assistant",
         "powered_by": "Google Gemini",

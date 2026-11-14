@@ -2,6 +2,7 @@ import os
 import ast
 import operator
 import time
+from pathlib import Path
 import httpx
 from typing import List, Dict, Any, Optional
 from ..core.config import settings
@@ -85,6 +86,25 @@ class PersonalAssistantService:
         # Per-user sliding window rate limiting
         self._rate_limits: Dict[str, List[float]] = {}
 
+    @staticmethod
+    def get_api_key() -> str:
+        key = (settings.gemini_api_key or "").strip() or os.getenv("GEMINI_API_KEY", "").strip()
+        if not key:
+            try:
+                from dotenv import load_dotenv
+                for env_file in [
+                    Path(__file__).resolve().parent.parent.parent / ".env",
+                    Path(__file__).resolve().parent.parent.parent.parent / ".env",
+                ]:
+                    if env_file.exists():
+                        load_dotenv(env_file, override=True)
+                key = os.getenv("GEMINI_API_KEY", "").strip()
+                if key:
+                    settings.gemini_api_key = key
+            except Exception:
+                pass
+        return key
+
     def _check_rate_limit(self, user_id: str, limit: int = 25, window: int = 60) -> bool:
         now = time.time()
         timestamps = self._rate_limits.setdefault(user_id, [])
@@ -111,7 +131,7 @@ class PersonalAssistantService:
                 "model": settings.gemini_model,
             }
 
-        api_key = settings.gemini_api_key.strip()
+        api_key = self.get_api_key()
         if not api_key:
             return {
                 "reply": (

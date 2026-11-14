@@ -12,7 +12,7 @@ env_paths = [
 ]
 for p in env_paths:
     if p.exists():
-        load_dotenv(p)
+        load_dotenv(p, override=True)
         break
 
 class Settings(BaseModel):
