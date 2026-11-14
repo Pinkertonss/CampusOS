@@ -375,6 +375,7 @@ export interface StudentExperienceProfile {
   github_link?: string | null;
   linkedin_link?: string | null;
   discovery_opt_in: boolean;
+  resume_sharing_opt_in?: boolean;
   cgpa_verified?: number | null;
   updated_at: string;
 }
@@ -406,6 +407,7 @@ export interface CandidateMatch {
   candidate_score: number;
   invited: boolean;
   has_resume: boolean;
+  resume_sharing_opt_in?: boolean;
 }
 
 export interface CandidateDiscoveryResponse {

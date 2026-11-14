@@ -3,8 +3,9 @@ import json
 import io
 import csv
 from pathlib import Path
-from datetime import datetime, date
-from typing import List, Dict, Optional, Any, Tuple
+from datetime import datetime, date, timezone, timedelta
+import zoneinfo
+from typing import List, Dict, Optional, Any, Tuple, Union
 from fastapi import HTTPException, status
 from ..models.academic_rbac import (
     Subject,
@@ -29,6 +30,60 @@ from ..models.academic_rbac import (
     RosterResponse,
     AcademicAuditLog,
 )
+
+IST_TIMEZONE = zoneinfo.ZoneInfo("Asia/Kolkata")
+
+
+def parse_and_normalize_utc(dt_val: Union[str, datetime], date_only_end_of_day: bool = True) -> datetime:
+    """
+    Normalizes ISO datetime string or date-only string or datetime object to offset-aware UTC.
+    - If date-only string ('YYYY-MM-DD'), sets time to 23:59:59.999999 in IST if date_only_end_of_day=True, then converts to UTC.
+    - If datetime string without offset (naive), treats as IST and converts to UTC.
+    - If datetime string with offset (e.g. +05:30 or Z), parses and converts to UTC.
+    - Raises HTTPException 400 Bad Request if string is malformed or invalid.
+    """
+    if isinstance(dt_val, datetime):
+        if dt_val.tzinfo is None:
+            dt_val = dt_val.replace(tzinfo=IST_TIMEZONE)
+        return dt_val.astimezone(timezone.utc)
+
+    if not isinstance(dt_val, str) or not dt_val.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid due date value: '{dt_val}'.",
+        )
+
+    s = dt_val.strip()
+    # Check date-only pattern YYYY-MM-DD
+    if len(s) == 10 and s[4] == "-" and s[7] == "-":
+        try:
+            d = date.fromisoformat(s)
+            if date_only_end_of_day:
+                dt = datetime(d.year, d.month, d.day, 23, 59, 59, 999999, tzinfo=IST_TIMEZONE)
+            else:
+                dt = datetime(d.year, d.month, d.day, 0, 0, 0, 0, tzinfo=IST_TIMEZONE)
+            return dt.astimezone(timezone.utc)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Malformed date-only format '{s}': {e}",
+            )
+
+    cleaned = s
+    if cleaned.endswith("Z"):
+        cleaned = cleaned[:-1] + "+00:00"
+
+    try:
+        dt = datetime.fromisoformat(cleaned)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=IST_TIMEZONE)
+        return dt.astimezone(timezone.utc)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid due date format '{s}': {e}",
+        )
+
 
 class AcademicRBACEngine:
     """
@@ -988,34 +1043,75 @@ class AcademicRBACEngine:
         self._save_persisted_data()
         return sess
 
-    def get_session_records(self, session_id: str) -> List[SessionAttendanceRecord]:
+    def get_session(self, offering_id: str, session_id: str) -> Optional[AttendanceSession]:
+        self.get_offering(offering_id)
+        sessions = self.attendance_sessions.get(offering_id, [])
+        for s in sessions:
+            if s.id == session_id:
+                return s
+        return None
+
+    def get_session_records(self, session_id: str, offering_id: Optional[str] = None) -> List[SessionAttendanceRecord]:
+        if offering_id:
+            sess = self.get_session(offering_id, session_id)
+            if not sess:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+                )
         return list(self.session_attendance_records.get(session_id, {}).values())
 
     def mark_attendance(
         self, actor_id: str, actor_role: str, offering_id: str, session_id: str, records: List[AttendanceRecordItem]
     ) -> List[SessionAttendanceRecord]:
         self.get_offering(offering_id)
+        target_session = self.get_session(offering_id, session_id)
+        if not target_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+            )
+
+        if target_session.is_cancelled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot mark attendance for cancelled session '{session_id}'.",
+            )
+
+        # Atomic pre-validation of all students
+        enrollments = self.offering_enrollments.get(offering_id, {})
+        session_dt_str = target_session.session_date[:10] if target_session.session_date else None
+
+        for item in records:
+            enr = enrollments.get(item.student_id)
+            if not enr or enr.status != "active":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Student '{item.student_id}' is not actively enrolled in offering '{offering_id}'.",
+                )
+            if session_dt_str:
+                if enr.enrolled_at and enr.enrolled_at[:10] > session_dt_str:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Student '{item.student_id}' was enrolled on {enr.enrolled_at[:10]} after session date {session_dt_str}.",
+                    )
+                if enr.disenrolled_at and enr.disenrolled_at[:10] < session_dt_str:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Student '{item.student_id}' was disenrolled on {enr.disenrolled_at[:10]} prior to session date {session_dt_str}.",
+                    )
+
         if session_id not in self.session_attendance_records:
             self.session_attendance_records[session_id] = {}
 
-        target_session = None
-        for s in self.attendance_sessions.get(offering_id, []):
-            if s.id == session_id:
-                target_session = s
-                break
-        if not target_session:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
-
         updated_records = []
         for item in records:
-            # Check student enrollment
-            enr = self.offering_enrollments.get(offering_id, {}).get(item.student_id)
-            student_name = enr.student_name if enr else f"Student {item.student_id[:8]}"
-            student_roll = enr.student_roll_no if enr else item.student_id[-9:]
+            enr = enrollments[item.student_id]
+            student_name = enr.student_name
+            student_roll = enr.student_roll_no
 
             prev = self.session_attendance_records[session_id].get(item.student_id)
             if prev and prev.status != item.status:
-                # Correction: audit reason required or logged
                 self.log_audit(
                     actor_id=actor_id,
                     actor_role=actor_role,
@@ -1196,10 +1292,8 @@ class AcademicRBACEngine:
         if not asm:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Assessment '{assessment_id}' not found")
 
-        if assessment_id not in self.student_assessment_marks:
-            self.student_assessment_marks[assessment_id] = {}
-
-        updated_marks = []
+        enrollments = self.offering_enrollments.get(offering_id, {})
+        # Pre-validate all items before mutating state (atomic failure)
         for item in items:
             if item.obtained_marks is not None:
                 if item.obtained_marks < 0 or item.obtained_marks > asm.max_marks:
@@ -1207,10 +1301,21 @@ class AcademicRBACEngine:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Obtained marks {item.obtained_marks} must be between 0 and maximum marks ({asm.max_marks}).",
                     )
+            enr = enrollments.get(item.student_id)
+            if not enr or enr.status != "active":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Student '{item.student_id}' is not actively enrolled in offering '{offering_id}'.",
+                )
 
-            enr = self.offering_enrollments.get(offering_id, {}).get(item.student_id)
-            student_name = enr.student_name if enr else f"Student {item.student_id[:8]}"
-            student_roll = enr.student_roll_no if enr else item.student_id[-9:]
+        if assessment_id not in self.student_assessment_marks:
+            self.student_assessment_marks[assessment_id] = {}
+
+        updated_marks = []
+        for item in items:
+            enr = enrollments[item.student_id]
+            student_name = enr.student_name
+            student_roll = enr.student_roll_no
 
             prev = self.student_assessment_marks[assessment_id].get(item.student_id)
             if prev and prev.obtained_marks != item.obtained_marks:
@@ -1386,20 +1491,25 @@ class AcademicRBACEngine:
         if not target.is_published:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot submit to an unpublished assignment.")
 
-        # Check late submission rules
-        now = datetime.now()
+        # Enforce active student enrollment invariant
+        enr = self.offering_enrollments.get(offering_id, {}).get(student_id)
+        if not enr or enr.status != "active":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Student '{student_id}' is not actively enrolled in offering '{offering_id}'.",
+            )
+
+        # Check late submission rules with timezone-normalized timestamps
+        now_utc = datetime.now(timezone.utc)
         is_late = False
-        try:
-            due_dt = datetime.fromisoformat(target.due_date)
-            if now > due_dt:
-                if not target.allow_late:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Late submissions are strictly not permitted for this assignment.",
-                    )
-                is_late = True
-        except ValueError:
-            pass
+        due_utc = parse_and_normalize_utc(target.due_date, date_only_end_of_day=True)
+        if now_utc > due_utc:
+            if not target.allow_late:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Late submissions are strictly not permitted for this assignment.",
+                )
+            is_late = True
 
         if assignment_id not in self.assignment_submissions:
             self.assignment_submissions[assignment_id] = {}
@@ -1412,9 +1522,8 @@ class AcademicRBACEngine:
             )
 
         new_version = (existing.version + 1) if existing else 1
-        enr = self.offering_enrollments.get(offering_id, {}).get(student_id)
-        student_name = enr.student_name if enr else f"Student {student_id[:8]}"
-        student_roll = enr.student_roll_no if enr else student_id[-9:]
+        student_name = enr.student_name
+        student_roll = enr.student_roll_no
 
         sub_id = existing.id if existing else f"sub-{uuid.uuid4().hex[:8]}"
         sub = AssignmentSubmission(
@@ -1426,7 +1535,7 @@ class AcademicRBACEngine:
             submission_text=submission_text,
             file_name=file_name,
             storage_path=storage_path or f"/submissions/{assignment_id}/{student_id}_v{new_version}",
-            submitted_at=now.isoformat(),
+            submitted_at=now_utc.isoformat(),
             version=new_version,
             is_late=is_late,
             score=existing.score if existing else None,

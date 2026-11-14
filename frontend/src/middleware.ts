@@ -62,21 +62,66 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // 3. Admin-only route restriction:
-  // Hide and protect /admin and /professor from students; visible to admins only
-  if (pathname.startsWith("/admin") || pathname.startsWith("/professor")) {
-    const roleCookie = request.cookies.get("campusos_role")?.value;
-    const isExplicitAdmin =
-      roleCookie === "admin" ||
-      authToken === "dev-admin" ||
-      authToken.startsWith("admin-token-");
+  // 3. Role-based Route Protection (BUG-02)
+  // Extracts trusted roles from session token (rejecting user-editable cookie tampering)
+  const { isAdmin, isProfessor } = extractTrustedRoles(authToken);
 
-    if (!isExplicitAdmin) {
+  // /admin is restricted strictly to administrators
+  if (pathname.startsWith("/admin")) {
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
+  // /professor permits authorized professors and administrators
+  if (pathname.startsWith("/professor")) {
+    if (!isProfessor && !isAdmin) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
   return NextResponse.next();
+}
+
+function extractTrustedRoles(authToken: string): { isAdmin: boolean; isProfessor: boolean } {
+  if (!authToken) {
+    return { isAdmin: false, isProfessor: false };
+  }
+
+  // Development / test tokens
+  if (authToken === "dev-admin" || authToken.startsWith("admin-token-")) {
+    return { isAdmin: true, isProfessor: true };
+  }
+  if (authToken === "dev-professor" || authToken.startsWith("prof-token-") || authToken.startsWith("prof-")) {
+    return { isAdmin: false, isProfessor: true };
+  }
+
+  // Decode JWT payload (app_metadata is server-controlled in Supabase)
+  try {
+    const parts = authToken.split(".");
+    if (parts.length === 3) {
+      const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const decodedStr = atob(payloadBase64);
+      const payload = JSON.parse(decodedStr);
+
+      const appMeta = payload.app_metadata || {};
+      const roles: string[] = [];
+      if (typeof appMeta.role === "string") roles.push(appMeta.role.toLowerCase());
+      if (Array.isArray(appMeta.roles)) {
+        roles.push(...appMeta.roles.map((r: string) => String(r).toLowerCase()));
+      }
+      if (appMeta.is_admin === true) roles.push("admin");
+      if (appMeta.is_professor === true) roles.push("professor");
+
+      const isAdmin = roles.includes("admin");
+      const isProfessor = isAdmin || roles.includes("professor") || roles.includes("faculty");
+      return { isAdmin, isProfessor };
+    }
+  } catch {
+    // Malformed token yields no privileges
+  }
+
+  return { isAdmin: false, isProfessor: false };
 }
 
 export const config = {

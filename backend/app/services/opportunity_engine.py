@@ -124,17 +124,19 @@ class OpportunityEngine:
                     f"Graduation year ({edu.graduation_year}) is not among eligible graduation years: {opportunity.graduation_years}."
                 )
 
-        # 4. Minimum CGPA Criteria (Uses verified institutional records first, fallback to profile)
+        # 4. Minimum CGPA Criteria (Requires verified institutional records)
         if opportunity.min_cgpa is not None:
-            effective_cgpa = verified_cgpa or (edu.cgpa_verified if edu else None) or (edu.student_entered_cgpa if edu else None)
+            effective_cgpa = verified_cgpa or (edu.cgpa_verified if edu else None)
             if effective_cgpa is None:
                 is_incomplete = True
-                missing_fields.append("CGPA")
-                reasons.append(f"Recorded CGPA is required (minimum threshold is {opportunity.min_cgpa}).")
+                missing_fields.append("Verified Institutional CGPA")
+                reasons.append(
+                    f"Verified institutional CGPA is required to evaluate eligibility (minimum threshold is {opportunity.min_cgpa})."
+                )
             elif round(effective_cgpa, 2) < round(opportunity.min_cgpa, 2):
                 is_not_eligible = True
                 reasons.append(
-                    f"Minimum CGPA is {opportunity.min_cgpa}; recorded CGPA is {round(effective_cgpa, 2)}."
+                    f"Minimum CGPA is {opportunity.min_cgpa}; verified CGPA is {round(effective_cgpa, 2)}."
                 )
 
         # 5. Mandatory Required Skills

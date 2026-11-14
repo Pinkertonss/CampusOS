@@ -86,7 +86,6 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                 is_admin = bool(
                     app_meta.get("role") == "admin"
                     or app_meta.get("is_admin") is True
-                    or email.lower() in ("admin@thapar.edu", "doaa@thapar.edu")
                     or db_role == "admin"
                 )
 
@@ -152,7 +151,6 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                     is_admin = bool(
                         app_meta.get("role") == "admin"
                         or app_meta.get("is_admin") is True
-                        or email.lower() in ("admin@thapar.edu", "doaa@thapar.edu")
                         or db_role == "admin"
                     )
                     is_professor = bool(

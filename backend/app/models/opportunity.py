@@ -66,6 +66,7 @@ class StudentExperienceProfile(BaseModel):
     resume_storage_path: Optional[str] = None
     resume_updated_at: Optional[str] = None
     discovery_opt_in: bool = True  # Controls candidate discovery by opportunity creators
+    resume_sharing_opt_in: bool = False  # Controls explicit resume sharing with discovered opportunities
     updated_at: Optional[str] = None
 
 
@@ -82,6 +83,7 @@ class StudentExperienceProfileUpdate(BaseModel):
     github_link: Optional[str] = None
     linkedin_link: Optional[str] = None
     discovery_opt_in: Optional[bool] = None
+    resume_sharing_opt_in: Optional[bool] = None
 
 
 # Backward-compatibility alias
@@ -235,6 +237,7 @@ class CandidateMatch(BaseModel):
     skills: List[str] = Field(default_factory=list)
     eligibility: OpportunityEligibility
     has_resume: bool = False
+    resume_sharing_opt_in: bool = False
     is_applicant: bool = False
     application_id: Optional[str] = None
     invitation_sent: bool = False

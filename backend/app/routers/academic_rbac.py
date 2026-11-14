@@ -271,7 +271,13 @@ def get_session_attendance_records(
 ):
     """Get attendance records for a specific session."""
     _verify_offering_access(offering_id, claims, require_manage=False)
-    records = db.academic_rbac.get_session_records(session_id)
+    sess = db.academic_rbac.get_session(offering_id, session_id)
+    if not sess:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+        )
+    records = db.academic_rbac.get_session_records(session_id, offering_id=offering_id)
     is_admin = bool(claims.get("is_admin"))
     is_prof = bool(claims.get("is_professor") or claims.get("role") == "professor")
     if is_admin or is_prof:
@@ -291,6 +297,12 @@ def mark_session_attendance(
 ):
     """Record or correct attendance for students in an assigned offering session."""
     _verify_offering_access(offering_id, claims, require_manage=True)
+    sess = db.academic_rbac.get_session(offering_id, session_id)
+    if not sess:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session '{session_id}' not found in offering '{offering_id}'.",
+        )
     actor_id = str(claims["sub"])
     actor_role = "admin" if claims.get("is_admin") else "professor"
     return db.academic_rbac.mark_attendance(
@@ -468,6 +480,11 @@ def submit_assignment(
     """Enrolled student submits work for an assignment."""
     _verify_offering_access(offering_id, claims, require_manage=False)
     student_id = str(claims["sub"])
+    if not db.academic_rbac.is_student_enrolled(offering_id, student_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied: Only actively enrolled students can submit assignments for offering '{offering_id}'.",
+        )
     return db.academic_rbac.submit_assignment(
         student_id=student_id,
         offering_id=offering_id,

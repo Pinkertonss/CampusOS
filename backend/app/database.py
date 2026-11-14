@@ -297,7 +297,13 @@ class CampusOSDatabase:
                 full_name = "Arjun Mehta" if is_arjun else "Student Profile"
                 roll_no = "102203099" if is_arjun else "102203888"
                 email = "amehta_be22@thapar.edu" if is_arjun else f"student_{uid[:6]}@thapar.edu"
-                verified_cgpa = 8.52 if is_arjun else 7.80
+                dir_item = self.academic_rbac.student_directory.get(uid)
+                if dir_item:
+                    full_name = dir_item.full_name
+                    roll_no = dir_item.roll_no
+                    email = dir_item.email
+                verified_cgpa = 8.52 if is_arjun else None
+                student_cgpa = 8.52 if is_arjun else None
 
                 edu = [
                     EducationEntry(
@@ -307,7 +313,7 @@ class CampusOSDatabase:
                         semester=5,
                         graduation_year=2026,
                         cgpa_verified=verified_cgpa,
-                        student_entered_cgpa=verified_cgpa,
+                        student_entered_cgpa=student_cgpa,
                         institution="Thapar Institute of Engineering & Technology",
                     )
                 ]
@@ -563,9 +569,11 @@ class CampusOSDatabase:
             if not prof.discovery_opt_in and not is_applicant:
                 continue
 
-            verified_cgpa = 8.52 if sid == self.default_user_id else 7.80
-            if prof.education and prof.education[0].cgpa_verified:
+            verified_cgpa = None
+            if prof.education and prof.education[0].cgpa_verified is not None:
                 verified_cgpa = prof.education[0].cgpa_verified
+            elif sid == self.default_user_id:
+                verified_cgpa = 8.52
 
             eligibility = OpportunityEngine.evaluate_eligibility(
                 profile=prof,

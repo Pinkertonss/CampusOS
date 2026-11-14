@@ -380,30 +380,87 @@ def invite_opportunity_candidates(
 @router.get("/candidates/{student_id}/resume")
 def download_candidate_resume(
     student_id: str,
-    opportunity_id: Optional[str] = Query(None, description="Context opportunity ID"),
-    creator_claims: dict = Depends(require_opportunity_manager_or_admin),
+    opportunity_id: Optional[str] = Query(None, description="Context opportunity ID for reviewer access"),
+    creator_claims: dict = Depends(get_current_user_claims),
 ):
     """
-    Authorized opportunity creators can inspect candidate resumes ONLY IF:
-    1. The student has discovery_opt_in enabled, OR
-    2. The student has submitted an application to an opportunity owned by this creator.
+    Secure scoped resume access for opportunity reviewers.
+    Enforces the following authorization invariants:
+    1. Opportunity context is mandatory for reviewer access.
+    2. Requester must be the creator of the opportunity or an administrator.
+    3. An application to Opportunity A cannot authorize access by the owner of Opportunity B.
+    4. For non-applicants, student must have discovery_opt_in=True AND resume_sharing_opt_in=True
+       AND be eligible in the context of this specific opportunity.
+    5. Student ownership self-access is preserved.
     """
     requester_id = str(creator_claims.get("sub", ""))
     requester_role = str(creator_claims.get("role", "opportunity_manager"))
+    is_admin = requester_role == "admin" or creator_claims.get("is_admin") is True
 
-    prof = db.get_student_experience_profile(student_id)
-    is_opted_in = prof.discovery_opt_in
-    is_applicant = False
+    # 1. Student self-access: student can always download their own resume
+    if requester_id == student_id:
+        res = db.get_student_resume(student_id)
+        if not res:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No resume uploaded yet.")
+        filename, content = res
+        return Response(
+            content=content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
+        )
 
-    if opportunity_id:
-        apps = db.user_applications.get(student_id, [])
-        is_applicant = any(a.opportunity_id == opportunity_id for a in apps)
-
-    if not is_opted_in and not is_applicant and requester_role != "admin":
+    # 2. Reviewer access requires opportunity manager, faculty, or admin
+    is_prof = bool(creator_claims.get("is_professor") or requester_role in ("professor", "faculty", "opportunity_manager"))
+    if not (is_admin or is_prof):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Student has disabled discovery sharing and has not applied to your opportunity.",
+            detail="Forbidden: Opportunity Manager, Faculty, or Administrator role required.",
         )
+
+    # 3. Opportunity context is mandatory for reviewers
+    if not opportunity_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter 'opportunity_id' is mandatory for candidate resume review.",
+        )
+
+    # 4. Validate opportunity context existence
+    opp = db.get_opportunity(opportunity_id)
+    if not opp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Context opportunity '{opportunity_id}' not found.",
+        )
+
+    # 5. Requester relationship to the opportunity: must be creator or administrator
+    is_owner = (opp.creator_id == requester_id)
+    if not (is_owner or is_admin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You are not the creator or authorized reviewer for opportunity '{opportunity_id}'.",
+        )
+
+    # 4. Validate student's relationship to THIS specific opportunity
+    prof = db.get_student_experience_profile(student_id)
+    apps = db.user_applications.get(student_id, [])
+    applied_to_this_opp = any(a.opportunity_id == opportunity_id for a in apps)
+
+    # If student applied to THIS opportunity, resume access is authorized by application submission
+    if not applied_to_this_opp and not is_admin:
+        # Check explicit resume sharing consent (discovery_opt_in alone does not grant resume download)
+        has_resume_sharing_consent = getattr(prof, "resume_sharing_opt_in", False)
+        if not (prof.discovery_opt_in and has_resume_sharing_consent):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Candidate has not applied to this opportunity and has not consented to general resume sharing.",
+            )
+        # Candidate must also be eligible in this opportunity context
+        eligibility = OpportunityEngine.evaluate_eligibility(prof, opp)
+        if eligibility.status == "NOT_ELIGIBLE":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Candidate is not eligible for this opportunity.",
+            )
 
     res = db.get_student_resume(student_id)
     if not res:
