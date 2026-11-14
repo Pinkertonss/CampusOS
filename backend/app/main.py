@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.auth import get_current_user_id
-from .routers import academic, copilot, vault, reuse, opportunities
+from .routers import academic, academic_rbac, copilot, vault, reuse, opportunities
 
 app = FastAPI(
     title=settings.app_name,
@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 # Include feature routers
+app.include_router(academic_rbac.router)
 app.include_router(academic.router)
 app.include_router(academic.academics_router)
 app.include_router(academic.academic_singular_router)

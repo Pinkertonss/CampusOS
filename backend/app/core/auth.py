@@ -71,11 +71,18 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                     or email.lower() in ("admin@thapar.edu", "doaa@thapar.edu")
                 )
 
+                is_professor = bool(
+                    role in ("professor", "faculty")
+                    or app_meta.get("role") in ("professor", "faculty")
+                    or user_meta.get("role") in ("professor", "faculty")
+                )
+
                 return {
                     "sub": str(user_id),
                     "email": email,
-                    "role": role,
+                    "role": "admin" if is_admin else ("professor" if is_professor else role or "student"),
                     "is_admin": is_admin,
+                    "is_professor": is_professor,
                     "app_metadata": app_meta,
                     "user_metadata": user_meta,
                 }
@@ -141,16 +148,56 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                 "email": "admin@thapar.edu",
                 "role": "admin",
                 "is_admin": True,
+                "is_professor": True,
                 "app_metadata": {"role": "admin"},
                 "user_metadata": {"role": "admin"},
+            }
+
+        if clean_token in ("dev-professor-1", "dev-professor", "test-prof-1", "test-prof-rajesh"):
+            return {
+                "sub": "prof-rajesh-kumar-id",
+                "email": "prof_rajesh@thapar.edu",
+                "role": "professor",
+                "is_admin": False,
+                "is_professor": True,
+                "app_metadata": {"role": "professor"},
+                "user_metadata": {"role": "professor", "name": "Dr. Rajesh Kumar"},
+            }
+
+        if clean_token in ("dev-professor-2", "test-prof-2", "test-prof-sunita"):
+            return {
+                "sub": "prof-sunita-sharma-id",
+                "email": "prof_sunita@thapar.edu",
+                "role": "professor",
+                "is_admin": False,
+                "is_professor": True,
+                "app_metadata": {"role": "professor"},
+                "user_metadata": {"role": "professor", "name": "Dr. Sunita Sharma"},
+            }
+
+        if clean_token.startswith("prof-") or clean_token.startswith("test-prof-") or clean_token.startswith("dev-prof-"):
+            cleaned = clean_token
+            for prefix in ("test-prof-", "dev-prof-", "prof-"):
+                if cleaned.startswith(prefix):
+                    cleaned = cleaned[len(prefix):]
+                    break
+            return {
+                "sub": f"prof-{cleaned}-id",
+                "email": f"prof_{cleaned}@thapar.edu",
+                "role": "professor",
+                "is_admin": False,
+                "is_professor": True,
+                "app_metadata": {"role": "professor"},
+                "user_metadata": {"role": "professor", "name": f"Professor {cleaned.capitalize()}"},
             }
 
         if clean_token in ("dev-user-102203099", "dev-user", "mock-token"):
             return {
                 "sub": "102203099-tiet-user",
                 "email": "amehta_be22@thapar.edu",
-                "role": "authenticated",
+                "role": "student",
                 "is_admin": False,
+                "is_professor": False,
                 "app_metadata": {"role": "student"},
                 "user_metadata": {"role": "student"},
             }
@@ -159,8 +206,9 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
             return {
                 "sub": "00000000-0000-0000-0000-000102203088",
                 "email": "peer_student@thapar.edu",
-                "role": "authenticated",
+                "role": "student",
                 "is_admin": False,
+                "is_professor": False,
                 "app_metadata": {"role": "student"},
                 "user_metadata": {"role": "student"},
             }
@@ -174,8 +222,9 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
             return {
                 "sub": f"{cleaned}-user-id",
                 "email": f"{cleaned}@thapar.edu",
-                "role": "authenticated",
+                "role": "student",
                 "is_admin": False,
+                "is_professor": False,
                 "app_metadata": {"role": "student"},
                 "user_metadata": {"role": "student"},
             }
@@ -229,11 +278,39 @@ def require_admin_user(authorization: Optional[str] = Header(None)) -> Dict[str,
     Rejects valid non-admin tokens with 403 Forbidden.
     """
     claims = get_current_user_claims(authorization)
-    if not claims.get("is_admin"):
+    from ..database import db
+    db_role = db.get_user_role(str(claims["sub"]))
+    is_admin = bool(claims.get("is_admin") or db_role == "admin")
+    if not is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions: Administrator role required.",
         )
+    claims["is_admin"] = True
+    claims["role"] = "admin"
+    return claims
+
+
+def require_professor_or_admin(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+    """
+    FastAPI dependency strictly requiring verified Professor or Administrator permissions.
+    Rejects missing or invalid tokens with 401 Unauthorized.
+    Rejects student tokens with 403 Forbidden.
+    """
+    claims = get_current_user_claims(authorization)
+    from ..database import db
+    db_role = db.get_user_role(str(claims["sub"]))
+    is_admin = bool(claims.get("is_admin") or db_role == "admin")
+    is_professor = bool(claims.get("is_professor") or db_role in ("professor", "faculty") or is_admin)
+    if not (is_admin or is_professor):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: Professor or Administrator role required.",
+        )
+    if is_admin:
+        claims["is_admin"] = True
+    if is_professor:
+        claims["is_professor"] = True
     return claims
 
 

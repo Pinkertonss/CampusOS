@@ -556,3 +556,208 @@ export interface NotificationsResponse {
   notifications: ReuseNotification[];
 }
 
+// ============================================================
+// Academic RBAC & Offerings Types
+// ============================================================
+
+export interface Subject {
+  id: string;
+  code: string;
+  name: string;
+  credits: number;
+  department: string;
+}
+
+export interface SubjectOffering {
+  id: string;
+  subject_id: string;
+  subject_code: string;
+  subject_name: string;
+  term: string;
+  section: string;
+  attendance_threshold: number;
+  grade_policy: string;
+  professor_ids: string[];
+  professor_names: string[];
+  enrolled_count: number;
+  created_at: string;
+}
+
+export interface StudentEnrollment {
+  id: string;
+  offering_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  student_email: string;
+  status: "active" | "dropped" | "disenrolled";
+  enrolled_at: string;
+  disenrolled_at?: string | null;
+  disenroll_reason?: string | null;
+}
+
+export interface StudentDirectoryItem {
+  student_id: string;
+  full_name: string;
+  roll_no: string;
+  email: string;
+  branch: string;
+  semester: number;
+}
+
+export interface AttendanceSession {
+  id: string;
+  offering_id: string;
+  session_date: string;
+  slot_type: string;
+  is_cancelled: boolean;
+  created_by: string;
+  created_at: string;
+  records_count: number;
+}
+
+export interface SessionAttendanceRecord {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  status: "present" | "absent" | "late" | "excused";
+  correction_reason?: string | null;
+  marked_by: string;
+  updated_at: string;
+}
+
+export interface Assessment {
+  id: string;
+  offering_id: string;
+  title: string;
+  assessment_type: string;
+  max_marks: number;
+  weight_percent: number;
+  due_date?: string | null;
+  is_published: boolean;
+  answer_key_content?: string | null;
+  answer_key_released: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export interface StudentAssessmentMark {
+  id: string;
+  assessment_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  obtained_marks?: number | null;
+  status: "graded" | "not_graded" | "absent" | "exempt";
+  feedback?: string | null;
+  correction_reason?: string | null;
+  graded_by?: string | null;
+  updated_at: string;
+}
+
+export interface OfferingAssignment {
+  id: string;
+  offering_id: string;
+  title: string;
+  instructions: string;
+  due_date: string;
+  allowed_formats: string[];
+  max_file_size_mb: number;
+  allow_late: boolean;
+  allow_resubmission: boolean;
+  is_published: boolean;
+  model_answer?: string | null;
+  model_answer_released: boolean;
+  created_by: string;
+  created_at: string;
+  submissions_count: number;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  submission_text?: string | null;
+  file_name?: string | null;
+  storage_path?: string | null;
+  submitted_at: string;
+  version: number;
+  is_late: boolean;
+  score?: number | null;
+  feedback?: string | null;
+  graded_by?: string | null;
+  graded_at?: string | null;
+}
+
+export interface OfferingAnnouncement {
+  id: string;
+  offering_id: string;
+  title: string;
+  content: string;
+  target_group: string;
+  target_student_ids: string[];
+  created_by: string;
+  created_at: string;
+}
+
+export interface RosterStudent {
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  student_email: string;
+  branch: string;
+  semester: number;
+  enrollment_status: string;
+  enrolled_at: string;
+  disenrolled_at?: string | null;
+  attended_sessions: number;
+  counted_sessions: number;
+  attendance_percentage?: number | null;
+  attendance_status: "safe" | "warning" | "critical" | "no_data";
+  assessment_marks: Record<string, number | null>;
+  total_obtained_marks: number;
+  total_possible_marks: number;
+  weighted_score?: number | null;
+  calculated_grade?: string | null;
+  missing_assignments_count: number;
+  needs_attendance_support: boolean;
+  needs_academic_support: boolean;
+  support_reasons: string[];
+}
+
+export interface RosterResponse {
+  offering_id: string;
+  subject_code: string;
+  subject_name: string;
+  term: string;
+  section: string;
+  total_students: number;
+  page: number;
+  page_size: number;
+  attendance_threshold: number;
+  students: RosterStudent[];
+}
+
+export interface AcademicAuditLog {
+  id: string;
+  timestamp: string;
+  actor_id: string;
+  actor_role: string;
+  action: string;
+  offering_id?: string | null;
+  resource_id?: string | null;
+  details: Record<string, any>;
+  reason?: string | null;
+}
+
+export interface UserRoleItem {
+  user_id: string;
+  role: string;
+  status: string;
+}
+
+

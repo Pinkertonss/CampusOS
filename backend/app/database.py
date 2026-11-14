@@ -13,6 +13,7 @@ from .models.opportunity import (
     OpportunityApplicationCreate,
 )
 from .services.what_if_engine import WhatIfEngine
+from .services.academic_engine import AcademicRBACEngine
 
 class CampusOSDatabase:
     """
@@ -38,6 +39,7 @@ class CampusOSDatabase:
         self.user_deadlines: Dict[str, List[DeadlineTask]] = {}
         self.user_timetable: Dict[str, List[TimetableSlot]] = {}
         self._tasks_file = Path(__file__).resolve().parent.parent / "storage" / "tasks_persistence.json"
+        self.academic_rbac = AcademicRBACEngine()
         self._seed_sample_data()
         self._load_persisted_tasks()
 
@@ -77,6 +79,11 @@ class CampusOSDatabase:
         if not uid or uid in ("102203099-tiet-user", "dev-user-102203099", "dev-user", "mock-token"):
             return self.default_user_id
         return uid
+
+    def get_user_role(self, user_id: str) -> str:
+        if hasattr(self, "academic_rbac"):
+            return self.academic_rbac.get_user_role(user_id)
+        return "student"
 
     def get_courses(self, user_id: str) -> List[Course]:
         uid = self._canonical_uid(user_id)

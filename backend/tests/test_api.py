@@ -61,7 +61,7 @@ def test_copilot_ask_and_confirm_task():
     confirm_res = client.post(
         "/api/copilot/confirm-task",
         json=confirm_payload,
-        headers={"Authorization": "Bearer dev-user-102203099"},
+        headers={"Authorization": "Bearer dev-user-api-test"},
     )
     assert confirm_res.status_code == 200
     task_data = confirm_res.json()
