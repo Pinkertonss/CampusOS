@@ -34,8 +34,23 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
     # ------------------------------------------------------------
     if is_jwt_format:
         signing_secret = settings.supabase_jwt_secret
-        if not signing_secret and settings.environment in ("development", "test"):
+        is_explicit_dev_env = settings.environment.lower() in ("development", "test")
+
+        if not signing_secret and is_explicit_dev_env:
             signing_secret = DEFAULT_LOCAL_DEV_JWT_SECRET
+        elif not signing_secret and not is_explicit_dev_env:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Production environment requires explicit SUPABASE_JWT_SECRET configuration.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if not is_explicit_dev_env and signing_secret == DEFAULT_LOCAL_DEV_JWT_SECRET:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Development signing secret cannot be used in production.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
         if signing_secret:
             try:
@@ -59,28 +74,35 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                     )
 
                 email = str(payload.get("email") or "")
-                role = str(payload.get("role") or "")
                 app_meta = payload.get("app_metadata") or {}
                 user_meta = payload.get("user_metadata") or {}
 
+                # SECURITY TRUST BOUNDARY:
+                # user_metadata is user-editable and MUST NEVER grant admin or professor privileges.
+                # Privileged roles are granted ONLY by server-controlled app_metadata or server-side user_roles.
+                from ..database import db
+                db_role = db.get_user_role(str(user_id))
+
                 is_admin = bool(
-                    role in ("admin", "service_role")
-                    or app_meta.get("role") == "admin"
-                    or user_meta.get("role") == "admin"
-                    or payload.get("is_admin") is True
+                    app_meta.get("role") == "admin"
+                    or app_meta.get("is_admin") is True
                     or email.lower() in ("admin@thapar.edu", "doaa@thapar.edu")
+                    or db_role == "admin"
                 )
 
                 is_professor = bool(
-                    role in ("professor", "faculty")
-                    or app_meta.get("role") in ("professor", "faculty")
-                    or user_meta.get("role") in ("professor", "faculty")
+                    app_meta.get("role") in ("professor", "faculty")
+                    or app_meta.get("is_professor") is True
+                    or db_role in ("professor", "faculty")
+                    or is_admin
                 )
+
+                assigned_role = "admin" if is_admin else ("professor" if is_professor else (db_role or "student"))
 
                 return {
                     "sub": str(user_id),
                     "email": email,
-                    "role": "admin" if is_admin else ("professor" if is_professor else role or "student"),
+                    "role": assigned_role,
                     "is_admin": is_admin,
                     "is_professor": is_professor,
                     "app_metadata": app_meta,
@@ -110,16 +132,25 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                     email = getattr(u, "email", "") or ""
                     app_meta = getattr(u, "app_metadata", {}) or {}
                     user_meta = getattr(u, "user_metadata", {}) or {}
+                    from ..database import db
+                    db_role = db.get_user_role(str(u.id))
                     is_admin = bool(
                         app_meta.get("role") == "admin"
-                        or user_meta.get("role") == "admin"
+                        or app_meta.get("is_admin") is True
                         or email.lower() in ("admin@thapar.edu", "doaa@thapar.edu")
+                        or db_role == "admin"
+                    )
+                    is_professor = bool(
+                        app_meta.get("role") in ("professor", "faculty")
+                        or db_role in ("professor", "faculty")
+                        or is_admin
                     )
                     return {
                         "sub": str(u.id),
                         "email": email,
-                        "role": getattr(u, "role", "authenticated"),
+                        "role": "admin" if is_admin else ("professor" if is_professor else (db_role or "student")),
                         "is_admin": is_admin,
+                        "is_professor": is_professor,
                         "app_metadata": app_meta,
                         "user_metadata": user_meta,
                     }

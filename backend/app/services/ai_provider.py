@@ -16,6 +16,13 @@ class BaseEmbeddingProvider:
         embeddings = await self.embed_texts([query])
         return embeddings[0]
 
+    def get_signature(self) -> Dict[str, Any]:
+        """
+        Returns the embedding model signature including provider, model name, dimensions, and version.
+        Guarantees that index and query embeddings are only compared within the identical vector space.
+        """
+        raise NotImplementedError
+
 
 class BaseLLMProvider:
     """Abstract base class for LLM providers."""
@@ -50,9 +57,9 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         "75%": 16, "65%": 16, "detention": 14, "shortage": 12, "exemption": 15,
         "grade": 20, "grading": 20, "cgpa": 21, "sgpa": 21, "credits": 22, "backlog": 23,
         "exam": 30, "examination": 30, "mst": 31, "est": 32, "makeup": 33, "mid": 31, "end": 32,
-        "hostel": 40, "curfew": 41, "timing": 42, "turnstile": 43, "warden": 44,
+        "hostel": 40, "curfew": 41, "timing": 42, "timings": 42, "turnstile": 43, "warden": 44,
         "cooler": 45, "heater": 46, "appliance": 46, "biometric": 43, "mess": 47,
-        "library": 50, "book": 51, "nalanda": 52, "fine": 53, "overdue": 53, "borrow": 51,
+        "library": 50, "book": 51, "books": 51, "nalanda": 52, "fine": 53, "fines": 53, "overdue": 53, "borrow": 51, "borrowing": 51,
         "fee": 60, "fees": 60, "tuition": 61, "surcharge": 62, "registration": 63,
         "calendar": 70, "break": 71, "holiday": 72, "semester": 73, "schedule": 74,
         "minor": 80, "degree": 80, "allocation": 81, "medical": 85, "dispensary": 86
@@ -96,6 +103,14 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
 
     async def embed_texts(self, texts: List[str]) -> List[List[float]]:
         return self.embed_texts_sync(texts)
+
+    def get_signature(self) -> Dict[str, Any]:
+        return {
+            "provider": "local",
+            "model": "deterministic-768",
+            "dimension": self.DIMENSION,
+            "version": "1.0",
+        }
 
 
 class LocalLLMProvider(BaseLLMProvider):
@@ -144,6 +159,14 @@ class GeminiProvider(BaseEmbeddingProvider, BaseLLMProvider):
         self.generate_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
         self.fallback_embedder = LocalEmbeddingProvider()
         self.fallback_llm = LocalLLMProvider()
+
+    def get_signature(self) -> Dict[str, Any]:
+        return {
+            "provider": "gemini",
+            "model": "text-embedding-004",
+            "dimension": 768,
+            "version": "1.0",
+        }
 
     async def embed_texts(self, texts: List[str]) -> List[List[float]]:
         if not self.api_key:
@@ -222,6 +245,14 @@ class OpenAIProvider(BaseEmbeddingProvider, BaseLLMProvider):
         self.api_key = api_key
         self.fallback_embedder = LocalEmbeddingProvider()
         self.fallback_llm = LocalLLMProvider()
+
+    def get_signature(self) -> Dict[str, Any]:
+        return {
+            "provider": "openai",
+            "model": "text-embedding-3-small",
+            "dimension": 768,
+            "version": "1.0",
+        }
 
     async def embed_texts(self, texts: List[str]) -> List[List[float]]:
         if not self.api_key:

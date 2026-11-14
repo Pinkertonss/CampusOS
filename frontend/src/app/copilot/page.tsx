@@ -447,17 +447,38 @@ export default function CampusCopilotPage() {
 
                       {/* Actionable Suggestion Card */}
                       {msg.actionableSuggestion && msg.actionableSuggestion.has_action && (
-                        <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-2">
+                        <div
+                          className={`mt-3 p-3 rounded-xl space-y-2 border ${
+                            msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                              ? "bg-slate-100/90 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                              : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200"
+                          }`}
+                        >
                           <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold">
+                            <div className="flex items-center gap-1.5 font-semibold">
                               <Calendar className="w-3.5 h-3.5" />
-                              <span>Actionable Campus Notice Detected</span>
+                              <span>
+                                {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                  ? "Historical Campus Notice (Past-Due)"
+                                  : "Actionable Campus Notice Detected"}
+                              </span>
                             </div>
-                            <Badge variant={msg.actionableSuggestion.priority === "high" ? "danger" : "warning"} size="sm">
-                              {msg.actionableSuggestion.priority.toUpperCase()}
+                            <Badge
+                              variant={
+                                msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                  ? "default"
+                                  : msg.actionableSuggestion.priority === "high"
+                                  ? "danger"
+                                  : "warning"
+                              }
+                              size="sm"
+                            >
+                              {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                ? "HISTORICAL"
+                                : msg.actionableSuggestion.priority.toUpperCase()}
                             </Badge>
                           </div>
-                          <div className="text-xs text-amber-900 dark:text-amber-200 font-medium">
+                          <div className="text-xs font-medium">
                             {msg.actionableSuggestion.title}
                           </div>
                           {msg.actionableSuggestion.reason && (
@@ -466,7 +487,12 @@ export default function CampusCopilotPage() {
                             </p>
                           )}
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                            <span>Deadline: {new Date(msg.actionableSuggestion.due_date).toLocaleDateString()}</span>
+                            <span>
+                              {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                ? "Past Date: "
+                                : "Deadline: "}
+                              {new Date(msg.actionableSuggestion.due_date).toLocaleDateString()}
+                            </span>
                             {msg.actionableSuggestion.course_code && (
                               <span className="font-mono text-[10px]">{msg.actionableSuggestion.course_code}</span>
                             )}
@@ -477,12 +503,14 @@ export default function CampusCopilotPage() {
                             </Badge>
                           ) : (
                             <Button
-                              variant="primary"
+                              variant={msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired ? "secondary" : "primary"}
                               size="sm"
                               className="w-full text-xs mt-1"
                               onClick={() => handleConfirmTask(msg.id, msg.actionableSuggestion!)}
                             >
-                              Add to Academic Deadlines
+                              {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                ? "Record as Historical Task"
+                                : "Add to Academic Deadlines"}
                             </Button>
                           )}
                         </div>

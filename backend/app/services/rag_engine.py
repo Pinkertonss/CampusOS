@@ -41,35 +41,43 @@ class RagEngine:
         self.llm_provider: BaseLLMProvider = get_llm_provider()
         self.documents: Dict[str, CampusDocument] = {}
         self.chunks: List[Dict[str, Any]] = []
-        self.dimension: int = 768
+        sig = self.embedding_provider.get_signature()
+        self.dimension: int = sig["dimension"]
         self.index_metadata: Dict[str, Any] = {
-            "provider": "local",
-            "model": "deterministic-768",
-            "dimension": 768,
-            "version": "1.0",
+            "provider": sig["provider"],
+            "model": sig["model"],
+            "dimension": sig["dimension"],
+            "version": sig["version"],
         }
         self.similarity_threshold: float = float(os.getenv("COPILOT_SIMILARITY_THRESHOLD", "0.45"))
         self._initialize_corpus()
 
     def get_status(self) -> Dict[str, Any]:
         """Exposes operational mode, provider configuration, and index integrity honestly."""
-        prov_name = os.getenv("EMBEDDING_PROVIDER", "local").lower()
+        current_sig = self.embedding_provider.get_signature()
+        sig_match = (
+            current_sig.get("provider") == self.index_metadata.get("provider")
+            and current_sig.get("model") == self.index_metadata.get("model")
+            and current_sig.get("dimension") == self.dimension
+        )
         return {
-            "mode": "external_neural" if prov_name in ("gemini", "openai") else "local_deterministic",
-            "provider": prov_name,
+            "mode": "external_neural" if current_sig.get("provider") in ("gemini", "openai") else "local_deterministic",
+            "provider": current_sig.get("provider"),
+            "model": current_sig.get("model"),
             "dimension": self.dimension,
             "index_metadata": self.index_metadata,
+            "signature_compatible": sig_match,
             "document_count": len(self.documents),
             "chunk_count": len(self.chunks),
             "honest_description": (
                 "External neural embeddings via API"
-                if prov_name in ("gemini", "openai")
+                if current_sig.get("provider") in ("gemini", "openai")
                 else "Local deterministic 768-dimensional normalized keyword/n-gram projection. Not an external neural model."
             ),
         }
 
     def _save_index(self):
-        """Durable persistence for documents and chunks across backend restarts."""
+        """Atomic durable persistence for documents and chunks across backend restarts."""
         try:
             doc_list = []
             for d in self.documents.values():
@@ -82,10 +90,13 @@ class RagEngine:
                 "documents": doc_list,
                 "chunks": self.chunks,
             }
-            with open(INDEX_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f)
-        except Exception:
-            pass
+            INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+            tmp_path = INDEX_PATH.with_suffix(".tmp")
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, INDEX_PATH)
+        except Exception as e:
+            logger.error("Failed to persist vector index: %s", e)
 
     def _load_index(self) -> bool:
         """Loads persisted vector index from disk if available."""
@@ -102,6 +113,15 @@ class RagEngine:
                 self.documents[cd.id] = cd
             self.chunks = data.get("chunks", [])
             return len(self.documents) > 0 and len(self.chunks) > 0
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Corrupted corpus index at %s: %s. Preserving backup.", INDEX_PATH, e)
+            try:
+                import shutil
+                backup_path = INDEX_PATH.with_suffix(f".corrupted.{int(datetime.now().timestamp())}")
+                shutil.copy(INDEX_PATH, backup_path)
+            except Exception:
+                pass
+            return False
         except Exception:
             return False
 
@@ -197,11 +217,12 @@ class RagEngine:
     def delete_document(self, document_id: str) -> bool:
         if document_id in self.documents:
             doc = self.documents[document_id]
-            # Purge underlying storage file from disk
+            # Purge underlying storage file safely from disk
             if doc.storage_path:
-                rel = doc.storage_path.replace("campus-docs/", "")
-                file_path = STORAGE_DIR / rel
-                if file_path.exists():
+                rel = doc.storage_path.replace("campus-docs/", "").lstrip("/\\")
+                safe_name = Path(rel).name
+                file_path = (STORAGE_DIR / safe_name).resolve()
+                if file_path.is_relative_to(STORAGE_DIR.resolve()) and file_path.exists():
                     try:
                         file_path.unlink()
                     except Exception:
@@ -321,6 +342,19 @@ class RagEngine:
                 f"but corpus index requires {self.dimension}. Refusing to compare incompatible vector spaces."
             )
 
+        # 2. Vector space signature validation
+        # Even if dimensions match (e.g. 768-dim Gemini vs 768-dim local), vector spaces differ!
+        current_sig = self.embedding_provider.get_signature()
+        if (
+            current_sig.get("provider") != self.index_metadata.get("provider")
+            or current_sig.get("model") != self.index_metadata.get("model")
+        ):
+            raise ValueError(
+                f"Incompatible embedding vector space signature: query provider '{current_sig.get('provider')}/{current_sig.get('model')}' "
+                f"does not match indexed corpus provider '{self.index_metadata.get('provider')}/{self.index_metadata.get('model')}'. "
+                f"Reindexing required before matching."
+            )
+
         scored_chunks: List[Tuple[Dict[str, Any], float]] = []
         for chunk in self.chunks:
             chunk_emb = chunk.get("embedding")
@@ -332,6 +366,41 @@ class RagEngine:
 
         scored_chunks.sort(key=lambda x: x[1], reverse=True)
         return scored_chunks[:top_k]
+
+    async def reindex_corpus(self) -> Dict[str, Any]:
+        """
+        Recomputes embeddings for all indexed documents and chunks using the active embedding provider.
+        Updates index signature and persists updated vector representations.
+        """
+        self.embedding_provider = get_embedding_provider()
+        sig = self.embedding_provider.get_signature()
+
+        if not self.chunks:
+            self.dimension = sig["dimension"]
+            self.index_metadata = {
+                **sig,
+                "reindexed_at": datetime.now().isoformat(),
+            }
+            self._save_index()
+            return {"status": "reindexed", "chunks_reindexed": 0, "signature": sig}
+
+        texts = [f"{c.get('document_title', '')} {c.get('section_title', '')} {c.get('page_ref', '')} {c.get('content', '')}" for c in self.chunks]
+        embeddings = await self.embedding_provider.embed_texts(texts)
+
+        for chunk_dict, emb in zip(self.chunks, embeddings):
+            chunk_dict["embedding"] = emb
+
+        self.dimension = sig["dimension"]
+        self.index_metadata = {
+            **sig,
+            "reindexed_at": datetime.now().isoformat(),
+        }
+        self._save_index()
+        return {
+            "status": "reindexed",
+            "chunks_reindexed": len(self.chunks),
+            "signature": sig,
+        }
 
     def _detect_actionable_event(self, text: str, query: str) -> Optional[ActionableSuggestion]:
         """

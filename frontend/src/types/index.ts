@@ -104,6 +104,8 @@ export interface ActionableSuggestion {
   priority: "low" | "medium" | "high";
   course_code?: string;
   reason: string;
+  is_expired?: boolean;
+  is_historical?: boolean;
 }
 
 export interface CopilotQueryResponse {
