@@ -39,6 +39,7 @@ import {
   OpportunityRecommendation,
   OpportunityRecommendationResponse,
   StudentSkillProfile,
+  OpportunityApplication,
 } from "../types";
 import {
   MOCK_COURSES,
@@ -1279,6 +1280,33 @@ export async function getSavedOpportunities(): Promise<Opportunity[]> {
     cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to fetch saved opportunities");
+  return await res.json();
+}
+
+export async function applyToOpportunity(
+  oppId: string,
+  data?: { statement_of_interest?: string; available_hours_per_week?: number }
+): Promise<OpportunityApplication> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/${oppId}/apply`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data || {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit application");
+  }
+  return await res.json();
+}
+
+export async function getAppliedOpportunities(): Promise<OpportunityApplication[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/applied`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch applied opportunities");
   return await res.json();
 }
 

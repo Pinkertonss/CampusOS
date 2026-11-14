@@ -22,6 +22,8 @@ import {
   ArrowRight,
   UserCheck,
   BookOpen,
+  Send,
+  FileCheck2,
 } from "lucide-react";
 import {
   Card,
@@ -41,21 +43,25 @@ import {
   updateStudentSkillProfile,
   toggleSaveOpportunity,
   getSavedOpportunities,
+  applyToOpportunity,
+  getAppliedOpportunities,
 } from "../../lib/api";
 import {
   Opportunity,
   OpportunityRecommendation,
   OpportunityRecommendationResponse,
   StudentSkillProfile,
+  OpportunityApplication,
 } from "../../types";
 
 export default function OpportunitiesPage() {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"recommended" | "explore" | "saved">("recommended");
+  const [activeTab, setActiveTab] = useState<"recommended" | "explore" | "saved" | "applied">("recommended");
   const [recommendations, setRecommendations] = useState<OpportunityRecommendation[]>([]);
   const [allOpportunities, setAllOpportunities] = useState<Opportunity[]>([]);
   const [savedOpportunities, setSavedOpportunities] = useState<Opportunity[]>([]);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [appliedList, setAppliedList] = useState<OpportunityApplication[]>([]);
   const [profile, setProfile] = useState<StudentSkillProfile | null>(null);
 
   // Filters
@@ -70,16 +76,26 @@ export default function OpportunitiesPage() {
   const [editHours, setEditHours] = useState<number>(10);
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Apply Modal
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [selectedOppToApply, setSelectedOppToApply] = useState<Opportunity | null>(null);
+  const [statementInput, setStatementInput] = useState("");
+  const [commitmentInput, setCommitmentInput] = useState(8);
+  const [submittingApp, setSubmittingApp] = useState(false);
+
   const { toast } = useToast();
+
+  const appliedOppIds = new Set(appliedList.map((a) => a.opportunity_id));
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [recData, allData, savedData, profData] = await Promise.all([
+      const [recData, allData, savedData, profData, appsData] = await Promise.all([
         getRecommendedOpportunities().catch(() => null),
         getOpportunities(),
         getSavedOpportunities().catch(() => []),
         getStudentSkillProfile().catch(() => null),
+        getAppliedOpportunities().catch(() => []),
       ]);
 
       if (recData) {
@@ -87,6 +103,7 @@ export default function OpportunitiesPage() {
       }
       setAllOpportunities(allData || []);
       setSavedOpportunities(savedData || []);
+      setAppliedList(appsData || []);
       const sIds = new Set((savedData || []).map((o) => o.id));
       setSavedIds(sIds);
 
@@ -120,7 +137,6 @@ export default function OpportunitiesPage() {
         return next;
       });
 
-      // Refresh saved list
       const updatedSaved = await getSavedOpportunities();
       setSavedOpportunities(updatedSaved);
 
@@ -131,6 +147,41 @@ export default function OpportunitiesPage() {
       toast.error("Failed to save opportunity", {
         description: "Could not update bookmark status.",
       });
+    }
+  };
+
+  const handleOpenApplyModal = (opp: Opportunity) => {
+    setSelectedOppToApply(opp);
+    const topSkills = (profile?.skills || ["Python", "Machine Learning"]).slice(0, 3).join(", ");
+    setStatementInput(
+      `I am eager to contribute to ${opp.title} at ${opp.organization}. My technical background in ${topSkills} aligns closely with your team's goals, and I can commit ${opp.time_commitment_hrs_week} hours per week without timetable conflicts.`
+    );
+    setCommitmentInput(opp.time_commitment_hrs_week);
+    setApplyModalOpen(true);
+  };
+
+  const handleConfirmApply = async () => {
+    if (!selectedOppToApply) return;
+    setSubmittingApp(true);
+    try {
+      const application = await applyToOpportunity(selectedOppToApply.id, {
+        statement_of_interest: statementInput,
+        available_hours_per_week: commitmentInput,
+      });
+
+      setAppliedList((prev) => [...prev, application]);
+      setApplyModalOpen(false);
+
+      toast.success("Application Submitted!", {
+        description: `Your application for "${selectedOppToApply.title}" was registered with ${selectedOppToApply.organization}.`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit application";
+      toast.error("Application Failed", {
+        description: msg,
+      });
+    } finally {
+      setSubmittingApp(false);
     }
   };
 
@@ -162,7 +213,6 @@ export default function OpportunitiesPage() {
         description: "Your skills and matching preferences have been updated.",
       });
 
-      // Reload recommendations with new skills
       const recRes = await getRecommendedOpportunities();
       setRecommendations(recRes.recommendations || []);
     } catch (err) {
@@ -254,7 +304,7 @@ export default function OpportunitiesPage() {
           2. NAVIGATION TABS & FILTER BAR
       ======================================================== */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab("recommended")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
@@ -264,7 +314,7 @@ export default function OpportunitiesPage() {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Personalized Recommendations ({recommendations.length})
+            Recommendations ({recommendations.length})
           </button>
           <button
             onClick={() => setActiveTab("explore")}
@@ -276,6 +326,17 @@ export default function OpportunitiesPage() {
           >
             <Compass className="w-3.5 h-3.5" />
             All Opportunities ({allOpportunities.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("applied")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              activeTab === "applied"
+                ? "bg-teal-500 text-slate-950 shadow-sm"
+                : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <FileCheck2 className="w-3.5 h-3.5" />
+            Applied ({appliedList.length})
           </button>
           <button
             onClick={() => setActiveTab("saved")}
@@ -341,6 +402,7 @@ export default function OpportunitiesPage() {
             {recommendations.map((rec) => {
               const opp = rec.opportunity;
               const isSaved = savedIds.has(opp.id);
+              const isApplied = appliedOppIds.has(opp.id);
               const scoreColor =
                 rec.match_score >= 85
                   ? "bg-teal-950/80 text-teal-300 border-teal-600/60"
@@ -462,17 +524,35 @@ export default function OpportunitiesPage() {
                       </span>
                     </div>
 
-                    {opp.application_link && (
-                      <a
-                        href={opp.application_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-teal-400 hover:text-teal-300 font-semibold transition-colors"
-                      >
-                        Apply / Details
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isApplied ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-mono">
+                          <Check className="w-3.5 h-3.5" />
+                          Applied
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenApplyModal(opp)}
+                          className="text-xs px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                        >
+                          Apply Now
+                        </Button>
+                      )}
+
+                      {opp.application_link && (
+                        <a
+                          href={opp.application_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Official portal for ${opp.title}`}
+                          className="p-1 text-slate-400 hover:text-teal-300 transition-colors"
+                          title="View Official Portal"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </Card>
               );
@@ -490,6 +570,7 @@ export default function OpportunitiesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredExplore.map((opp) => {
               const isSaved = savedIds.has(opp.id);
+              const isApplied = appliedOppIds.has(opp.id);
               return (
                 <Card
                   key={opp.id}
@@ -539,21 +620,84 @@ export default function OpportunitiesPage() {
                       <Clock className="w-3.5 h-3.5 text-slate-500" />
                       {opp.time_commitment_hrs_week}h/week · {opp.location}
                     </span>
-                    {opp.application_link && (
-                      <a
-                        href={opp.application_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-teal-400 hover:text-teal-300 font-semibold"
-                      >
-                        Details
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
+
+                    <div className="flex items-center gap-2">
+                      {isApplied ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-mono">
+                          <Check className="w-3.5 h-3.5" />
+                          Applied
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenApplyModal(opp)}
+                          className="text-xs px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                        >
+                          Apply Now
+                        </Button>
+                      )}
+
+                      {opp.application_link && (
+                        <a
+                          href={opp.application_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Official portal for ${opp.title}`}
+                          className="p-1 text-slate-400 hover:text-teal-300 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </Card>
               );
             })}
+          </div>
+        )
+      ) : activeTab === "applied" ? (
+        appliedList.length === 0 ? (
+          <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
+            <FileCheck2 className="w-8 h-8 text-slate-500 mx-auto" />
+            <div className="text-sm font-semibold text-slate-300">No Applications Submitted</div>
+            <p className="text-xs text-slate-400">
+              Browse recommendations or explore campus opportunities and click &quot;Apply Now&quot; to submit your interest.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {appliedList.map((app) => (
+              <Card key={app.id} className="p-5 bg-slate-900/80 border-slate-800 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-bold uppercase">
+                      {app.status}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Applied {new Date(app.applied_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-100">{app.opportunity_title}</h3>
+                    <p className="text-xs text-slate-400">{app.organization}</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-1">
+                    <div className="text-[11px] font-medium text-slate-400">Your Statement of Interest:</div>
+                    <p className="italic text-slate-300 leading-relaxed">&ldquo;{app.statement_of_interest}&rdquo;</p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <span>Committed: <strong className="text-slate-200">{app.available_hours_per_week} hrs/week</strong></span>
+                  <span className="text-emerald-400 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Pending Faculty Review
+                  </span>
+                </div>
+              </Card>
+            ))}
           </div>
         )
       ) : savedOpportunities.length === 0 ? (
@@ -564,54 +708,158 @@ export default function OpportunitiesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {savedOpportunities.map((opp) => (
-            <Card key={opp.id} className="p-5 bg-slate-900/80 border-slate-800 flex flex-col justify-between gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                    {opp.category}
-                  </span>
-                  <button
-                    onClick={() => handleToggleSave(opp.id)}
-                    aria-label="Remove from saved"
-                    className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/40"
-                  >
-                    <Bookmark className="w-3.5 h-3.5" fill="currentColor" />
-                  </button>
+          {savedOpportunities.map((opp) => {
+            const isApplied = appliedOppIds.has(opp.id);
+            return (
+              <Card key={opp.id} className="p-5 bg-slate-900/80 border-slate-800 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                      {opp.category}
+                    </span>
+                    <button
+                      onClick={() => handleToggleSave(opp.id)}
+                      aria-label="Remove from saved"
+                      className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/40"
+                    >
+                      <Bookmark className="w-3.5 h-3.5" fill="currentColor" />
+                    </button>
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-100">{opp.title}</h3>
+                    <p className="text-xs text-slate-400">
+                      {opp.organization} {opp.mentor_name && `· Mentor: ${opp.mentor_name}`}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-300">{opp.description}</p>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-100">{opp.title}</h3>
-                  <p className="text-xs text-slate-400">
-                    {opp.organization} {opp.mentor_name && `· Mentor: ${opp.mentor_name}`}
-                  </p>
-                </div>
-                <p className="text-xs text-slate-300">{opp.description}</p>
-              </div>
 
-              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                  {opp.location}
-                </span>
-                {opp.application_link && (
-                  <a
-                    href={opp.application_link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-teal-400 hover:text-teal-300 font-semibold"
-                  >
-                    Apply Now
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            </Card>
-          ))}
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                    {opp.location}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    {isApplied ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-mono">
+                        <Check className="w-3.5 h-3.5" />
+                        Applied
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => handleOpenApplyModal(opp)}
+                        className="text-xs px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                      >
+                        Apply Now
+                      </Button>
+                    )}
+
+                    {opp.application_link && (
+                      <a
+                        href={opp.application_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Official portal for ${opp.title}`}
+                        className="p-1 text-slate-400 hover:text-teal-300 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
       {/* ========================================================
-          4. EDIT SKILLS & AVAILABILITY MODAL
+          4. APPLY MODAL
+      ======================================================== */}
+      {selectedOppToApply && (
+        <Modal
+          isOpen={applyModalOpen}
+          onClose={() => setApplyModalOpen(false)}
+          title={`Apply: ${selectedOppToApply.title}`}
+          size="md"
+        >
+          <div className="space-y-4 text-xs text-slate-300">
+            {/* Opportunity Context Header */}
+            <div className="p-3 rounded-lg bg-teal-950/40 border border-teal-800/40 space-y-1">
+              <div className="font-semibold text-slate-100">{selectedOppToApply.organization}</div>
+              <p className="text-slate-400">
+                {selectedOppToApply.location} · {selectedOppToApply.time_commitment_hrs_week} hours/week requirement
+              </p>
+            </div>
+
+            {/* Candidate Pre-filled Profile */}
+            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
+              <div className="font-semibold text-slate-200">Candidate Information</div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400">
+                <div>Student: <strong className="text-slate-200">Arjun Mehta</strong></div>
+                <div>Roll No: <strong className="text-slate-200">102203099</strong></div>
+                <div>Branch: <strong className="text-slate-200">COE (Semester 5)</strong></div>
+                <div>Campus: <strong className="text-slate-200">Thapar Institute (TIET)</strong></div>
+              </div>
+            </div>
+
+            {/* Statement of Interest */}
+            <div className="space-y-1.5">
+              <label htmlFor="apply-statement" className="font-semibold text-slate-200">
+                Statement of Interest &amp; Relevant Experience
+              </label>
+              <textarea
+                id="apply-statement"
+                rows={4}
+                value={statementInput}
+                onChange={(e) => setStatementInput(e.target.value)}
+                placeholder="Describe your motivation and any relevant projects or coursework..."
+                className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 leading-relaxed resize-none"
+              />
+            </div>
+
+            {/* Weekly Commitment Input */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label htmlFor="apply-hrs" className="font-semibold text-slate-200">
+                  Weekly Available Hours
+                </label>
+                <span className="font-mono text-teal-400 font-bold">{commitmentInput} hrs/wk</span>
+              </div>
+              <input
+                id="apply-hrs"
+                type="range"
+                min={2}
+                max={25}
+                step={1}
+                value={commitmentInput}
+                onChange={(e) => setCommitmentInput(Number(e.target.value))}
+                className="w-full accent-teal-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setApplyModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmApply}
+                isLoading={submittingApp}
+                leftIcon={<Send className="w-3.5 h-3.5" />}
+                className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+              >
+                Submit Application
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ========================================================
+          5. EDIT SKILLS & AVAILABILITY MODAL
       ======================================================== */}
       <Modal
         isOpen={editModalOpen}

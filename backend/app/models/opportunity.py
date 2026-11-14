@@ -57,3 +57,26 @@ class OpportunityRecommendationResponse(BaseModel):
     recommendations: List[OpportunityRecommendation]
     student_skills: List[str]
     opt_in_matching: bool
+
+
+class OpportunityApplicationCreate(BaseModel):
+    statement_of_interest: Optional[str] = None
+    available_hours_per_week: Optional[int] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+
+
+class OpportunityApplication(BaseModel):
+    id: str
+    opportunity_id: str
+    opportunity_title: str
+    organization: str
+    user_id: str
+    student_name: str
+    student_roll_no: str
+    student_branch: str
+    statement_of_interest: str
+    available_hours_per_week: int
+    applied_at: str
+    status: str = "submitted"  # "submitted" | "under_review" | "shortlisted" | "accepted"
+

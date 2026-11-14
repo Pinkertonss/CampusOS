@@ -147,3 +147,33 @@ def test_save_and_get_saved_opportunities():
 def test_save_nonexistent_opportunity_fails():
     res = client.post("/api/opportunities/non-existent-999/save", headers=AUTH_HEADER)
     assert res.status_code == 404
+
+
+def test_apply_to_opportunity_flow():
+    # Apply to opp-2
+    payload = {
+        "statement_of_interest": "Extensive experience in Next.js and Tailwind CSS; eager to build green portals.",
+        "available_hours_per_week": 6,
+    }
+    res = client.post("/api/opportunities/opp-2/apply", json=payload, headers=AUTH_HEADER)
+    assert res.status_code == 200
+    app_data = res.json()
+    assert app_data["opportunity_id"] == "opp-2"
+    assert app_data["status"] == "submitted"
+    assert "Next.js" in app_data["statement_of_interest"]
+
+    # Duplicate application rejected
+    res_dup = client.post("/api/opportunities/opp-2/apply", json=payload, headers=AUTH_HEADER)
+    assert res_dup.status_code == 400
+    assert "already applied" in res_dup.json()["detail"].lower()
+
+    # List applied
+    res_list = client.get("/api/opportunities/applied", headers=AUTH_HEADER)
+    assert res_list.status_code == 200
+    apps = res_list.json()
+    assert any(a["opportunity_id"] == "opp-2" for a in apps)
+
+    # Non-existent opportunity apply fails with 404
+    res_404 = client.post("/api/opportunities/opp-ghost/apply", json=payload, headers=AUTH_HEADER)
+    assert res_404.status_code == 404
+

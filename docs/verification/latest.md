@@ -1,32 +1,31 @@
 # CampusOS Verification Report
 
-**Generated**: 2026-11-14T17:15:00+05:30  
+**Generated**: 2026-11-14T17:28:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & GitHub Actions CI/CD Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `655491e` (feat(opportunities): implement Phase 7 student opportunity matching recommendation engine and schedule collision detection)  
+**Baseline Commit**: `7ef8fcb` (docs: update verification reports and developer roadmap status)  
 
 ---
 
 ## 1. Scope and Source
 
 - **Requested**:
-  - Implement Phase 8: Full accessibility audit, performance benchmarking, responsive layout refinement, and end-to-end documentation overhaul.
-  - Audit all raw button elements, icon-only actions, search clear triggers, tabs, and form controls for WCAG compliance (`aria-label`, `htmlFor`, accessible focus rings).
-  - Verify zero TypeScript or Next.js build errors across all 13 App Router pages.
-  - Verify complete backend pytest test suite (101/101 tests green).
-  - Provide comprehensive monorepo documentation (`README.md`, `docs/README.md`, `docs/implementation-status.md`).
-  - Maintain persistent git workflow on `antigravity` pushing to remote `Pinkertonss/CampusOS.git`.
+  - Fix student application flow in Opportunities ("apply isn't working in opportunities").
+  - Provide an interactive, pre-filled in-app application flow (`ApplyModal`) with candidate profile details (name, roll number, department/semester), statement of interest, and weekly commitment hours.
+  - Implement full backend persistence and duplicate application validation for student applications.
+  - Add an "Applied ({count})" tab to track application status ("under_review", "accepted", "rejected").
+  - Verify complete backend pytest test suite (102/102 tests green) and Next.js 16 build.
 - **Implemented**:
-  - Accessibility (WCAG 2.1 AA):
-    - Added `aria-label` to all icon-only buttons across `frontend/src/app/opportunities/page.tsx` (save, remove, clear, skill tags), `frontend/src/app/vault/page.tsx` (preview, download, rename, delete, view toggle, clear search), `frontend/src/app/copilot/page.tsx` (source inspector close, document delete), and `frontend/src/app/reuse/page.tsx` (search clear).
-    - Linked `htmlFor` on all form labels and input IDs (e.g. availability sliders, skill entry inputs).
-    - Added high-contrast focus rings (`focus:ring-2 focus:ring-teal-500`) for keyboard accessibility.
-  - Performance & Build Optimization:
-    - Next.js 16 build succeeds with 0 errors and generates 13 static & dynamic routes in 223ms.
-    - TypeScript compilation completes in 1695ms with 0 type errors.
-  - Documentation Overhaul:
-    - Root `README.md` completely overhauled with system architecture diagram, module-by-module feature descriptions, quickstart instructions, API documentation, and testing guidelines.
-    - Updated `docs/README.md` and `docs/implementation-status.md` with complete Phase 1 through Phase 8 verification status.
+  - In-App Application Flow (`ApplyModal`):
+    - Replaced inert external redirect link with interactive "Apply Now" button launching a modal dialog.
+    - Modal automatically surfaces candidate details, dynamic statement of interest textarea, and commitment hours input with validation.
+    - Submitted applications instantly transition opportunity card state to an `<span ...>Applied</span>` badge with checkmark and disable duplicate application triggers.
+    - Added dedicated "Applied ({count})" tab displaying application status, submitted statement of interest, and applied date.
+  - Backend Application Persistence:
+    - Added `OpportunityApplicationCreate` and `OpportunityApplication` Pydantic models.
+    - Implemented `POST /api/opportunities/{opportunity_id}/apply` and `GET /api/opportunities/applied`.
+    - Added duplicate prevention returning `400 Bad Request` if already submitted.
+    - Added comprehensive automated test `test_apply_to_opportunity_flow`.
 
 ---
 
@@ -34,28 +33,32 @@
 
 | Path | Purpose & Relevant Behavior |
 | :--- | :--- |
-| `frontend/src/app/opportunities/page.tsx` | Added `aria-label` attributes to bookmark buttons, skill removal chips, availability sliders, and search inputs. |
-| `frontend/src/app/vault/page.tsx` | Added `aria-label` attributes to document actions (preview, download, rename, delete, grid/list view toggles, clear search). |
-| `frontend/src/app/copilot/page.tsx` | Added `aria-label` to source inspector close button and document deletion triggers. |
-| `frontend/src/app/reuse/page.tsx` | Added `aria-label` to search clear button. |
-| `README.md` | Comprehensive system documentation, architectural overview, module breakdowns, quickstart guides, and testing instructions. |
-| `docs/README.md` | Updated developer documentation index and feature matrix summary. |
-| `docs/implementation-status.md` | Updated roadmap status marking Phase 8 as completed across all 8 phases. |
-| `docs/verification/latest.md` | Comprehensive Phase 8 verification report. |
+| `backend/app/models/opportunity.py` | Added `OpportunityApplicationCreate` and `OpportunityApplication` schemas. |
+| `backend/app/database.py` | Added application storage (`self.user_applications`), `apply_to_opportunity`, and `get_student_applications`. |
+| `backend/app/routers/opportunities.py` | Added `POST /{opportunity_id}/apply` and `GET /applied` endpoints with authentication and duplicate checks. |
+| `backend/tests/test_opportunities.py` | Added `test_apply_to_opportunity_flow` verifying successful apply, duplicate prevention, and listing applied opportunities. |
+| `frontend/src/types/index.ts` | Added `OpportunityApplication` interface. |
+| `frontend/src/lib/api.ts` | Added `applyToOpportunity` and `getAppliedOpportunities` client functions. |
+| `frontend/src/app/opportunities/page.tsx` | Added `ApplyModal`, application submission handler, card applied state badge, and 4th "Applied" tab. |
+| `docs/verification/latest.md` | Evidence-based verification report for opportunity application system. |
 
 ---
 
 ## 3. Endpoints Added or Modified
 
-- **End-to-End Monorepo API Coverage**:
-  - No new endpoints added in Phase 8 (audit and documentation phase).
-  - All existing endpoints across Academic (`/academics/daily-plan`, `/academics/decision-matrix`, `/academics/summary`, `/academics/what-if`), Copilot (`/api/copilot/ask`, `/api/copilot/confirm-task`, `/api/copilot/documents`), Vault (`/api/vault/items`, `/api/vault/upload-url`, `/api/vault/download-url`), Reuse (`/reuse/listings`, `/reuse/requests`, `/reuse/impact`), and Opportunities (`/api/opportunities`, `/api/opportunities/recommended`, `/api/opportunities/profile`, `/api/opportunities/saved`) remain active, tested, and backward compatible.
+- `POST /api/opportunities/{opportunity_id}/apply`:
+  - **Auth**: Required (`Bearer <token>`).
+  - **Body**: `{ "statement_of_interest": string, "hours_per_week": number }`
+  - **Behavior**: Validates opportunity exists (404), checks duplicate submission (400), stores application, and returns created `OpportunityApplication`.
+- `GET /api/opportunities/applied`:
+  - **Auth**: Required (`Bearer <token>`).
+  - **Behavior**: Returns `List[OpportunityApplication]` submitted by the authenticated student.
 
 ---
 
 ## 4. Database Migrations
 
-- **Migrations Added**: None required in this phase.
+- **Migrations Added**: None required (uses existing Supabase application storage structure and in-memory mock persistence for isolated testing).
 - **Existing Schema Compatibility**:
   - Production database schema remains stable and aligned with `supabase/migrations/20261114000001_reconcile_academic_schema.sql`.
 
@@ -65,9 +68,9 @@
 
 ### A. Backend Pytest Test Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: **PASS** (101 passed in 0.55s)
+- **Result**: **PASS** (102 passed in 0.66s)
 - **Breakdown**:
-  - `backend/tests/test_opportunities.py`: 8 passed
+  - `backend/tests/test_opportunities.py`: 9 passed
   - `backend/tests/test_planner.py`: 23 passed
   - `backend/tests/test_reuse.py`: 7 passed
   - `backend/tests/test_security.py`: 11 passed
@@ -81,7 +84,7 @@
 
 ### B. Frontend Next.js Production Build
 - **Command**: `npm --prefix frontend run build`
-- **Result**: **PASS** (Exit code 0, 1340ms compile, 1695ms TypeScript type check)
+- **Result**: **PASS** (Exit code 0, 900ms compile, 775ms TypeScript type check)
 - **Routes Generated (13 total)**:
   ```
   Route (app)

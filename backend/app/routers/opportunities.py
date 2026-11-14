@@ -8,6 +8,8 @@ from ..models.opportunity import (
     OpportunityRecommendationResponse,
     StudentSkillProfile,
     StudentSkillProfileUpdate,
+    OpportunityApplication,
+    OpportunityApplicationCreate,
 )
 from ..services.opportunity_engine import OpportunityEngine
 from ..services.planner import AttendanceEngine
@@ -195,3 +197,39 @@ def get_saved_opportunities(user_id: str = Depends(get_current_user_id)):
     Returns opportunities bookmarked by the student.
     """
     return db.get_saved_opportunities(user_id)
+
+
+# ============================================================
+# 5. Apply to Opportunity
+# ============================================================
+
+@public_router.post("/{opportunity_id}/apply", response_model=OpportunityApplication)
+@router.post("/{opportunity_id}/apply", response_model=OpportunityApplication)
+def apply_opportunity(
+    opportunity_id: str,
+    application_in: Optional[OpportunityApplicationCreate] = None,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Submits student's application for an opportunity.
+    """
+    try:
+        app = db.apply_to_opportunity(user_id, opportunity_id, application_in)
+        return app
+    except ValueError as e:
+        err_msg = str(e)
+        if "not found" in err_msg.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_msg)
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err_msg)
+
+
+@public_router.get("/applications", response_model=List[OpportunityApplication])
+@router.get("/applications", response_model=List[OpportunityApplication])
+@public_router.get("/applied", response_model=List[OpportunityApplication])
+@router.get("/applied", response_model=List[OpportunityApplication])
+def get_student_applications(user_id: str = Depends(get_current_user_id)):
+    """
+    Returns all applications submitted by the student.
+    """
+    return db.get_student_applications(user_id)

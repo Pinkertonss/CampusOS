@@ -295,6 +295,21 @@ export interface StudentSkillProfile {
   preferred_categories: string[];
 }
 
+export interface OpportunityApplication {
+  id: string;
+  opportunity_id: string;
+  opportunity_title: string;
+  organization: string;
+  user_id: string;
+  student_name: string;
+  student_roll_no: string;
+  student_branch: string;
+  statement_of_interest: string;
+  available_hours_per_week: number;
+  applied_at: string;
+  status: "submitted" | "under_review" | "shortlisted" | "accepted" | string;
+}
+
 export interface AcademicSummaryCourse {
   id: string;
   code: string;

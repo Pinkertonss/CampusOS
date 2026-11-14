@@ -4,7 +4,12 @@ from typing import List, Dict, Optional
 from .models.academic import Course, AttendanceRecord, TimetableSlot, DeadlineTask
 from .models.vault import VaultDocument
 from .models.reuse import ReuseItem
-from .models.opportunity import Opportunity, StudentSkillProfile
+from .models.opportunity import (
+    Opportunity,
+    StudentSkillProfile,
+    OpportunityApplication,
+    OpportunityApplicationCreate,
+)
 from .services.what_if_engine import WhatIfEngine
 
 class CampusOSDatabase:
@@ -24,6 +29,7 @@ class CampusOSDatabase:
         self.opportunities: Dict[str, Opportunity] = {}
         self.user_skill_profiles: Dict[str, StudentSkillProfile] = {}
         self.user_saved_opportunities: Dict[str, List[str]] = {}
+        self.user_applications: Dict[str, List[OpportunityApplication]] = {}
         # Multi-tenant isolated storage maps (scoped by authenticated user_id)
         self.user_courses: Dict[str, Dict[str, Course]] = {}
         self.user_attendance: Dict[str, Dict[str, AttendanceRecord]] = {}
@@ -190,6 +196,54 @@ class CampusOSDatabase:
         uid = self._canonical_uid(user_id)
         saved_ids = self.user_saved_opportunities.get(uid, [])
         return [self.opportunities[oid] for oid in saved_ids if oid in self.opportunities]
+
+    def apply_to_opportunity(
+        self,
+        user_id: str,
+        opp_id: str,
+        application_in: Optional[OpportunityApplicationCreate] = None,
+    ) -> OpportunityApplication:
+        uid = self._canonical_uid(user_id)
+        opp = self.opportunities.get(opp_id)
+        if not opp:
+            raise ValueError(f"Opportunity {opp_id} not found")
+
+        apps = self.user_applications.setdefault(uid, [])
+        for a in apps:
+            if a.opportunity_id == opp_id:
+                raise ValueError("You have already applied to this opportunity")
+
+        stmt = (
+            application_in.statement_of_interest.strip()
+            if application_in and application_in.statement_of_interest
+            else f"Interested in contributing to {opp.title} at {opp.organization}."
+        )
+        hrs = (
+            application_in.available_hours_per_week
+            if application_in and application_in.available_hours_per_week
+            else opp.time_commitment_hrs_week
+        )
+
+        app = OpportunityApplication(
+            id=f"app-{uuid.uuid4().hex[:8]}",
+            opportunity_id=opp.id,
+            opportunity_title=opp.title,
+            organization=opp.organization,
+            user_id=uid,
+            student_name="Arjun Mehta",
+            student_roll_no="102203099",
+            student_branch="COE",
+            statement_of_interest=stmt,
+            available_hours_per_week=hrs,
+            applied_at=datetime.utcnow().isoformat(),
+            status="submitted",
+        )
+        apps.append(app)
+        return app
+
+    def get_student_applications(self, user_id: str) -> List[OpportunityApplication]:
+        uid = self._canonical_uid(user_id)
+        return list(self.user_applications.get(uid, []))
 
     def _seed_sample_data(self):
         # 1. Seed realistic Thapar Courses for 5th Semester COE (Computer Engineering)
