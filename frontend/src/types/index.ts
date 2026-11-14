@@ -89,6 +89,12 @@ export interface Citation {
   page_number?: number;
   source_ref?: string;
   excerpt?: string;
+  issuing_body?: string;
+  official_reference?: string;
+  effective_date?: string;
+  publication_date?: string;
+  review_status?: string;
+  is_archived?: boolean;
 }
 
 export interface ActionableSuggestion {
@@ -119,6 +125,14 @@ export interface CampusDocument {
   is_approved: boolean;
   chunk_count: number;
   file_size_bytes: number;
+  issuing_body?: string;
+  official_reference?: string;
+  publication_date?: string;
+  effective_date?: string;
+  review_status?: string;
+  approval_reviewer?: string;
+  version?: string;
+  is_archived?: boolean;
   created_at: string;
 }
 

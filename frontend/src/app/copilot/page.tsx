@@ -434,6 +434,11 @@ export default function CampusCopilotPage() {
                                 <span className="text-[10px] text-teal-600 dark:text-teal-400 font-normal">
                                   ({cit.page_ref || `Page ${cit.page_number || 1}`})
                                 </span>
+                                {cit.is_archived && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-semibold">
+                                    Archived Notice
+                                  </span>
+                                )}
                               </button>
                             ))}
                           </div>
@@ -443,15 +448,28 @@ export default function CampusCopilotPage() {
                       {/* Actionable Suggestion Card */}
                       {msg.actionableSuggestion && msg.actionableSuggestion.has_action && (
                         <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-2">
-                          <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold text-xs">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>Actionable Campus Notice Detected</span>
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>Actionable Campus Notice Detected</span>
+                            </div>
+                            <Badge variant={msg.actionableSuggestion.priority === "high" ? "danger" : "warning"} size="sm">
+                              {msg.actionableSuggestion.priority.toUpperCase()}
+                            </Badge>
                           </div>
                           <div className="text-xs text-amber-900 dark:text-amber-200 font-medium">
                             {msg.actionableSuggestion.title}
                           </div>
-                          <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                            Deadline: {new Date(msg.actionableSuggestion.due_date).toLocaleDateString()}
+                          {msg.actionableSuggestion.reason && (
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                              {msg.actionableSuggestion.reason}
+                            </p>
+                          )}
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                            <span>Deadline: {new Date(msg.actionableSuggestion.due_date).toLocaleDateString()}</span>
+                            {msg.actionableSuggestion.course_code && (
+                              <span className="font-mono text-[10px]">{msg.actionableSuggestion.course_code}</span>
+                            )}
                           </div>
                           {msg.taskConfirmed ? (
                             <Badge variant="success" size="sm" className="mt-1">
@@ -545,8 +563,8 @@ export default function CampusCopilotPage() {
                   </Button>
                 </form>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-                  <span>Zero guessing policy: answers only from approved campus corpus.</span>
-                  <span className="text-teal-600 dark:text-teal-400 font-medium">pgvector (768-dim)</span>
+                  <span>Zero guessing policy: answers strictly cite approved campus documents.</span>
+                  <span className="text-teal-600 dark:text-teal-400 font-medium">Citation-Grounded Verified Search · 768-dim Embeddings</span>
                 </div>
               </div>
             </Card>
@@ -581,16 +599,34 @@ export default function CampusCopilotPage() {
                       </h4>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Badge variant="primary" size="sm">
                         {selectedCitation.page_ref || `Page ${selectedCitation.page_number || 1}`}
                       </Badge>
-                      {selectedCitation.source_ref && (
-                        <span className="text-xs text-slate-500 truncate max-w-[170px]">
-                          {selectedCitation.source_ref}
+                      {selectedCitation.review_status && (
+                        <Badge variant={selectedCitation.is_archived ? "warning" : "success"} size="sm">
+                          {selectedCitation.is_archived ? "Archived Circular" : "Standing Policy"}
+                        </Badge>
+                      )}
+                      {selectedCitation.effective_date && (
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Effective: {selectedCitation.effective_date}
                         </span>
                       )}
                     </div>
+
+                    {selectedCitation.issuing_body && (
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">Issuing Body: </span>
+                        {selectedCitation.issuing_body}
+                      </div>
+                    )}
+
+                    {selectedCitation.official_reference && (
+                      <div className="text-[11px] font-mono text-slate-500">
+                        Ref: {selectedCitation.official_reference}
+                      </div>
+                    )}
 
                     {selectedCitation.section_title && (
                       <div className="text-xs font-semibold text-teal-700 dark:text-teal-300">

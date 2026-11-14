@@ -15,8 +15,8 @@
 | **Attendance & Grade What-If Calculators** | **COMPLETED (Phase 2)** | `/academics/attendance/what-if`, `/academics/grades/what-if` | Read-only simulation (no DB mutation) | Deterministic mathematical formulas (`AttendanceEngine`, `GradeEngine`) guaranteed non-mutating | Comprehensive boundary & edge tests in `test_planner.py` & `test_academic_persistence.py` |
 | **Academic CRUD & Import** | **COMPLETED (Phase 2)** | `/api/academic/courses`, `/attendance`, `/timetable`, `/deadlines`, `/import-csv` | Per-user isolated `CampusOSDatabase` + Supabase DB | Enforces invariants (`0 <= attended <= total`), duplicate prevention (409), durable task toggle, row-level CSV errors | Tested in `test_api.py`, `test_security.py`, & `test_academic_persistence.py` |
 | **Digital Vault** | **COMPLETED (Phase 3)** | `/api/vault/items`, `/upload-url`, `/items/{id}/download-url`, `/raw/{id}` | Supabase Storage `vault` + PostgreSQL `vault_items` | Real signed URLs & streaming; safe filenames; owner isolation; rollback of orphan storage; no blob: fallbacks; 10MB limit; 500MB quota | 14 tests in `test_vault.py` & `test_security.py` |
-| **Campus Copilot RAG** | **Implemented (768-dim Vectors)** | `/api/copilot/ask`, `/copilot/documents` | Ingests PDF/DOCX/TXT into `document_chunks` (pgvector 768-dim) | Deterministic offline local engine or Gemini/OpenAI API; strict refusal if below threshold | 7 tests in `test_copilot.py` |
-| **Actionable Copilot Task Confirmation** | **Implemented** | `/api/copilot/confirm-task` | PostgreSQL `tasks` / `db.deadlines` | Requires student explicit confirmation click; never silently writes tasks | Tested in `test_copilot.py` |
+| **Campus Copilot RAG** | **COMPLETED (Phase 4)** | `/api/copilot/ask`, `/copilot/documents` | Ingests PDF/DOCX/TXT into `document_chunks` (768-dim Vectors / Local Lexical Fallback) | Source-grounded answers; strict refusal on unsupported questions; document governance metadata & freshness status; prompt injection defense; server-side personalized attendance calculations | 12 tests in `test_copilot.py` |
+| **Actionable Copilot Task Confirmation** | **COMPLETED (Phase 4)** | `/api/copilot/confirm-task` | PostgreSQL `tasks` + `CampusOSDatabase.user_deadlines` | Secured with student auth (`get_current_user_id`); preview title/due date/reason before saving; persists user-owned task | Tested in `test_copilot.py` & `test_api.py` |
 | **Campus Reuse Marketplace** | **COMPLETED (Phase 1 Security)** | `/reuse/listings`, `/requests`, `/impact` | PostgreSQL `listings`, `exchange_requests`, `impact_events` | 2-party confirmation flow (request -> accept -> complete) updates SDG 12 metrics; non-owner actions blocked | 7 tests in `test_reuse.py` and `test_security.py` |
 | **Contact Privacy in Reuse** | **COMPLETED (Phase 1)** | Public `/reuse/listings`, `/reuse/listings/{id}` | Sanitized response schemas | Contact details (phone, hostel room) masked on public feed; visible only to owner or accepted partner | Tested in `test_security.py` |
 | **Cross-Module Student Decision Workflow** | **Missing (Phase 6)** | Dashboard Priorities Integration | Academic risk + calendar conflict + task planning | Not yet synthesized across academic calendar and copilot | Scheduled for Phase 6 |
@@ -28,7 +28,7 @@
 
 - **Backend Pytest**:
   - Command: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-  - Result: **85 passed in 0.45s** (85/85 tests green across `test_academic_persistence.py`, `test_api.py`, `test_auth.py`, `test_copilot.py`, `test_impact.py`, `test_planner.py`, `test_reuse.py`, `test_security.py`, `test_vault.py`, `test_what_if.py`).
+  - Result: **90 passed in 0.50s** (90/90 tests green across `test_academic_persistence.py`, `test_api.py`, `test_auth.py`, `test_copilot.py`, `test_impact.py`, `test_planner.py`, `test_reuse.py`, `test_security.py`, `test_vault.py`, `test_what_if.py`).
 - **Frontend Next.js Build**:
   - Command: `npm --prefix frontend run build`
   - Result: Compiled successfully; all 12 routes generated (`/`, `/academic`, `/copilot`, `/vault`, `/reuse`, `/login`, `/onboarding`, `/signup`).
@@ -62,8 +62,15 @@
    - Storage limits enforced: 10 MB maximum file size and 500 MB quota per student.
    - Exact byte retention: downloaded bytes match original uploaded bytes intact.
    - 14 dedicated tests in `backend/tests/test_vault.py` (85/85 total suite passing).
-4. **Phase 4 (P1) - NEXT**: Campus Copilot end-to-end polish, lexical/pgvector RAG pipeline, freshness flagging, and actionable task confirmation.
-5. **Phase 5 (P1)**: Campus Reuse Marketplace complete two-party lifecycle.
+4. **Phase 4 (P1) - COMPLETED**:
+   - Source-grounded RAG query interface connecting `askCopilot()` / `askCopilotStream()` with strict gating; declines unsupported questions without hallucinations.
+   - Enriched document governance metadata: issuing body, official reference, publication date, effective date, review status (standing policy vs archived circular), and versioning.
+   - Server-side authorized academic evaluation for personalized attendance inquiries ("Can I miss Friday's lecture?") using `AttendanceEngine` deterministic calculations and official Section 6.2 rules, clearly distinguishing mathematical projections from official waivers.
+   - Quarantined retrieved context chunks inside `<context_document>` XML tags to block prompt injection and enforce prompt boundaries.
+   - Secured actionable task confirmation (`POST /api/copilot/confirm-task`) requiring student Bearer auth and persisting to user deadlines.
+   - Replaced false "pgvector RAG" badge with truthful "Citation-Grounded Verified Search · 768-dim Embeddings".
+   - 12 comprehensive tests in `backend/tests/test_copilot.py` including a curated multi-domain evaluation set (90/90 suite passing).
+5. **Phase 5 (P1) - NEXT**: Campus Reuse Marketplace complete two-party lifecycle (offer -> request -> accept -> handoff confirmation) and verified SDG impact calculation.
 6. **Phase 6**: Integrated cross-module student decision intelligence.
 7. **Phase 7**: Opportunity matching and calendar conflict detection.
 8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.

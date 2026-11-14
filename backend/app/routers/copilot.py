@@ -1,8 +1,10 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Depends
 from fastapi.responses import StreamingResponse
 
+from ..core.auth import get_current_user_id, get_optional_user_id
+from ..core.supabase import get_supabase_client
 from ..database import db
 from ..models.academic import DeadlineTask
 from ..models.copilot import (
@@ -81,24 +83,31 @@ def delete_campus_document(document_id: str):
 
 
 @router.post("/ask", response_model=CopilotQueryResponse)
-async def ask_copilot(request: CopilotQueryRequest):
+async def ask_copilot(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
     """
     QUERY:
     Embeds the question, calls match_chunks for top-k, applies similarity threshold.
     If no chunk passes the threshold, returns strict refusal:
     "I couldn't find this in the approved campus documents" with no guessing.
     Otherwise prompts the LLM with ONLY the retrieved chunks, citing sources as [1], [2].
+    For personalized questions, retrieves authorized academic records on the server.
     """
-    return await rag_engine.aask(request)
+    return await rag_engine.aask(request, user_id=user_id)
 
 
 @router.post("/ask/stream")
-async def ask_copilot_stream(request: CopilotQueryRequest):
+async def ask_copilot_stream(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
     """
     Streaming query endpoint delivering tokens in real-time via Server-Sent Events (SSE).
     """
     return StreamingResponse(
-        rag_engine.ask_stream(request),
+        rag_engine.ask_stream(request, user_id=user_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -109,10 +118,13 @@ async def ask_copilot_stream(request: CopilotQueryRequest):
 
 
 @router.post("/confirm-task", response_model=DeadlineTask)
-def confirm_actionable_task(req: ConfirmTaskRequest):
+def confirm_actionable_task(
+    req: ConfirmTaskRequest,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Actionable AI confirmation: turns a relevant campus circular into a task
-    ONLY after the student explicitly clicks 'Confirm'.
+    ONLY after the student explicitly clicks 'Confirm'. Persists user-owned task.
     """
     task = DeadlineTask(
         id=f"task-{uuid.uuid4().hex[:6]}",
@@ -123,7 +135,26 @@ def confirm_actionable_task(req: ConfirmTaskRequest):
         priority=req.priority,
         source="copilot_action",
     )
-    db.deadlines.append(task)
+    db.add_deadline(user_id, task)
+
+    client = get_supabase_client()
+    if client:
+        try:
+            from .vault import _to_db_user_id
+            db_uid = _to_db_user_id(user_id)
+            client.table("tasks").insert({
+                "id": str(uuid.uuid4()),
+                "user_id": db_uid,
+                "title": req.title,
+                "course_code": req.course_code or "CAMPUS-NOTICE",
+                "due_date": req.due_date,
+                "status": "pending",
+                "priority": req.priority,
+                "source": "copilot_action",
+            }).execute()
+        except Exception:
+            pass
+
     return task
 
 
@@ -150,10 +181,24 @@ def delete_campus_document_root(document_id: str):
 
 
 @copilot_public_router.post("/ask", response_model=CopilotQueryResponse)
-async def ask_copilot_root(request: CopilotQueryRequest):
-    return await ask_copilot(request=request)
+async def ask_copilot_root(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    return await ask_copilot(request=request, user_id=user_id)
 
 
 @copilot_public_router.post("/ask/stream")
-async def ask_copilot_stream_root(request: CopilotQueryRequest):
-    return await ask_copilot_stream(request=request)
+async def ask_copilot_stream_root(
+    request: CopilotQueryRequest,
+    user_id: Optional[str] = Depends(get_optional_user_id),
+):
+    return await ask_copilot_stream(request=request, user_id=user_id)
+
+
+@copilot_public_router.post("/confirm-task", response_model=DeadlineTask)
+def confirm_actionable_task_root(
+    req: ConfirmTaskRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    return confirm_actionable_task(req=req, user_id=user_id)

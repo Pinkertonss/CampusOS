@@ -51,14 +51,18 @@ def test_copilot_ask_and_confirm_task():
     assert data["answered"] is True
     assert data["actionable_suggestion"] is not None
     
-    # Explicitly confirm actionable task
+    # Explicitly confirm actionable task (requires authentication)
     confirm_payload = {
         "title": data["actionable_suggestion"]["title"],
         "due_date": data["actionable_suggestion"]["due_date"],
         "priority": data["actionable_suggestion"]["priority"],
         "course_code": data["actionable_suggestion"]["course_code"],
     }
-    confirm_res = client.post("/api/copilot/confirm-task", json=confirm_payload)
+    confirm_res = client.post(
+        "/api/copilot/confirm-task",
+        json=confirm_payload,
+        headers={"Authorization": "Bearer dev-user-102203099"},
+    )
     assert confirm_res.status_code == 200
     task_data = confirm_res.json()
     assert task_data["source"] == "copilot_action"

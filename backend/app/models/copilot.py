@@ -9,6 +9,12 @@ class Citation(BaseModel):
     page_number: Optional[int] = 1
     source_ref: Optional[str] = ""
     excerpt: Optional[str] = ""
+    issuing_body: Optional[str] = "Dean of Academic Affairs (DOAA)"
+    official_reference: Optional[str] = ""
+    effective_date: Optional[str] = ""
+    publication_date: Optional[str] = ""
+    review_status: Optional[str] = "active"
+    is_archived: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -77,6 +83,14 @@ class CampusDocument(BaseModel):
     is_approved: bool = True
     chunk_count: int = 0
     file_size_bytes: int = 0
+    issuing_body: str = "Dean of Academic Affairs (DOAA)"
+    official_reference: Optional[str] = None
+    publication_date: Optional[str] = None
+    effective_date: Optional[str] = None
+    review_status: str = "active"  # "active" | "archived" | "standing_policy"
+    approval_reviewer: Optional[str] = "DOAA Committee"
+    version: str = "2024-25.1"
+    is_archived: bool = False
     created_at: str
 
 
