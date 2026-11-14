@@ -135,13 +135,32 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
     if not assessments_list:
         today = date.today()
         assessments_list = [
-            {"id": "ass-1", "course_code": "UCS301", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 24.0, "due_date": (today - timedelta(days=40)).isoformat()},
-            {"id": "ass-2", "course_code": "UCS301", "name": "MST-2", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=15)).isoformat()},
-            {"id": "ass-3", "course_code": "UCS301", "name": "Assignment 1", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=45)).isoformat()},
-            {"id": "ass-4", "course_code": "UCS301", "name": "Assignment 2", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=20)).isoformat()},
-            {"id": "ass-5", "course_code": "UCS301", "name": "End Semester", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
-            {"id": "ass-6", "course_code": "UCS405", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=40)).isoformat()},
-            {"id": "ass-7", "course_code": "UCS405", "name": "Lab Eval 2", "weight_percent": 10.0, "max_marks": 25.0, "obtained_marks": None, "due_date": (today + timedelta(days=3)).isoformat()},
+            # UCS301 - Data Structures & Algorithms (100% total weight)
+            {"id": "ass-ucs301-1", "course_code": "UCS301", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 24.0, "due_date": (today - timedelta(days=40)).isoformat()},
+            {"id": "ass-ucs301-2", "course_code": "UCS301", "name": "MST-2", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=15)).isoformat()},
+            {"id": "ass-ucs301-3", "course_code": "UCS301", "name": "Assignment 1", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=45)).isoformat()},
+            {"id": "ass-ucs301-4", "course_code": "UCS301", "name": "Assignment 2", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=20)).isoformat()},
+            {"id": "ass-ucs301-5", "course_code": "UCS301", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
+
+            # UCS310 - Database Management Systems (100% total weight)
+            {"id": "ass-ucs310-1", "course_code": "UCS310", "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 23.0, "due_date": (today - timedelta(days=35)).isoformat()},
+            {"id": "ass-ucs310-2", "course_code": "UCS310", "name": "Lab & Quizzes", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=10)).isoformat()},
+            {"id": "ass-ucs310-3", "course_code": "UCS310", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=18)).isoformat()},
+
+            # UCS405 - Operating Systems (100% total weight)
+            {"id": "ass-ucs405-1", "course_code": "UCS405", "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=38)).isoformat()},
+            {"id": "ass-ucs405-2", "course_code": "UCS405", "name": "Lab Evaluation", "weight_percent": 20.0, "max_marks": 25.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=12)).isoformat()},
+            {"id": "ass-ucs405-3", "course_code": "UCS405", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=22)).isoformat()},
+
+            # UMA010 - Mathematics - III (100% total weight)
+            {"id": "ass-uma010-1", "course_code": "UMA010", "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 17.0, "due_date": (today - timedelta(days=36)).isoformat()},
+            {"id": "ass-uma010-2", "course_code": "UMA010", "name": "Tutorial Quizzes", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 12.0, "due_date": (today - timedelta(days=14)).isoformat()},
+            {"id": "ass-uma010-3", "course_code": "UMA010", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=15)).isoformat()},
+
+            # UED101 - Engineering Design Project - I (100% total weight)
+            {"id": "ass-ued101-1", "course_code": "UED101", "name": "Mid-Term Project Review", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 27.0, "due_date": (today - timedelta(days=30)).isoformat()},
+            {"id": "ass-ued101-2", "course_code": "UED101", "name": "Continuous Sessional Work", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=8)).isoformat()},
+            {"id": "ass-ued101-3", "course_code": "UED101", "name": "End Semester Prototype & Viva", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=25)).isoformat()},
         ]
 
     if not tasks_list:
@@ -340,6 +359,15 @@ def grades_what_if_endpoint(
             assessments_data = [
                 a for a in assessments_data if a.get("course_code") == req.course_code
             ]
+            if not assessments_data:
+                # Provide standard fallback assessment breakdown so any course can be simulated
+                today = date.today()
+                code = req.course_code.upper()
+                assessments_data = [
+                    {"id": f"ass-{code}-mst", "course_code": code, "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 22.5, "due_date": (today - timedelta(days=30)).isoformat()},
+                    {"id": f"ass-{code}-sess", "course_code": code, "name": "Continuous Assessment", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=10)).isoformat()},
+                    {"id": f"ass-{code}-est", "course_code": code, "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
+                ]
 
     weighted_info = GradeEngine.calculate_current_weighted_score(assessments_data)
     curr_score = weighted_info["current_weighted_score"]

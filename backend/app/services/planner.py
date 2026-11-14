@@ -398,6 +398,12 @@ class GradeEngine:
         remaining_weight = weighted_info["remaining_weight"]
 
         projected_score = current_score
+        pending_assessments = [a for a in assessments if a.get("obtained_marks") is None]
+
+        def _clean_str(s: str) -> str:
+            return "".join(c.lower() for c in str(s) if c.isalnum())
+
+        hypo_norm_map = {_clean_str(k): v for k, v in hypothetical_scores.items()}
 
         for a in assessments:
             if a.get("obtained_marks") is None:
@@ -406,10 +412,27 @@ class GradeEngine:
                 weight = float(a.get("weight_percent", 0.0))
                 max_m = float(a.get("max_marks", 100.0))
 
-                # Check hypothetical scores by id or name
+                # 1. Exact match by id or name
                 hypo = hypothetical_scores.get(a_id)
                 if hypo is None:
                     hypo = hypothetical_scores.get(a_name)
+
+                # 2. Case-insensitive / normalized match
+                if hypo is None:
+                    hypo = hypo_norm_map.get(_clean_str(a_id)) or hypo_norm_map.get(_clean_str(a_name))
+
+                # 3. Synonym matching for terminal exam / end semester / finals
+                if hypo is None:
+                    a_norm = _clean_str(a_name)
+                    if any(term in a_norm for term in ["end", "sem", "est", "final", "exam"]):
+                        for hk, hv in hypo_norm_map.items():
+                            if any(term in hk for term in ["end", "sem", "est", "final", "exam"]):
+                                hypo = hv
+                                break
+
+                # 4. Fallback: single pending assessment with single hypothetical score
+                if hypo is None and len(pending_assessments) == 1 and len(hypothetical_scores) == 1:
+                    hypo = next(iter(hypothetical_scores.values()))
 
                 if hypo is not None and max_m > 0:
                     val = float(hypo)

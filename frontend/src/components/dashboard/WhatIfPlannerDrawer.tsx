@@ -59,6 +59,12 @@ export default function WhatIfPlannerDrawer({
     }
   }, [defaultCourseCode]);
 
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
+
   // Find selected course data
   const currentCourse = courses.find((c) => c.code === selectedCourseCode) || courses[0];
 
@@ -345,26 +351,54 @@ export default function WhatIfPlannerDrawer({
                 </div>
               </div>
 
+              {/* Required Score on Remaining Weight Banner */}
+              {gradeResult && gradeResult.required_percent_on_remaining !== null && (
+                <div
+                  className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 ${
+                    gradeResult.is_achievable
+                      ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+                      : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 shrink-0" />
+                    <span>
+                      Target {targetTotalGrade}%: Requires{" "}
+                      <strong>{gradeResult.required_percent_on_remaining}%</strong> average across remaining assessments ({gradeResult.remaining_weight}% weight).
+                    </span>
+                  </div>
+                  <Badge variant={gradeResult.is_achievable ? "success" : "danger"} size="sm">
+                    {gradeResult.is_achievable ? "Achievable" : "Unattainable"}
+                  </Badge>
+                </div>
+              )}
+
               {/* Assessment Hypothetical Inputs Table */}
               <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden bg-white dark:bg-slate-800/60">
                 <div className="grid grid-cols-3 gap-2 px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   <span>Assessment</span>
                   <span>Weight %</span>
-                  <span>Hypothetical Score</span>
+                  <span>Score / Projection</span>
                 </div>
                 <div className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs">
                   <div className="grid grid-cols-3 gap-2 px-3.5 py-2.5 items-center">
                     <span className="font-medium text-slate-900 dark:text-slate-100">
-                      MST-1 &amp; MST-2 (Completed)
+                      Completed Assessments (MST/Sessional)
                     </span>
-                    <span className="text-slate-400">40% weight</span>
-                    <span className="font-mono text-emerald-500 font-bold">31.5% scored</span>
+                    <span className="text-slate-400">
+                      {gradeResult ? `${gradeResult.completed_weight}% weight` : "50% weight"}
+                    </span>
+                    <span className="font-mono text-emerald-500 font-bold">
+                      {gradeResult ? `${gradeResult.current_weighted_score}% scored` : "Loading..."}
+                    </span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 px-3.5 py-3 items-center">
                     <span className="font-medium text-teal-600 dark:text-teal-400">
-                      End Semester Exam (Pending)
+                      End Semester Examination (Pending)
                     </span>
-                    <span className="text-slate-400">60% weight</span>
+                    <span className="text-slate-400">
+                      {gradeResult ? `${gradeResult.remaining_weight}% weight` : "50% weight"}
+                    </span>
                     <div className="flex items-center gap-2">
                       <input
                         type="range"
@@ -372,9 +406,9 @@ export default function WhatIfPlannerDrawer({
                         max="100"
                         value={endSemHypoScore}
                         onChange={(e) => setEndSemHypoScore(Number(e.target.value))}
-                        className="w-24 sm:w-32 accent-teal-500"
+                        className="w-24 sm:w-32 accent-teal-500 cursor-pointer"
                       />
-                      <span className="font-mono font-bold text-xs text-teal-500">
+                      <span className="font-mono font-bold text-xs text-teal-500 w-10">
                         {endSemHypoScore}%
                       </span>
                     </div>

@@ -357,6 +357,30 @@ def test_post_grades_what_if_authenticated():
     assert "is_achievable" in data
 
 
+def test_post_grades_what_if_all_courses_and_slider_matching():
+    """Verify grade simulation runs successfully across all enrolled courses and unseeded courses."""
+    test_courses = ["UCS301", "UCS310", "UCS405", "UMA010", "UED101", "UCS999"]
+    for code in test_courses:
+        payload = {
+            "course_code": code,
+            "target_total_percent": 85.0,
+            "hypothetical_scores": {
+                "End Semester": 90.0,
+            },
+        }
+        res = client.post("/academics/grades/what-if", json=payload, headers=AUTH_HEADER)
+        assert res.status_code == 200, f"Failed for course {code}"
+        data = res.json()
+        assert data["course_code"] == code
+        assert data["completed_weight"] > 0, f"Course {code} should have completed assessments"
+        assert data["remaining_weight"] > 0, f"Course {code} should have remaining weight"
+        assert data["projected_total_score"] > data["current_weighted_score"], (
+            f"Course {code} hypothetical score did not project an increase: "
+            f"current={data['current_weighted_score']}, projected={data['projected_total_score']}"
+        )
+        assert data["projected_letter_grade"] in ["A+", "A", "A-", "B", "B-", "C", "D", "E"]
+
+
 def test_get_daily_plan_authenticated():
     res = client.get("/academics/daily-plan?reference_date=2024-11-10", headers=AUTH_HEADER)
     assert res.status_code == 200
