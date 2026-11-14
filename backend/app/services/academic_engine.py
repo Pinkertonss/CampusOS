@@ -196,6 +196,7 @@ class AcademicRBACEngine:
             "admin-00000000-0000-0000-0000-000000000001": {"role": "admin", "status": "active"},
             "prof-rajesh-kumar-id": {"role": "professor", "status": "active"},
             "prof-sunita-sharma-id": {"role": "professor", "status": "active"},
+            "opp-manager-tiet-id": {"role": "opportunity_manager", "status": "active"},
             "102203099-tiet-user": {"role": "student", "status": "active"},
             "00000000-0000-0000-0000-000102203088": {"role": "student", "status": "active"},
             "102203077-student-id": {"role": "student", "status": "active"},

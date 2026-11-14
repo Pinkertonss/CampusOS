@@ -40,6 +40,9 @@ import {
   OpportunityRecommendationResponse,
   StudentSkillProfile,
   OpportunityApplication,
+  StudentExperienceProfile,
+  OpportunityEligibility,
+  CandidateDiscoveryResponse,
   Subject,
   SubjectOffering,
   StudentEnrollment,
@@ -1265,6 +1268,101 @@ export async function updateStudentSkillProfile(
     body: JSON.stringify(profile),
   });
   if (!res.ok) throw new Error("Failed to update student skill profile");
+  return await res.json();
+}
+
+export async function getStudentExperienceProfile(): Promise<StudentExperienceProfile> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/experience-profile`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch student experience profile");
+  return await res.json();
+}
+
+export async function updateStudentExperienceProfile(
+  data: Partial<StudentExperienceProfile>
+): Promise<StudentExperienceProfile> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/experience-profile`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update experience profile");
+  }
+  return await res.json();
+}
+
+export async function uploadStudentResume(file: File): Promise<{ success: boolean; filename: string }> {
+  const headers = await getAuthHeaders();
+  const formData = new FormData();
+  formData.append("resume", file);
+  const res = await fetch(`${API_BASE}/api/opportunities/profile/me/resume`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload resume");
+  }
+  return await res.json();
+}
+
+export async function deleteStudentResume(): Promise<{ success: boolean; message: string }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/profile/me/resume`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to delete resume");
+  }
+  return await res.json();
+}
+
+export async function getOpportunityEligibility(oppId: string): Promise<OpportunityEligibility> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/eligibility`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to evaluate opportunity eligibility");
+  return await res.json();
+}
+
+export async function getCandidateDiscovery(oppId: string): Promise<CandidateDiscoveryResponse> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/candidates`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to discover candidates (Creator / Opp Manager only)");
+  }
+  return await res.json();
+}
+
+export async function sendOpportunityInvitations(
+  oppId: string,
+  candidateIds: string[]
+): Promise<{ success: boolean; invited_count: number; message: string }> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/invite`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ candidate_ids: candidateIds }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to send opportunity invitations");
+  }
   return await res.json();
 }
 

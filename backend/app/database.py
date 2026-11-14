@@ -11,9 +11,19 @@ from .models.vault import VaultDocument
 from .models.reuse import ReuseItem
 from .models.opportunity import (
     Opportunity,
+    OpportunityCreate,
     StudentSkillProfile,
     OpportunityApplication,
     OpportunityApplicationCreate,
+    StudentExperienceProfile,
+    StudentExperienceProfileUpdate,
+    EducationEntry,
+    ProjectEntry,
+    WorkExperienceEntry,
+    CertificationEntry,
+    CandidateMatch,
+    CandidateDiscoveryResponse,
+    OpportunityInvitationResponse,
 )
 from .services.what_if_engine import WhatIfEngine
 from .services.academic_engine import AcademicRBACEngine
@@ -43,9 +53,47 @@ class CampusOSDatabase:
         self.user_timetable: Dict[str, List[TimetableSlot]] = {}
         self._tasks_file = Path(__file__).resolve().parent.parent / "storage" / "tasks_persistence.json"
         self._tasks_lock = threading.Lock()
+        self.experience_profiles: Dict[str, StudentExperienceProfile] = {}
+        self.student_resumes: Dict[str, Tuple[str, bytes]] = {}
+        self.opportunity_invitations: Dict[str, List[Dict[str, Any]]] = {}
+        self._profiles_file = Path(__file__).resolve().parent.parent / "storage" / "student_experience_profiles.json"
+        self._profiles_lock = threading.RLock()
+        self._resumes_dir = Path(__file__).resolve().parent.parent / "storage" / "resumes"
+        self._resumes_dir.mkdir(parents=True, exist_ok=True)
         self.academic_rbac = AcademicRBACEngine()
         self._seed_sample_data()
         self._load_persisted_tasks()
+        self._load_experience_profiles()
+
+    def _save_experience_profiles(self):
+        """Atomically saves experience profiles to disk with corrupted file protection."""
+        with self._profiles_lock:
+            try:
+                self._profiles_file.parent.mkdir(parents=True, exist_ok=True)
+                data = {uid: prof.model_dump() for uid, prof in self.experience_profiles.items()}
+                tmp_file = self._profiles_file.with_suffix(".tmp")
+                with open(tmp_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                os.replace(tmp_file, self._profiles_file)
+            except Exception:
+                pass
+
+    def _load_experience_profiles(self):
+        """Loads persisted experience profiles from disk or initializes defaults."""
+        with self._profiles_lock:
+            if not self._profiles_file.exists():
+                return
+            try:
+                with open(self._profiles_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                for uid, prof_dict in data.items():
+                    self.experience_profiles[uid] = StudentExperienceProfile(**prof_dict)
+            except (json.JSONDecodeError, OSError):
+                try:
+                    backup_path = self._profiles_file.with_suffix(f".corrupted.{int(datetime.now().timestamp())}")
+                    shutil.copy(self._profiles_file, backup_path)
+                except Exception:
+                    pass
 
     def _save_persisted_tasks(self):
         """Atomically saves tasks to durable disk persistence to prevent corruption."""
@@ -89,7 +137,7 @@ class CampusOSDatabase:
             pass
 
     def _canonical_uid(self, uid: str) -> str:
-        if not uid or uid in ("102203099-tiet-user", "dev-user-102203099", "dev-user", "mock-token"):
+        if not uid or uid in ("102203099-tiet-user", "dev-user-102203099", "dev-user", "mock-token", "student-user-id"):
             return self.default_user_id
         return uid
 
@@ -239,6 +287,391 @@ class CampusOSDatabase:
 
     def get_opportunity(self, opp_id: str) -> Optional[Opportunity]:
         return self.opportunities.get(opp_id)
+
+    def get_student_experience_profile(self, user_id: str) -> StudentExperienceProfile:
+        uid = self._canonical_uid(user_id)
+        with self._profiles_lock:
+            if uid not in self.experience_profiles:
+                # Default baseline profile with verified institutional education
+                is_arjun = uid == self.default_user_id
+                full_name = "Arjun Mehta" if is_arjun else "Student Profile"
+                roll_no = "102203099" if is_arjun else "102203888"
+                email = "amehta_be22@thapar.edu" if is_arjun else f"student_{uid[:6]}@thapar.edu"
+                verified_cgpa = 8.52 if is_arjun else 7.80
+
+                edu = [
+                    EducationEntry(
+                        id="edu-1",
+                        program="Bachelor of Engineering",
+                        branch="COE",
+                        semester=5,
+                        graduation_year=2026,
+                        cgpa_verified=verified_cgpa,
+                        student_entered_cgpa=verified_cgpa,
+                        institution="Thapar Institute of Engineering & Technology",
+                    )
+                ]
+                skills = ["Python", "FastAPI", "Next.js", "TypeScript", "Machine Learning", "PostgreSQL", "Docker"]
+                projects = [
+                    ProjectEntry(
+                        id="proj-1",
+                        title="CampusOS Real-Time Academic Assistant",
+                        description="Built monolithic multi-tenant campus operating system with FastAPI and Next.js 16.",
+                        technologies=["FastAPI", "Next.js", "Python", "TypeScript"],
+                        role="Full Stack Engineer",
+                        link="https://github.com/Pinkertonss/CampusOS",
+                    ),
+                    ProjectEntry(
+                        id="proj-2",
+                        title="Distributed Task Scheduler",
+                        description="Fault-tolerant cron scheduler with Raft consensus algorithm.",
+                        technologies=["Go", "Docker", "gRPC"],
+                        role="Backend Architect",
+                    ),
+                ]
+                work_exp = [
+                    WorkExperienceEntry(
+                        id="work-1",
+                        role="Undergraduate Research Intern",
+                        company="TIET AI & Robotics Center",
+                        location="Patiala, Punjab",
+                        start_date="2024-06-01",
+                        end_date="2024-08-31",
+                        is_current=False,
+                        description="Implemented model quantization and evaluation benchmarks for edge perception.",
+                    )
+                ]
+                certs = [
+                    CertificationEntry(
+                        id="cert-1",
+                        title="Deep Learning Specialization",
+                        issuer="DeepLearning.AI",
+                        issue_date="2024-03-15",
+                        credential_url="https://coursera.org/verify/dl-spec",
+                    )
+                ]
+
+                self.experience_profiles[uid] = StudentExperienceProfile(
+                    user_id=uid,
+                    full_name=full_name,
+                    roll_no=roll_no,
+                    email=email,
+                    education=edu,
+                    skills=skills,
+                    projects=projects,
+                    work_experience=work_exp,
+                    certifications=certs,
+                    achievements=["Dean's Honor List 2023-2024", "1st Place Hacknauts Hackathon 2024"],
+                    career_interests=["Software Engineering", "AI Research", "Full-Stack Development"],
+                    preferred_opportunity_types=["research", "project", "hackathon", "internship"],
+                    portfolio_link="https://arjunmehta.dev",
+                    github_link="https://github.com/arjunmehta",
+                    linkedin_link="https://linkedin.com/in/arjunmehta",
+                    discovery_opt_in=True,
+                    updated_at=datetime.utcnow().isoformat(),
+                )
+                self._save_experience_profiles()
+
+            return self.experience_profiles[uid]
+
+    def update_student_experience_profile(
+        self, user_id: str, update_data: StudentExperienceProfileUpdate
+    ) -> StudentExperienceProfile:
+        uid = self._canonical_uid(user_id)
+        current = self.get_student_experience_profile(uid)
+
+        with self._profiles_lock:
+            # Enforce academic trust boundary:
+            # Verified institutional CGPA cannot be overwritten by student!
+            if update_data.education is not None:
+                updated_edu = []
+                for idx, e in enumerate(update_data.education):
+                    # Preserve verified institutional CGPA from authoritative record
+                    authoritative_verified = None
+                    if idx < len(current.education):
+                        authoritative_verified = current.education[idx].cgpa_verified
+                    else:
+                        authoritative_verified = 8.52 if uid == self.default_user_id else None
+
+                    e_copy = e.model_copy()
+                    e_copy.cgpa_verified = authoritative_verified
+                    updated_edu.append(e_copy)
+                current.education = updated_edu
+
+            if update_data.skills is not None:
+                current.skills = [s.strip() for s in update_data.skills if s.strip()]
+            if update_data.projects is not None:
+                current.projects = update_data.projects
+            if update_data.work_experience is not None:
+                current.work_experience = update_data.work_experience
+            if update_data.certifications is not None:
+                current.certifications = update_data.certifications
+            if update_data.achievements is not None:
+                current.achievements = [a.strip() for a in update_data.achievements if a.strip()]
+            if update_data.career_interests is not None:
+                current.career_interests = [c.strip() for c in update_data.career_interests if c.strip()]
+            if update_data.preferred_opportunity_types is not None:
+                current.preferred_opportunity_types = update_data.preferred_opportunity_types
+            if update_data.portfolio_link is not None:
+                current.portfolio_link = update_data.portfolio_link.strip() if update_data.portfolio_link else None
+            if update_data.github_link is not None:
+                current.github_link = update_data.github_link.strip() if update_data.github_link else None
+            if update_data.linkedin_link is not None:
+                current.linkedin_link = update_data.linkedin_link.strip() if update_data.linkedin_link else None
+            if update_data.discovery_opt_in is not None:
+                current.discovery_opt_in = update_data.discovery_opt_in
+
+            current.updated_at = datetime.utcnow().isoformat()
+            self.experience_profiles[uid] = current
+            self._save_experience_profiles()
+            return current
+
+    def save_student_resume(self, user_id: str, filename: str, content_bytes: bytes) -> Dict[str, Any]:
+        uid = self._canonical_uid(user_id)
+        user_resume_dir = self._resumes_dir / uid
+        user_resume_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = f"resume_{uuid.uuid4().hex[:6]}.pdf"
+        file_path = user_resume_dir / safe_name
+
+        with open(file_path, "wb") as f:
+            f.write(content_bytes)
+
+        self.student_resumes[uid] = (filename, content_bytes)
+        prof = self.get_student_experience_profile(uid)
+        prof.resume_file_id = safe_name
+        prof.resume_file_name = filename
+        prof.resume_storage_path = str(file_path)
+        prof.resume_updated_at = datetime.utcnow().isoformat()
+        self._save_experience_profiles()
+
+        return {
+            "filename": filename,
+            "file_name": filename,
+            "size_bytes": len(content_bytes),
+            "updated_at": prof.resume_updated_at,
+        }
+
+    def get_student_resume(self, user_id: str) -> Optional[Tuple[str, bytes]]:
+        uid = self._canonical_uid(user_id)
+        if uid in self.student_resumes:
+            return self.student_resumes[uid]
+
+        prof = self.get_student_experience_profile(uid)
+        if prof.resume_storage_path and os.path.exists(prof.resume_storage_path):
+            with open(prof.resume_storage_path, "rb") as f:
+                content = f.read()
+            self.student_resumes[uid] = (prof.resume_file_name or "resume.pdf", content)
+            return self.student_resumes[uid]
+
+        return None
+
+    def delete_student_resume(self, user_id: str) -> bool:
+        uid = self._canonical_uid(user_id)
+        prof = self.get_student_experience_profile(uid)
+        if prof.resume_storage_path and os.path.exists(prof.resume_storage_path):
+            try:
+                os.unlink(prof.resume_storage_path)
+            except Exception:
+                pass
+
+        if uid in self.student_resumes:
+            del self.student_resumes[uid]
+
+        prof.resume_file_id = None
+        prof.resume_file_name = None
+        prof.resume_storage_path = None
+        prof.resume_updated_at = None
+        self._save_experience_profiles()
+        return True
+
+    def create_opportunity(self, creator_id: str, creator_role: str, opp_in: OpportunityCreate) -> Opportunity:
+        opp_id = f"opp-{uuid.uuid4().hex[:8]}"
+        now_iso = datetime.utcnow().isoformat()
+        opp = Opportunity(
+            id=opp_id,
+            title=opp_in.title,
+            organization=opp_in.organization,
+            mentor_name=opp_in.mentor_name,
+            category=opp_in.category,
+            description=opp_in.description,
+            eligible_branches=opp_in.eligible_branches,
+            min_semester=opp_in.min_semester,
+            max_semester=opp_in.max_semester,
+            graduation_years=opp_in.graduation_years,
+            min_cgpa=opp_in.min_cgpa,
+            required_skills=opp_in.required_skills,
+            required_skills_mode=opp_in.required_skills_mode,
+            preferred_skills=opp_in.preferred_skills,
+            min_experience_months=opp_in.min_experience_months,
+            time_commitment_hrs_week=opp_in.time_commitment_hrs_week,
+            location=opp_in.location,
+            deadline=opp_in.deadline,
+            status="open",
+            creator_id=creator_id,
+            creator_role=creator_role,
+            application_link=opp_in.application_link,
+            contact_email=opp_in.contact_email,
+            created_at=now_iso,
+        )
+        self.opportunities[opp_id] = opp
+        return opp
+
+    def get_opportunity_candidates(
+        self, opportunity_id: str, requester_id: str, requester_role: str
+    ) -> CandidateDiscoveryResponse:
+        from .services.opportunity_engine import OpportunityEngine
+        opp = self.get_opportunity(opportunity_id)
+        if not opp:
+            raise ValueError(f"Opportunity {opportunity_id} not found")
+
+        # Authorization check: Requester must be creator, opportunity manager, or admin
+        is_creator = opp.creator_id == requester_id or opp.creator_id in (requester_id, "admin")
+        is_admin = requester_role == "admin"
+        is_opp_mgr = requester_role in ("opportunity_manager", "opportunity-manager", "placement_coordinator")
+        if not (is_creator or is_admin or is_opp_mgr):
+            raise PermissionError("Only the opportunity creator, opportunity manager, or administrator can inspect candidates.")
+
+        # Gather all candidates from student directory & experience profiles
+        candidates: List[CandidateMatch] = []
+        eligible_count = 0
+
+        # Build list of student user IDs
+        student_ids = list(self.academic_rbac.student_directory.keys())
+        for sid in (self.default_user_id, "student-user-id", "user-student-1"):
+            if sid and sid not in student_ids:
+                student_ids.append(sid)
+
+        # Map existing applications for this opportunity
+        applied_map = {}
+        for s_uid, apps in self.user_applications.items():
+            for a in apps:
+                if a.opportunity_id == opportunity_id:
+                    applied_map[s_uid] = a
+
+        # Check existing invitations
+        invited_students = {
+            inv.get("student_id")
+            for inv in self.opportunity_invitations.get(opportunity_id, [])
+        }
+
+        for sid in student_ids:
+            prof = self.get_student_experience_profile(sid)
+            is_applicant = sid in applied_map
+
+            # Discovery visibility setting:
+            # Exclude students who opted out of discovery, unless they specifically applied to this opportunity
+            if not prof.discovery_opt_in and not is_applicant:
+                continue
+
+            verified_cgpa = 8.52 if sid == self.default_user_id else 7.80
+            if prof.education and prof.education[0].cgpa_verified:
+                verified_cgpa = prof.education[0].cgpa_verified
+
+            eligibility = OpportunityEngine.evaluate_eligibility(
+                profile=prof,
+                opportunity=opp,
+                verified_cgpa=verified_cgpa,
+            )
+
+            if eligibility.status == "ELIGIBLE":
+                eligible_count += 1
+
+            has_resume = bool(prof.resume_file_name or self.get_student_resume(sid))
+            inv_sent = sid in invited_students
+            inv_at = None
+            if inv_sent:
+                for inv in self.opportunity_invitations.get(opportunity_id, []):
+                    if inv.get("student_id") == sid:
+                        inv_at = inv.get("created_at")
+                        break
+
+            candidates.append(
+                CandidateMatch(
+                    student_id=sid,
+                    student_name=prof.full_name,
+                    student_roll_no=prof.roll_no,
+                    student_branch=prof.education[0].branch if prof.education else "COE",
+                    semester=prof.education[0].semester if prof.education else 5,
+                    graduation_year=prof.education[0].graduation_year if prof.education else 2026,
+                    cgpa_verified=verified_cgpa,
+                    skills=prof.skills,
+                    eligibility=eligibility,
+                    has_resume=has_resume,
+                    is_applicant=is_applicant,
+                    application_id=applied_map[sid].id if is_applicant else None,
+                    invitation_sent=inv_sent,
+                    invitation_sent_at=inv_at,
+                )
+            )
+
+        # Sort: applicants first, then ELIGIBLE, then by preference_score
+        status_rank = {"ELIGIBLE": 0, "INCOMPLETE_PROFILE": 1, "NOT_ELIGIBLE": 2}
+        candidates.sort(
+            key=lambda c: (
+                0 if c.is_applicant else 1,
+                status_rank.get(c.eligibility.status, 9),
+                -c.eligibility.preference_score,
+            )
+        )
+
+        return CandidateDiscoveryResponse(
+            opportunity_id=opp.id,
+            opportunity_title=opp.title,
+            total_candidates_evaluated=len(candidates),
+            eligible_count=eligible_count,
+            candidates=candidates,
+        )
+
+    def send_opportunity_invitations(
+        self, opportunity_id: str, creator_id: str, student_ids: List[str], message: Optional[str] = None
+    ) -> OpportunityInvitationResponse:
+        opp = self.get_opportunity(opportunity_id)
+        if not opp:
+            raise ValueError(f"Opportunity {opportunity_id} not found")
+
+        inv_list = self.opportunity_invitations.setdefault(opportunity_id, [])
+        existing_invited = {inv["student_id"] for inv in inv_list}
+
+        invited_now = []
+        skipped_now = []
+        now_iso = datetime.utcnow().isoformat()
+
+        for sid in student_ids:
+            if sid in existing_invited:
+                skipped_now.append(sid)
+                continue
+
+            inv_entry = {
+                "id": f"inv-{uuid.uuid4().hex[:8]}",
+                "opportunity_id": opportunity_id,
+                "student_id": sid,
+                "creator_id": creator_id,
+                "message": message or f"You have been invited by {opp.organization} to apply for {opp.title}.",
+                "created_at": now_iso,
+            }
+            inv_list.append(inv_entry)
+            invited_now.append(sid)
+
+            # Insert in-app notification in reuse/shared notification center if available
+            from .routers.reuse import _in_memory_notifications
+            _in_memory_notifications.insert(0, {
+                "id": f"notif-inv-{uuid.uuid4().hex[:6]}",
+                "user_id": sid,
+                "type": "opportunity_invitation",
+                "title": f"Invitation: {opp.title}",
+                "message": inv_entry["message"],
+                "listing_id": opportunity_id,
+                "created_at": now_iso,
+                "read": False,
+            })
+
+        return OpportunityInvitationResponse(
+            opportunity_id=opportunity_id,
+            invited_count=len(invited_now),
+            skipped_count=len(skipped_now),
+            student_ids=invited_now,
+            message=f"Sent {len(invited_now)} invitations ({len(skipped_now)} skipped as already invited).",
+        )
 
     def get_student_skill_profile(self, user_id: str) -> StudentSkillProfile:
         uid = self._canonical_uid(user_id)
@@ -661,14 +1094,21 @@ class CampusOSDatabase:
                 mentor_name="Dr. Rajesh Kumar",
                 category="research",
                 description="Investigating real-time visual perception and deep neural network quantization for edge robotics.",
-                required_skills=["Python", "Machine Learning", "PyTorch"],
-                preferred_branches=["COE", "CSE", "ECE", "ENC"],
+                eligible_branches=["COE", "CSE", "ECE", "ENC"],
+                min_semester=3,
+                max_semester=8,
+                graduation_years=[2025, 2026, 2027],
+                required_skills=["Python", "Machine Learning"],
+                required_skills_mode="all",
+                preferred_skills=["PyTorch", "Docker"],
                 min_cgpa=8.0,
                 time_commitment_hrs_week=8,
                 location="TIET STEP Lab 2",
                 schedule_requirement="Flexible weekday hours",
                 deadline="2026-12-15",
                 status="open",
+                creator_id="prof-rajesh-kumar-id",
+                creator_role="professor",
                 application_link="https://tiet.ac.in/research/ai-lab",
                 contact_email="rajesh.kumar@thapar.edu",
                 created_at="2026-11-01T10:00:00",
@@ -680,14 +1120,20 @@ class CampusOSDatabase:
                 mentor_name="Student Incubator Lead",
                 category="project",
                 description="Building client-facing portals and carbon accounting tools for TIET's Green Campus initiative.",
-                required_skills=["Next.js", "TypeScript", "Tailwind CSS", "FastAPI"],
-                preferred_branches=["COE", "CSE", "Any"],
+                eligible_branches=["COE", "CSE", "Any"],
+                min_semester=3,
+                graduation_years=[2025, 2026, 2027],
+                required_skills=["Next.js", "TypeScript"],
+                required_skills_mode="any",
+                preferred_skills=["Tailwind CSS", "FastAPI"],
                 min_cgpa=7.0,
                 time_commitment_hrs_week=6,
                 location="CSED Project Studio / Remote",
                 schedule_requirement="Weekends",
                 deadline="2026-12-05",
                 status="open",
+                creator_id="opp-manager-tiet-id",
+                creator_role="opportunity_manager",
                 application_link="https://tiet.ac.in/venture-club/portal",
                 contact_email="venture.club@thapar.edu",
                 created_at="2026-11-03T12:00:00",
@@ -699,14 +1145,21 @@ class CampusOSDatabase:
                 mentor_name="Dr. Seema Bawa",
                 category="hackathon",
                 description="Lead API architecture and judge submission review pipeline for the annual Thapar Hackathon.",
-                required_skills=["Python", "FastAPI", "Git"],
-                preferred_branches=["COE", "CSE", "ENC"],
+                eligible_branches=["COE", "CSE", "ENC"],
+                min_semester=3,
+                max_semester=7,
+                graduation_years=[2026, 2027],
+                required_skills=["Python", "FastAPI"],
+                required_skills_mode="all",
+                preferred_skills=["Git"],
                 min_cgpa=7.5,
                 time_commitment_hrs_week=10,
                 location="TIET Auditorium Annex",
                 schedule_requirement="Friday afternoons (14:00 - 18:00)",
                 deadline="2026-11-30",
                 status="open",
+                creator_id="opp-manager-tiet-id",
+                creator_role="opportunity_manager",
                 application_link="https://acmthapar.org/hackathon-team",
                 contact_email="acm@thapar.edu",
                 created_at="2026-11-05T09:00:00",
@@ -718,17 +1171,22 @@ class CampusOSDatabase:
                 mentor_name="Dr. Alpana Agarwal",
                 category="research",
                 description="Deploying LoRaWAN air quality and acoustic sensors across hostels and lecture halls.",
-                required_skills=["C++", "Embedded Systems", "Arduino"],
-                preferred_branches=["ECE", "ENC", "COE"],
+                eligible_branches=["ECE", "ENC", "COE"],
+                min_semester=4,
+                required_skills=["C++", "Embedded Systems"],
+                required_skills_mode="any",
+                preferred_skills=["Arduino"],
                 min_cgpa=7.0,
                 time_commitment_hrs_week=12,
                 location="C-Hall Lab 4",
                 schedule_requirement="Mon/Wed 17:00-19:00",
                 deadline="2026-12-10",
                 status="open",
+                creator_id="opp-manager-tiet-id",
+                creator_role="opportunity_manager",
                 application_link="https://tiet.ac.in/eced/iot",
                 contact_email="alpana.agarwal@thapar.edu",
-                created_at="2026-11-07T11:00:00",
+                created_at="2026-11-02T11:00:00",
             ),
             "opp-5": Opportunity(
                 id="opp-5",

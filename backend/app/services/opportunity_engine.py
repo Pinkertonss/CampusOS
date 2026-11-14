@@ -1,39 +1,237 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set, Tuple
 from datetime import date
 from ..models.opportunity import (
     Opportunity,
     OpportunityRecommendation,
+    OpportunityEligibility,
+    StudentExperienceProfile,
     StudentSkillProfile,
 )
 
 
+CANONICAL_SKILL_MAP: Dict[str, str] = {
+    "react.js": "react",
+    "reactjs": "react",
+    "node.js": "node",
+    "nodejs": "node",
+    "vue.js": "vue",
+    "vuejs": "vue",
+    "c++": "c++",
+    "cpp": "c++",
+    "golang": "go",
+    "postgres": "postgresql",
+    "postgres sql": "postgresql",
+    "fast api": "fastapi",
+    "py": "python",
+    "python 3": "python",
+    "python3": "python",
+    "machine learning": "machine learning",
+    "ml": "machine learning",
+    "deep learning": "deep learning",
+    "dl": "deep learning",
+    "artificial intelligence": "ai",
+    "ui/ux": "ui/ux",
+    "ui ux": "ui/ux",
+}
+
+
+def normalize_skill(skill: str) -> str:
+    """Normalizes skill tokens to canonical lowercase representations."""
+    cleaned = skill.strip().lower()
+    return CANONICAL_SKILL_MAP.get(cleaned, cleaned)
+
+
 class OpportunityEngine:
     """
-    Deterministic matching engine for student opportunities:
-    Synthesizes:
-    1. Skill overlap (student skills vs opportunity requirements)
-    2. Academic attendance feasibility (detention risks & study pressure)
-    3. Timetable schedule compatibility & lecture collision detection
-    4. Student branch and category interests
+    Deterministic shared matching and eligibility engine for CampusOS opportunities.
+    Evaluates:
+    1. Mandatory Criteria -> ELIGIBLE | NOT_ELIGIBLE | INCOMPLETE_PROFILE
+    2. Preference Criteria (Preferred Skills & Categories) -> Recommendation ranking
+    3. Academic & Schedule Feasibility -> Collision warnings and workload advisory
     """
+
+    @classmethod
+    def evaluate_eligibility(
+        cls,
+        profile: StudentExperienceProfile,
+        opportunity: Opportunity,
+        verified_cgpa: Optional[float] = None,
+    ) -> OpportunityEligibility:
+        """
+        Evaluates student profile strictly against mandatory opportunity requirements.
+        Returns three distinct deterministic outcomes:
+        - ELIGIBLE: all mandatory criteria demonstrably met
+        - NOT_ELIGIBLE: at least one mandatory criterion demonstrably unmet
+        - INCOMPLETE_PROFILE: required information missing to establish eligibility
+        """
+        reasons: List[str] = []
+        missing_fields: List[str] = []
+        is_not_eligible = False
+        is_incomplete = False
+
+        # If opportunity is closed, immediately mark as NOT_ELIGIBLE with clear reason
+        if opportunity.status == "closed":
+            return OpportunityEligibility(
+                status="NOT_ELIGIBLE",
+                reasons=["Opportunity is closed for applications."],
+                missing_profile_fields=[],
+                explanation="This opportunity has passed its deadline and is closed.",
+            )
+
+        # 1. Branch and Education Criteria
+        edu = profile.education[0] if profile.education else None
+        if not edu or not edu.branch:
+            is_incomplete = True
+            missing_fields.append("Branch")
+            reasons.append("Branch is required to determine eligibility.")
+        else:
+            student_branch = edu.branch.strip().upper()
+            allowed_branches = [b.strip().upper() for b in opportunity.eligible_branches if b.strip()]
+            if allowed_branches and "ANY" not in allowed_branches and student_branch not in allowed_branches:
+                is_not_eligible = True
+                reasons.append(
+                    f"Recorded branch '{student_branch}' does not meet eligible branches: {', '.join(opportunity.eligible_branches)}."
+                )
+
+        # 2. Semester Range Criteria
+        if opportunity.min_semester is not None or opportunity.max_semester is not None:
+            if not edu or edu.semester is None:
+                is_incomplete = True
+                missing_fields.append("Semester")
+                reasons.append("Semester is required to determine eligibility.")
+            else:
+                sem = edu.semester
+                if opportunity.min_semester is not None and sem < opportunity.min_semester:
+                    is_not_eligible = True
+                    reasons.append(
+                        f"Current semester ({sem}) is below required minimum semester ({opportunity.min_semester})."
+                    )
+                if opportunity.max_semester is not None and sem > opportunity.max_semester:
+                    is_not_eligible = True
+                    reasons.append(
+                        f"Current semester ({sem}) exceeds maximum allowed semester ({opportunity.max_semester})."
+                    )
+
+        # 3. Graduation Year Criteria
+        if opportunity.graduation_years:
+            if not edu or not edu.graduation_year:
+                is_incomplete = True
+                missing_fields.append("Graduation Year")
+                reasons.append("Graduation year is required to determine eligibility.")
+            elif edu.graduation_year not in opportunity.graduation_years:
+                is_not_eligible = True
+                reasons.append(
+                    f"Graduation year ({edu.graduation_year}) is not among eligible graduation years: {opportunity.graduation_years}."
+                )
+
+        # 4. Minimum CGPA Criteria (Uses verified institutional records first, fallback to profile)
+        if opportunity.min_cgpa is not None:
+            effective_cgpa = verified_cgpa or (edu.cgpa_verified if edu else None) or (edu.student_entered_cgpa if edu else None)
+            if effective_cgpa is None:
+                is_incomplete = True
+                missing_fields.append("CGPA")
+                reasons.append(f"Recorded CGPA is required (minimum threshold is {opportunity.min_cgpa}).")
+            elif round(effective_cgpa, 2) < round(opportunity.min_cgpa, 2):
+                is_not_eligible = True
+                reasons.append(
+                    f"Minimum CGPA is {opportunity.min_cgpa}; recorded CGPA is {round(effective_cgpa, 2)}."
+                )
+
+        # 5. Mandatory Required Skills
+        student_skills_normalized = {normalize_skill(s) for s in profile.skills if s.strip()}
+        matched_mandatory: List[str] = []
+        missing_mandatory: List[str] = []
+
+        for req in opportunity.required_skills:
+            req_norm = normalize_skill(req)
+            if req_norm in student_skills_normalized:
+                matched_mandatory.append(req)
+            else:
+                missing_mandatory.append(req)
+
+        if opportunity.required_skills:
+            mode = (opportunity.required_skills_mode or "any").lower()
+            if mode == "all":
+                if missing_mandatory:
+                    is_not_eligible = True
+                    reasons.append(
+                        f"Missing mandatory required skills (requires all): {', '.join(missing_mandatory)}."
+                    )
+            else:  # "any" mode
+                if len(matched_mandatory) == 0:
+                    is_not_eligible = True
+                    reasons.append(
+                        f"Requires at least one of the mandatory skills: {', '.join(opportunity.required_skills)}."
+                    )
+
+        # 6. Preferred Skills & Preferences (Affects ranking, never eligibility!)
+        matched_preferred: List[str] = []
+        missing_preferred: List[str] = []
+        for pref in opportunity.preferred_skills:
+            pref_norm = normalize_skill(pref)
+            if pref_norm in student_skills_normalized:
+                matched_preferred.append(pref)
+            else:
+                missing_preferred.append(pref)
+
+        if opportunity.preferred_skills:
+            pref_score = round((len(matched_preferred) / len(opportunity.preferred_skills)) * 100.0, 1)
+        else:
+            pref_score = 100.0
+
+        # Outcome synthesis: NOT_ELIGIBLE takes precedence over INCOMPLETE_PROFILE
+        if is_not_eligible:
+            status_val = "NOT_ELIGIBLE"
+            explanation = reasons[0] if reasons else "One or more mandatory criteria are unmet."
+        elif is_incomplete:
+            status_val = "INCOMPLETE_PROFILE"
+            explanation = (
+                f"Profile incomplete: {', '.join(missing_fields)} is required to establish eligibility."
+            )
+        else:
+            status_val = "ELIGIBLE"
+            explanation = "Eligible: your academic profile and recorded qualifications satisfy all mandatory criteria."
+
+        return OpportunityEligibility(
+            status=status_val,
+            mandatory_passed=(status_val == "ELIGIBLE"),
+            reasons=reasons,
+            missing_requirements=reasons,
+            missing_profile_fields=missing_fields,
+            matched_mandatory_skills=matched_mandatory,
+            missing_mandatory_skills=missing_mandatory,
+            matched_preferred_skills=matched_preferred,
+            missing_preferred_skills=missing_preferred,
+            preference_score=pref_score,
+            explanation=explanation,
+            manual_review_required=False,
+        )
 
     @classmethod
     def match_opportunities(
         cls,
-        profile: StudentSkillProfile,
+        profile: Any,  # StudentExperienceProfile or StudentSkillProfile
         opportunities: List[Opportunity],
         courses_attendance: List[Dict[str, Any]],
         timetable: List[Dict[str, Any]],
-        assessments: Optional[List[Dict[str, Any]]] = None,
+        verified_cgpa: Optional[float] = None,
         student_branch: str = "COE",
     ) -> List[OpportunityRecommendation]:
-        if not profile.opt_in_matching:
-            return []
+        """
+        Delivers personalized opportunity matching and ranked recommendations.
+        """
+        # Convert legacy StudentSkillProfile if needed
+        if isinstance(profile, StudentSkillProfile):
+            exp_profile = StudentExperienceProfile(
+                user_id=profile.user_id,
+                skills=profile.skills,
+                career_interests=profile.interests,
+                discovery_opt_in=profile.opt_in_matching,
+            )
+        else:
+            exp_profile = profile
 
-        student_skills_clean = {s.strip().lower() for s in profile.skills if s.strip()}
-        student_interests_clean = {i.strip().lower() for i in profile.interests if i.strip()}
-
-        # Evaluate student attendance standing
+        # Attendance and academic safety checks
         critical_courses = []
         warning_courses = []
         for c in courses_attendance:
@@ -49,37 +247,18 @@ class OpportunityEngine:
         recommendations: List[OpportunityRecommendation] = []
 
         for opp in opportunities:
-            if opp.status != "open":
-                continue
+            # Deterministic eligibility evaluation
+            eligibility = cls.evaluate_eligibility(
+                profile=exp_profile,
+                opportunity=opp,
+                verified_cgpa=verified_cgpa,
+            )
 
-            # 1. SKILL MATCH SCORE (45%)
-            required_skills = [s.strip() for s in opp.required_skills if s.strip()]
-            matched_skills: List[str] = []
-            missing_skills: List[str] = []
-
-            for req_skill in required_skills:
-                req_lower = req_skill.lower()
-                # Check direct or substring match
-                if any(req_lower == s or req_lower in s or s in req_lower for s in student_skills_clean):
-                    matched_skills.append(req_skill)
-                else:
-                    missing_skills.append(req_skill)
-
-            if len(required_skills) == 0:
-                skill_score = 100.0
-                skill_match_pct = 100.0
-            else:
-                skill_match_pct = round((len(matched_skills) / len(required_skills)) * 100.0, 1)
-                skill_score = skill_match_pct
-
-            # 2. SCHEDULE COMPATIBILITY (20%)
+            # Schedule collision detection
             schedule_compatible = True
             collision_warning: Optional[str] = None
-            schedule_score = 100.0
-
             sched_req = (opp.schedule_requirement or "").strip().lower()
             if sched_req and sched_req not in ("flexible", "weekends", "remote"):
-                # Detect day of week collision
                 for slot in timetable:
                     slot_day = str(slot.get("day_of_week", "")).strip().lower()
                     if slot_day and slot_day in sched_req:
@@ -92,88 +271,58 @@ class OpportunityEngine:
                             f"Potential collision with scheduled class {c_code} on {slot.get('day_of_week')} "
                             f"({start_t}-{end_t} @ {venue})."
                         )
-                        schedule_score = 40.0
                         break
 
-            # 3. ACADEMIC FEASIBILITY SCORE (25%)
-            academic_score = 100.0
+            # Academic safety advisory
             academic_advisory: Optional[str] = None
-
-            hrs = opp.time_commitment_hrs_week
             if critical_courses:
-                crit_code, crit_pct = critical_courses[0]
-                if hrs >= 8:
-                    academic_score = 45.0
-                    academic_advisory = (
-                        f"High commitment ({hrs} hrs/wk) is high-risk while {crit_code} attendance "
-                        f"is below detention threshold ({crit_pct}%). Prioritize lecture attendance."
-                    )
-                else:
-                    academic_score = 75.0
-                    academic_advisory = (
-                        f"Low commitment ({hrs} hrs/wk) is feasible, but monitor {crit_code} ({crit_pct}%)."
-                    )
+                course_strs = [f"{c[0]} ({c[1]}%)" for c in critical_courses]
+                academic_advisory = (
+                    f"Warning: Attendance is critical (<65%) in {', '.join(course_strs)}. "
+                    f"Prioritize academic recovery before committing {opp.time_commitment_hrs_week}h/week."
+                )
             elif warning_courses:
-                warn_code, warn_pct = warning_courses[0]
-                if hrs >= 12:
-                    academic_score = 65.0
-                    academic_advisory = (
-                        f"Heavy commitment ({hrs} hrs/wk) may impact attendance recovery for {warn_code} ({warn_pct}%)."
-                    )
-                else:
-                    academic_score = 90.0
+                course_strs = [f"{c[0]} ({c[1]}%)" for c in warning_courses]
+                academic_advisory = (
+                    f"Notice: Attendance is in warning zone (<75%) in {', '.join(course_strs)}."
+                )
+
+            # Combined Match Score for recommendation ordering:
+            # 50% eligibility weight + 30% preferred skills + 20% schedule compatibility
+            if eligibility.status == "ELIGIBLE":
+                base_score = 60.0 + (eligibility.preference_score * 0.3)
+            elif eligibility.status == "INCOMPLETE_PROFILE":
+                base_score = 35.0 + (eligibility.preference_score * 0.2)
             else:
-                academic_score = 100.0
+                base_score = 15.0 + (eligibility.preference_score * 0.1)
 
-            # 4. BRANCH & INTEREST ALIGNMENT (10%)
-            branch_score = 100.0
-            pref_branches = [b.strip().upper() for b in opp.preferred_branches]
-            if "ANY" not in pref_branches and student_branch.upper() not in pref_branches:
-                branch_score = 50.0
+            if not schedule_compatible:
+                base_score -= 15.0
 
-            if opp.category.lower() in student_interests_clean:
-                branch_score = min(100.0, branch_score + 20.0)
-
-            # WEIGHTED OVERALL MATCH SCORE
-            total_score = round(
-                (0.45 * skill_score)
-                + (0.25 * academic_score)
-                + (0.20 * schedule_score)
-                + (0.10 * branch_score),
-                1,
+            match_score = round(max(0.0, min(100.0, base_score)), 1)
+            all_required = opp.required_skills
+            skill_match_pct = (
+                round((len(eligibility.matched_mandatory_skills) / len(all_required)) * 100.0, 1)
+                if all_required
+                else 100.0
             )
-
-            # Formulate clear recommendation reason
-            reason_parts = []
-            if len(required_skills) > 0:
-                reason_parts.append(f"{len(matched_skills)}/{len(required_skills)} skills matched")
-            else:
-                reason_parts.append("Open to all skill levels")
-
-            if schedule_compatible:
-                reason_parts.append("compatible with your timetable")
-            else:
-                reason_parts.append("requires timetable accommodation")
-
-            if academic_advisory:
-                reason_parts.append(f"Advisory: {academic_advisory}")
-
-            reason = ". ".join(reason_parts) + "."
 
             recommendations.append(
                 OpportunityRecommendation(
                     opportunity=opp,
-                    match_score=total_score,
+                    eligibility=eligibility,
+                    match_score=match_score,
                     skill_match_percent=skill_match_pct,
-                    matched_skills=matched_skills,
-                    missing_skills=missing_skills,
+                    matched_skills=eligibility.matched_mandatory_skills,
+                    missing_skills=eligibility.missing_mandatory_skills,
                     schedule_compatible=schedule_compatible,
                     schedule_collision_warning=collision_warning,
                     academic_advisory=academic_advisory,
-                    recommendation_reason=reason,
+                    recommendation_reason=eligibility.explanation,
                 )
             )
 
-        # Sort descending by match_score
-        recommendations.sort(key=lambda x: -x.match_score)
+        # Sort recommendations by match_score descending
+        recommendations.sort(key=lambda r: r.match_score, reverse=True)
+
         return recommendations

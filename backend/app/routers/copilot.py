@@ -55,22 +55,38 @@ async def upload_campus_document(
 
     admin_actor = admin.get("email") or admin.get("sub") or "admin@thapar.edu"
 
-    res = await rag_engine.ingest_document(
-        file_bytes=content_bytes,
-        filename=filename,
-        title=title.strip(),
-        source_label=source_label.strip(),
-        uploaded_by=admin_actor,
-    )
-    return res
+    try:
+        res = await rag_engine.ingest_document(
+            file_bytes=content_bytes,
+            filename=filename,
+            title=title.strip(),
+            source_label=source_label.strip(),
+            uploaded_by=admin_actor,
+        )
+        return res
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        )
 
 
 @router.get("/documents", response_model=List[CampusDocument])
-def list_campus_documents():
+def list_campus_documents(admin: dict = Depends(require_admin_user)):
     """
     List all indexed approved campus documents with chunk count and metadata.
+    Restricted to administrators only.
     """
     return rag_engine.list_documents()
+
+
+@router.post("/migrate")
+def migrate_copilot_documents(admin: dict = Depends(require_admin_user)):
+    """
+    Admin: Re-index or backfill existing documents into full-text passage index.
+    """
+    count = rag_engine.migrate_corpus()
+    return {"success": True, "migrated_documents": count}
 
 
 @router.delete("/documents/{document_id}")
@@ -221,8 +237,8 @@ async def upload_campus_document_root(
 
 
 @copilot_public_router.get("/documents", response_model=List[CampusDocument])
-def list_campus_documents_root():
-    return list_campus_documents()
+def list_campus_documents_root(admin: dict = Depends(require_admin_user)):
+    return list_campus_documents(admin=admin)
 
 
 @copilot_public_router.delete("/documents/{document_id}")

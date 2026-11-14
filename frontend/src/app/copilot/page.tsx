@@ -43,6 +43,7 @@ import {
   CopilotQueryResponse,
   CampusDocument,
 } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 import {
   askCopilotStream,
   askCopilot,
@@ -82,8 +83,16 @@ function createUniqueMsgId(prefix: string): string {
 }
 
 export default function CampusCopilotPage() {
+  const { isAdmin } = useAuth();
+
   // Navigation / View Tabs
   const [activeTab, setActiveTab] = useState<"chat" | "admin">("chat");
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === "admin") {
+      setActiveTab("chat");
+    }
+  }, [isAdmin, activeTab]);
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -113,12 +122,12 @@ export default function CampusCopilotPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingText]);
 
-  // Load documents when opening admin tab
+  // Load documents when opening admin tab (administrators only)
   useEffect(() => {
-    if (activeTab === "admin") {
+    if (activeTab === "admin" && isAdmin) {
       fetchDocuments();
     }
-  }, [activeTab]);
+  }, [activeTab, isAdmin]);
 
   const fetchDocuments = async () => {
     setDocLoading(true);
@@ -316,32 +325,34 @@ export default function CampusCopilotPage() {
           </p>
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg">
-          <button
-            type="button"
-            onClick={() => setActiveTab("chat")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
-              activeTab === "chat"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Assistant Chat
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("admin")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
-              activeTab === "admin"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Manage Documents (Admin)
-          </button>
-        </div>
+        {/* Tab Controls (Administrator Only) */}
+        {isAdmin && (
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setActiveTab("chat")}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
+                activeTab === "chat"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Assistant Chat
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("admin")}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
+                activeTab === "admin"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Manage Documents (Admin)
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
@@ -690,9 +701,9 @@ export default function CampusCopilotPage() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 2: ADMIN DOCUMENT MANAGEMENT UI */}
+      {/* TAB 2: ADMIN DOCUMENT MANAGEMENT UI (Admin Only)             */}
       {/* ============================================================ */}
-      {activeTab === "admin" && (
+      {activeTab === "admin" && isAdmin && (
         <div className="space-y-6">
           {/* Upload Form Card */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-sm">

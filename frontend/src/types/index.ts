@@ -270,6 +270,7 @@ export interface Opportunity {
 
 export interface OpportunityRecommendation {
   opportunity: Opportunity;
+  eligibility?: OpportunityEligibility;
   match_score: number;
   skill_match_percent: number;
   matched_skills: string[];
@@ -310,6 +311,108 @@ export interface OpportunityApplication {
   available_hours_per_week: number;
   applied_at: string;
   status: "submitted" | "under_review" | "shortlisted" | "accepted" | string;
+}
+
+export interface EducationEntry {
+  id: string;
+  program: string;
+  branch: string;
+  semester: number;
+  graduation_year: number;
+  cgpa_verified?: number | null;
+  student_entered_cgpa?: number | null;
+  institution: string;
+}
+
+export interface ProjectEntry {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  role: string;
+  link?: string | null;
+}
+
+export interface WorkExperienceEntry {
+  id: string;
+  role: string;
+  company: string;
+  location?: string | null;
+  start_date: string;
+  end_date?: string | null;
+  is_current: boolean;
+  description: string;
+}
+
+export interface CertificationEntry {
+  id: string;
+  title: string;
+  issuer: string;
+  issue_date: string;
+  credential_url?: string | null;
+}
+
+export interface StudentExperienceProfile {
+  user_id: string;
+  full_name: string;
+  roll_no: string;
+  email: string;
+  education: EducationEntry[];
+  skills: string[];
+  projects: ProjectEntry[];
+  work_experience: WorkExperienceEntry[];
+  certifications: CertificationEntry[];
+  achievements: string[];
+  career_interests: string[];
+  preferred_opportunity_types: string[];
+  resume_file_name?: string | null;
+  resume_filename?: string | null;
+  resume_updated_at?: string | null;
+  resume_uploaded_at?: string | null;
+  resume_file_id?: string | null;
+  resume_storage_path?: string | null;
+  portfolio_link?: string | null;
+  github_link?: string | null;
+  linkedin_link?: string | null;
+  discovery_opt_in: boolean;
+  cgpa_verified?: number | null;
+  updated_at: string;
+}
+
+export interface OpportunityEligibility {
+  status: "ELIGIBLE" | "NOT_ELIGIBLE" | "INCOMPLETE_PROFILE";
+  mandatory_passed: boolean;
+  mandatory_reasons: string[];
+  missing_requirements: string[];
+  matched_mandatory_skills: string[];
+  missing_mandatory_skills: string[];
+  preference_score: number;
+  preference_matches: string[];
+  explanation: string;
+}
+
+export interface CandidateMatch {
+  student_id: string;
+  full_name: string;
+  roll_no: string;
+  branch: string;
+  semester: number;
+  graduation_year: number;
+  cgpa_verified?: number | null;
+  skills: string[];
+  projects_count: number;
+  work_experience_count: number;
+  eligibility: OpportunityEligibility;
+  candidate_score: number;
+  invited: boolean;
+  has_resume: boolean;
+}
+
+export interface CandidateDiscoveryResponse {
+  opportunity_id: string;
+  total_candidates: number;
+  eligible_count: number;
+  candidates: CandidateMatch[];
 }
 
 export interface AcademicSummaryCourse {

@@ -97,7 +97,21 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                     or is_admin
                 )
 
-                assigned_role = "admin" if is_admin else ("professor" if is_professor else (db_role or "student"))
+                is_opp_mgr = bool(
+                    app_meta.get("role") in ("opportunity_manager", "opportunity-manager", "placement_coordinator")
+                    or app_meta.get("is_opportunity_manager") is True
+                    or db_role in ("opportunity_manager", "opportunity-manager", "placement_coordinator")
+                    or is_admin
+                )
+
+                if is_admin:
+                    assigned_role = "admin"
+                elif is_professor:
+                    assigned_role = "professor"
+                elif is_opp_mgr:
+                    assigned_role = "opportunity_manager"
+                else:
+                    assigned_role = db_role or "student"
 
                 return {
                     "sub": str(user_id),
@@ -105,6 +119,7 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                     "role": assigned_role,
                     "is_admin": is_admin,
                     "is_professor": is_professor,
+                    "is_opportunity_manager": is_opp_mgr,
                     "app_metadata": app_meta,
                     "user_metadata": user_meta,
                 }
@@ -145,12 +160,28 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                         or db_role in ("professor", "faculty")
                         or is_admin
                     )
+                    is_opp_mgr = bool(
+                        app_meta.get("role") in ("opportunity_manager", "opportunity-manager", "placement_coordinator")
+                        or app_meta.get("is_opportunity_manager") is True
+                        or db_role in ("opportunity_manager", "opportunity-manager", "placement_coordinator")
+                        or is_admin
+                    )
+                    if is_admin:
+                        assigned_role = "admin"
+                    elif is_professor:
+                        assigned_role = "professor"
+                    elif is_opp_mgr:
+                        assigned_role = "opportunity_manager"
+                    else:
+                        assigned_role = db_role or "student"
+
                     return {
                         "sub": str(u.id),
                         "email": email,
-                        "role": "admin" if is_admin else ("professor" if is_professor else (db_role or "student")),
+                        "role": assigned_role,
                         "is_admin": is_admin,
                         "is_professor": is_professor,
+                        "is_opportunity_manager": is_opp_mgr,
                         "app_metadata": app_meta,
                         "user_metadata": user_meta,
                     }
@@ -194,6 +225,18 @@ def verify_supabase_jwt_claims(token: str) -> Dict[str, Any]:
                 "is_professor": True,
                 "app_metadata": {"role": "admin"},
                 "user_metadata": {"role": "admin"},
+            }
+
+        if clean_token in ("dev-opportunity-manager", "dev-placement-coordinator", "test-opp-mgr"):
+            return {
+                "sub": "opp-manager-tiet-id",
+                "email": "placements@thapar.edu",
+                "role": "opportunity_manager",
+                "is_admin": False,
+                "is_professor": False,
+                "is_opportunity_manager": True,
+                "app_metadata": {"role": "opportunity_manager"},
+                "user_metadata": {"role": "opportunity_manager", "name": "Placement Cell Coordinator"},
             }
 
         if clean_token in ("dev-professor-1", "dev-professor", "test-prof-1", "test-prof-rajesh"):
@@ -354,6 +397,37 @@ def require_professor_or_admin(authorization: Optional[str] = Header(None)) -> D
         claims["is_admin"] = True
     if is_professor:
         claims["is_professor"] = True
+    return claims
+
+
+def require_opportunity_manager_or_admin(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+    """
+    FastAPI dependency strictly requiring verified Opportunity Manager, Professor, or Administrator permissions.
+    Rejects missing or invalid tokens with 401 Unauthorized.
+    Rejects unauthorized student tokens with 403 Forbidden.
+    """
+    claims = get_current_user_claims(authorization)
+    from ..database import db
+    db_role = db.get_user_role(str(claims["sub"]))
+    is_admin = bool(claims.get("is_admin") or db_role == "admin")
+    is_professor = bool(claims.get("is_professor") or db_role in ("professor", "faculty") or is_admin)
+    is_opp_mgr = bool(
+        claims.get("is_opportunity_manager")
+        or db_role in ("opportunity_manager", "opportunity-manager", "placement_coordinator")
+        or is_admin
+        or is_professor
+    )
+    if not (is_admin or is_opp_mgr or is_professor):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: Opportunity Manager, Professor, or Administrator role required.",
+        )
+    if is_admin:
+        claims["is_admin"] = True
+    if is_professor:
+        claims["is_professor"] = True
+    if is_opp_mgr:
+        claims["is_opportunity_manager"] = True
     return claims
 
 

@@ -29,7 +29,14 @@ class DocumentIngestionService:
         elif ext == "docx":
             return cls._extract_from_docx(file_bytes)
         elif ext == "pdf":
-            return cls._extract_from_pdf(file_bytes)
+            pages = cls._extract_from_pdf(file_bytes)
+            total_chars = sum(len(p[1].strip()) for p in pages)
+            if total_chars < 20:
+                raise ValueError(
+                    "Unsupported scanned PDF or image-only document with no extractable text layer. "
+                    "Please upload a machine-readable digital PDF or extract text using OCR first."
+                )
+            return pages
         else:
             # Fallback text decoding
             try:
@@ -180,9 +187,16 @@ class DocumentIngestionService:
 
             full_extracted = " ".join(combined_text).strip()
             if not full_extracted:
-                # Fallback: extract ASCII strings
-                ascii_strings = re.findall(rb"[a-zA-Z0-9.,;:?!'\" \n\r\t-]{4,}", raw)
-                full_extracted = " ".join([s.decode("latin1", errors="ignore") for s in ascii_strings])
+                # Fallback: extract ASCII strings, excluding internal PDF structural dictionary tokens
+                pdf_structure_tokens = {
+                    "type", "catalog", "pages", "kids", "page", "mediabox", "root",
+                    "parent", "count", "trailer", "xref", "startxref", "obj", "endobj",
+                    "stream", "endstream", "filter", "flatedecode", "length", "size",
+                    "font", "subtype", "type1", "basetype", "fontdescriptor", "title"
+                }
+                raw_words = re.findall(r"[a-zA-Z]{3,}", raw.decode("latin1", errors="ignore"))
+                meaningful_words = [w for w in raw_words if w.lower() not in pdf_structure_tokens]
+                full_extracted = " ".join(meaningful_words).strip()
 
             # Split into reasonable pages of ~2000 characters if multiple pages found
             num_pages = max(1, len(page_matches))

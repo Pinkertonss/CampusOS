@@ -147,8 +147,15 @@ def test_document_ingestion_end_to_end():
     assert any("Urja Sports" in c["document_title"] for c in ask_data["citations"])
     assert "non-marking" in ask_data["answer"].lower()
 
-    # List documents
-    list_resp = client.get("/api/copilot/documents")
+    # Student or anonymous access to document listing is strictly forbidden (Mentorship point 4)
+    anon_list = client.get("/api/copilot/documents")
+    assert anon_list.status_code == 401
+
+    student_list = client.get("/api/copilot/documents", headers={"Authorization": "Bearer dev-user-102203099"})
+    assert student_list.status_code == 403
+
+    # Admin List documents
+    list_resp = client.get("/api/copilot/documents", headers=admin_headers)
     assert list_resp.status_code == 200
     doc_ids = [d["id"] for d in list_resp.json()]
     assert doc_id in doc_ids
@@ -159,7 +166,7 @@ def test_document_ingestion_end_to_end():
     assert del_resp.json()["success"] is True
 
     # Confirm purged from list
-    list_after = client.get("/api/copilot/documents").json()
+    list_after = client.get("/api/copilot/documents", headers=admin_headers).json()
     assert doc_id not in [d["id"] for d in list_after]
 
 
