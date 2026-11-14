@@ -12,6 +12,7 @@ import {
   Sun,
   Moon,
   ChevronRight,
+  Compass,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -28,6 +29,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/academic", label: "Academic Hub", icon: GraduationCap },
+  { href: "/opportunities", label: "Opportunities", icon: Compass, badge: "Match" },
   { href: "/copilot", label: "Campus Copilot", icon: Sparkles, badge: "AI" },
   { href: "/vault", label: "Digital Vault", icon: ShieldCheck },
   { href: "/reuse", label: "Campus Reuse", icon: Repeat },

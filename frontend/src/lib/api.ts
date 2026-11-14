@@ -35,6 +35,10 @@ import {
   CampusDocument,
   DocumentUploadResponse,
   DecisionMatrixResponse,
+  Opportunity,
+  OpportunityRecommendation,
+  OpportunityRecommendationResponse,
+  StudentSkillProfile,
 } from "../types";
 import {
   MOCK_COURSES,
@@ -1197,5 +1201,84 @@ function getFallbackReuseImpact(): ReuseImpactResponse {
       { month: "Nov 2024", exchanges: 6, donations: 11, loans: 5, total: 22, co2_kg: 41.3, waste_kg: 16.8, money_saved_inr: 8200.0 },
     ],
   };
+}
+
+// ============================================================
+// Opportunity Matching API
+// ============================================================
+
+export async function getOpportunities(
+  category?: string,
+  search?: string
+): Promise<Opportunity[]> {
+  try {
+    const params = new URLSearchParams();
+    if (category && category !== "all") params.set("category", category);
+    if (search && search.trim()) params.set("search", search.trim());
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const res = await fetch(`${API_BASE}/api/opportunities${query}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch opportunities");
+    return await res.json();
+  } catch (e) {
+    console.warn("Using fallback opportunities:", e);
+    return [];
+  }
+}
+
+export async function getRecommendedOpportunities(): Promise<OpportunityRecommendationResponse> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/recommended`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch recommended opportunities");
+  return await res.json();
+}
+
+export async function getStudentSkillProfile(): Promise<StudentSkillProfile> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/profile`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch student skill profile");
+  return await res.json();
+}
+
+export async function updateStudentSkillProfile(
+  profile: Partial<StudentSkillProfile>
+): Promise<StudentSkillProfile> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/profile`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error("Failed to update student skill profile");
+  return await res.json();
+}
+
+export async function toggleSaveOpportunity(
+  oppId: string
+): Promise<{ saved: boolean; message: string }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/${oppId}/save`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) throw new Error("Failed to toggle save opportunity");
+  return await res.json();
+}
+
+export async function getSavedOpportunities(): Promise<Opportunity[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/saved`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch saved opportunities");
+  return await res.json();
 }
 

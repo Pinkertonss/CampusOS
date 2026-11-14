@@ -242,6 +242,59 @@ export interface DecisionMatrixResponse {
   };
 }
 
+// ============================================================
+// Opportunity Matching & Recommendations Types
+// ============================================================
+
+export interface Opportunity {
+  id: string;
+  title: string;
+  organization: string;
+  mentor_name?: string;
+  category: "research" | "hackathon" | "project" | "club" | "tutoring" | string;
+  description: string;
+  required_skills: string[];
+  preferred_branches: string[];
+  min_cgpa?: number;
+  time_commitment_hrs_week: number;
+  location: string;
+  schedule_requirement?: string;
+  deadline?: string;
+  status: "open" | "closed";
+  application_link?: string;
+  contact_email?: string;
+  created_at: string;
+}
+
+export interface OpportunityRecommendation {
+  opportunity: Opportunity;
+  match_score: number;
+  skill_match_percent: number;
+  matched_skills: string[];
+  missing_skills: string[];
+  schedule_compatible: boolean;
+  schedule_collision_warning?: string;
+  academic_advisory?: string;
+  recommendation_reason: string;
+}
+
+export interface OpportunityRecommendationResponse {
+  student_id: string;
+  total_evaluated: number;
+  recommendations: OpportunityRecommendation[];
+  student_skills: string[];
+  opt_in_matching: boolean;
+}
+
+export interface StudentSkillProfile {
+  user_id: string;
+  skills: string[];
+  interests: string[];
+  opt_in_matching: boolean;
+  available_hours_per_week: number;
+  preferred_categories: string[];
+}
+
 export interface AcademicSummaryCourse {
   id: string;
   code: string;

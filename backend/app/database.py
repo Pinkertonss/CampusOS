@@ -4,6 +4,7 @@ from typing import List, Dict, Optional
 from .models.academic import Course, AttendanceRecord, TimetableSlot, DeadlineTask
 from .models.vault import VaultDocument
 from .models.reuse import ReuseItem
+from .models.opportunity import Opportunity, StudentSkillProfile
 from .services.what_if_engine import WhatIfEngine
 
 class CampusOSDatabase:
@@ -20,6 +21,9 @@ class CampusOSDatabase:
         self.deadlines: List[DeadlineTask] = []
         self.vault_docs: Dict[str, VaultDocument] = {}
         self.reuse_items: Dict[str, ReuseItem] = {}
+        self.opportunities: Dict[str, Opportunity] = {}
+        self.user_skill_profiles: Dict[str, StudentSkillProfile] = {}
+        self.user_saved_opportunities: Dict[str, List[str]] = {}
         # Multi-tenant isolated storage maps (scoped by authenticated user_id)
         self.user_courses: Dict[str, Dict[str, Course]] = {}
         self.user_attendance: Dict[str, Dict[str, AttendanceRecord]] = {}
@@ -146,6 +150,46 @@ class CampusOSDatabase:
                 t.status = "completed" if t.status == "pending" else "pending"
                 return t
         return None
+
+    def get_opportunities(self) -> List[Opportunity]:
+        return list(self.opportunities.values())
+
+    def get_opportunity(self, opp_id: str) -> Optional[Opportunity]:
+        return self.opportunities.get(opp_id)
+
+    def get_student_skill_profile(self, user_id: str) -> StudentSkillProfile:
+        uid = self._canonical_uid(user_id)
+        if uid not in self.user_skill_profiles:
+            self.user_skill_profiles[uid] = StudentSkillProfile(
+                user_id=uid,
+                skills=["Python", "FastAPI", "Next.js", "TypeScript", "Machine Learning"],
+                interests=["Research", "Hackathons", "Open Source"],
+                opt_in_matching=True,
+                available_hours_per_week=10,
+                preferred_categories=["research", "project", "hackathon"],
+            )
+        return self.user_skill_profiles[uid]
+
+    def update_student_skill_profile(self, user_id: str, profile: StudentSkillProfile) -> StudentSkillProfile:
+        uid = self._canonical_uid(user_id)
+        profile.user_id = uid
+        self.user_skill_profiles[uid] = profile
+        return profile
+
+    def toggle_save_opportunity(self, user_id: str, opp_id: str) -> bool:
+        uid = self._canonical_uid(user_id)
+        saved = self.user_saved_opportunities.setdefault(uid, [])
+        if opp_id in saved:
+            saved.remove(opp_id)
+            return False
+        else:
+            saved.append(opp_id)
+            return True
+
+    def get_saved_opportunities(self, user_id: str) -> List[Opportunity]:
+        uid = self._canonical_uid(user_id)
+        saved_ids = self.user_saved_opportunities.get(uid, [])
+        return [self.opportunities[oid] for oid in saved_ids if oid in self.opportunities]
 
     def _seed_sample_data(self):
         # 1. Seed realistic Thapar Courses for 5th Semester COE (Computer Engineering)
@@ -476,5 +520,114 @@ class CampusOSDatabase:
                 created_at="2024-11-03T16:00:00"
             ),
         }
+
+        # 6. Seed Realistic TIET Opportunities
+        self.opportunities = {
+            "opp-1": Opportunity(
+                id="opp-1",
+                title="ML Research Assistant: Edge AI & Autonomous Robotics",
+                organization="TIET AI & Robotics Center",
+                mentor_name="Dr. Rajesh Kumar",
+                category="research",
+                description="Investigating real-time visual perception and deep neural network quantization for edge robotics.",
+                required_skills=["Python", "Machine Learning", "PyTorch"],
+                preferred_branches=["COE", "CSE", "ECE", "ENC"],
+                min_cgpa=8.0,
+                time_commitment_hrs_week=8,
+                location="TIET STEP Lab 2",
+                schedule_requirement="Flexible weekday hours",
+                deadline="2026-12-15",
+                status="open",
+                application_link="https://tiet.ac.in/research/ai-lab",
+                contact_email="rajesh.kumar@thapar.edu",
+                created_at="2026-11-01T10:00:00",
+            ),
+            "opp-2": Opportunity(
+                id="opp-2",
+                title="Next.js Full-Stack Developer: Campus Sustainability Portal",
+                organization="Thapar Venture Club & CSED",
+                mentor_name="Student Incubator Lead",
+                category="project",
+                description="Building client-facing portals and carbon accounting tools for TIET's Green Campus initiative.",
+                required_skills=["Next.js", "TypeScript", "Tailwind CSS", "FastAPI"],
+                preferred_branches=["COE", "CSE", "Any"],
+                min_cgpa=7.0,
+                time_commitment_hrs_week=6,
+                location="CSED Project Studio / Remote",
+                schedule_requirement="Weekends",
+                deadline="2026-12-05",
+                status="open",
+                application_link="https://tiet.ac.in/venture-club/portal",
+                contact_email="venture.club@thapar.edu",
+                created_at="2026-11-03T12:00:00",
+            ),
+            "opp-3": Opportunity(
+                id="opp-3",
+                title="TIET ACM Student Chapter Hackathon Tech Lead",
+                organization="ACM Student Chapter TIET",
+                mentor_name="Dr. Seema Bawa",
+                category="hackathon",
+                description="Lead API architecture and judge submission review pipeline for the annual Thapar Hackathon.",
+                required_skills=["Python", "FastAPI", "Git"],
+                preferred_branches=["COE", "CSE", "ENC"],
+                min_cgpa=7.5,
+                time_commitment_hrs_week=10,
+                location="TIET Auditorium Annex",
+                schedule_requirement="Friday afternoons (14:00 - 18:00)",
+                deadline="2026-11-30",
+                status="open",
+                application_link="https://acmthapar.org/hackathon-team",
+                contact_email="acm@thapar.edu",
+                created_at="2026-11-05T09:00:00",
+            ),
+            "opp-4": Opportunity(
+                id="opp-4",
+                title="Embedded Systems Researcher: IoT Smart Campus Sensors",
+                organization="ECED Embedded Systems Group",
+                mentor_name="Dr. Alpana Agarwal",
+                category="research",
+                description="Deploying LoRaWAN air quality and acoustic sensors across hostels and lecture halls.",
+                required_skills=["C++", "Embedded Systems", "Arduino"],
+                preferred_branches=["ECE", "ENC", "COE"],
+                min_cgpa=7.0,
+                time_commitment_hrs_week=12,
+                location="C-Hall Lab 4",
+                schedule_requirement="Mon/Wed 17:00-19:00",
+                deadline="2026-12-10",
+                status="open",
+                application_link="https://tiet.ac.in/eced/iot",
+                contact_email="alpana.agarwal@thapar.edu",
+                created_at="2026-11-07T11:00:00",
+            ),
+            "opp-5": Opportunity(
+                id="opp-5",
+                title="Peer Tutor: Data Structures & Algorithms (UCS301)",
+                organization="Academic Tutoring Cell & DOAA",
+                mentor_name="Academic Support Coordinator",
+                category="tutoring",
+                description="Conducting evening doubt clearance sessions for junior students in binary search trees and dynamic programming.",
+                required_skills=["C++", "Data Structures", "Algorithms"],
+                preferred_branches=["COE", "CSE"],
+                min_cgpa=8.5,
+                time_commitment_hrs_week=4,
+                location="Central Library Discussion Room",
+                schedule_requirement="Flexible evening slots",
+                deadline="2026-12-20",
+                status="open",
+                application_link="https://tiet.ac.in/doaa/peer-tutoring",
+                contact_email="tutoring.cell@thapar.edu",
+                created_at="2026-11-08T15:00:00",
+            ),
+        }
+
+        # 7. Seed Default Student Skill Profile
+        self.user_skill_profiles[self.default_user_id] = StudentSkillProfile(
+            user_id=self.default_user_id,
+            skills=["Python", "FastAPI", "Next.js", "TypeScript", "Machine Learning"],
+            interests=["Research", "Hackathons", "Open Source"],
+            opt_in_matching=True,
+            available_hours_per_week=10,
+            preferred_categories=["research", "project", "hackathon"],
+        )
 
 db = CampusOSDatabase()

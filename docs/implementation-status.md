@@ -20,7 +20,7 @@
 | **Campus Reuse Marketplace** | **COMPLETED (Phase 5)** | `/reuse/listings`, `/requests`, `/impact` | PostgreSQL `listings`, `exchange_requests`, `impact_events` | 2-party bilateral confirmation flow (request -> accept -> mutual confirm) updates verified SDG 12 metrics; non-owner actions blocked | 7 tests in `test_reuse.py` and `test_security.py` |
 | **Contact Privacy in Reuse** | **COMPLETED (Phase 1)** | Public `/reuse/listings`, `/reuse/listings/{id}` | Sanitized response schemas | Contact details (phone, hostel room) masked on public feed; visible only to owner or accepted partner | Tested in `test_security.py` |
 | **Cross-Module Student Decision Workflow** | **COMPLETED (Phase 6)** | `/academics/decision-matrix`, `/academics/daily-plan` | Cross-module synthesis (`ActionPlanEngine`) | Academic risk + timetable schedule + urgent deadline trade-off collision detection | Tests in `test_planner.py` |
-| **Opportunity Matching** | **Missing (Phase 7)** | Opportunity recommendation engine | Opt-in skill tags, schedule compatibility | Post-MVP / Phase 7 | Scheduled for Phase 7 |
+| **Opportunity Matching & Recommendation Engine** | **COMPLETED (Phase 7)** | `/api/opportunities/recommended`, `/profile`, `/save` | Multi-tenant `OpportunityEngine` + `CampusOSDatabase` | Skill tags matching, timetable schedule collision detection, and attendance risk feasibility scoring | 8 tests in `test_opportunities.py` |
 
 ---
 
@@ -28,10 +28,10 @@
 
 - **Backend Pytest**:
   - Command: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-  - Result: **93 passed in 0.53s** (93/93 tests green across all test files).
+  - Result: **101 passed in 0.55s** (101/101 tests green across 11 test modules).
 - **Frontend Next.js Build**:
   - Command: `npm --prefix frontend run build`
-  - Result: Compiled successfully; all 12 routes generated (`/`, `/academic`, `/copilot`, `/vault`, `/reuse`, `/login`, `/onboarding`, `/signup`).
+  - Result: Compiled successfully; all 13 routes generated (`/`, `/academic`, `/opportunities`, `/copilot`, `/vault`, `/reuse`, `/login`, `/onboarding`, `/signup`).
 
 ---
 
@@ -72,7 +72,8 @@
    - 12 comprehensive tests in `backend/tests/test_copilot.py` including a curated multi-domain evaluation set (90/90 suite passing).
 5. **Phase 5 (P1) - COMPLETED**: Campus Reuse Marketplace complete two-party lifecycle (offer -> request -> accept -> bilateral handoff confirmation) and verified SDG 12 impact calculation.
 6. **Phase 6 (P1) - COMPLETED**: Cross-module student decision intelligence synthesizing academic attendance risk, calendar/timetable schedule, and actionable deadline priorities with trade-off conflict detection.
-7. **Phase 7 - NEXT**: Opportunity matching and recommendation engine.
+7. **Phase 7 (P1) - COMPLETED**: Opportunity matching recommendation engine synthesizing opt-in skill tags, timetable lecture schedule compatibility, and attendance feasibility scoring with transparency explanations.
+8. **Phase 8 - NEXT**: Full accessibility audit, performance benchmarking, and final documentation.
 8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.
 7. **Phase 7**: Opportunity matching and calendar conflict detection.
 8. **Phase 8**: Full accessibility, performance audit, and end-to-end documentation.
