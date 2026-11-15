@@ -2,45 +2,226 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Design tokens for light mode */
-:root {
-  --surface: #f8fafc;
-  --surface-card: #ffffff;
-  --surface-muted: #f1f5f9;
-  --surface-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --border-muted: #f1f5f9;
-  --foreground: #0f172a;
-  --foreground-muted: #64748b;
+/* =====================================================================
+   Role-Scoped Theme Tokens: Administrator (Cool Slate) vs Student (Warm Stone)
+   ===================================================================== */
+
+/* Default / Student Light Mode (Warm Stone) */
+:root,
+[data-theme="student"] {
+  --page-bg: #F7F5F2;
+  --surface-card: #FFFFFF;
+  --surface-secondary: #ECE8E2;
+  --text-primary: #292724;
+  --text-secondary: #666059;
+  --text-muted: #878077;
+  --border-color: #DDD7CF;
+  --border-subtle: #E8E3DC;
+  --action-primary: #62574B;
+  --action-primary-text: #FFFFFF;
+  --action-primary-hover: #50463C;
+  --action-primary-active: #41382F;
+  --nav-selected-bg: #E8E1D8;
+  --nav-selected-text: #292724;
+  --nav-selected-border: #D5CCC0;
+  --focus-ring: #62574B;
+  --accent-tint: #F2EDE6;
+  --accent-badge-bg: #EAE3D9;
+  --accent-badge-text: #473E34;
+  --accent-badge-border: #DDD5C9;
+
+  /* Legacy semantic mappings */
+  --surface: var(--page-bg);
+  --surface-muted: var(--surface-secondary);
+  --surface-hover: var(--surface-secondary);
+  --border: var(--border-color);
+  --border-muted: var(--border-subtle);
+  --foreground: var(--text-primary);
+  --foreground-muted: var(--text-secondary);
+
   color-scheme: light;
 }
 
-/* Design tokens for dark mode */
-html.dark {
-  --surface: #0f172a;
-  --surface-card: #1e293b;
-  --surface-muted: #0b1120;
-  --surface-hover: #334155;
-  --border: #334155;
-  --border-muted: #1e293b;
-  --foreground: #f8fafc;
-  --foreground-muted: #94a3b8;
+/* Administrator Light Mode (Cool Slate) */
+[data-theme="admin"] {
+  --page-bg: #F4F5F7;
+  --surface-card: #FFFFFF;
+  --surface-secondary: #E9EDF2;
+  --text-primary: #202936;
+  --text-secondary: #566171;
+  --text-muted: #7A8699;
+  --border-color: #D5DBE3;
+  --border-subtle: #E2E7ED;
+  --action-primary: #39485B;
+  --action-primary-text: #FFFFFF;
+  --action-primary-hover: #2C394A;
+  --action-primary-active: #202A37;
+  --nav-selected-bg: #E2E8F0;
+  --nav-selected-text: #202936;
+  --nav-selected-border: #CBD5E1;
+  --focus-ring: #39485B;
+  --accent-tint: #EDF1F5;
+  --accent-badge-bg: #DFE5EC;
+  --accent-badge-text: #202936;
+  --accent-badge-border: #CBD4DE;
+
+  /* Legacy semantic mappings */
+  --surface: var(--page-bg);
+  --surface-muted: var(--surface-secondary);
+  --surface-hover: var(--surface-secondary);
+  --border: var(--border-color);
+  --border-muted: var(--border-subtle);
+  --foreground: var(--text-primary);
+  --foreground-muted: var(--text-secondary);
+
+  color-scheme: light;
+}
+
+/* Default / Student Dark Mode (Warm Stone Dark) */
+html.dark,
+html.dark [data-theme="student"],
+html.dark[data-theme="student"] {
+  --page-bg: #171614;
+  --surface-card: #211E1B;
+  --surface-secondary: #2C2824;
+  --text-primary: #F5F3EF;
+  --text-secondary: #A69F95;
+  --text-muted: #7E776E;
+  --border-color: #3A342E;
+  --border-subtle: #2C2723;
+  --action-primary: #6E6255;
+  --action-primary-text: #FFFFFF;
+  --action-primary-hover: #7D7163;
+  --action-primary-active: #5A4F43;
+  --nav-selected-bg: #2C2824;
+  --nav-selected-text: #F5F3EF;
+  --nav-selected-border: #443E38;
+  --focus-ring: #8A7D6F;
+  --accent-tint: #26221E;
+  --accent-badge-bg: #302B26;
+  --accent-badge-text: #DCD6CD;
+  --accent-badge-border: #423B34;
+
+  /* Legacy semantic mappings */
+  --surface: var(--page-bg);
+  --surface-muted: var(--surface-secondary);
+  --surface-hover: var(--surface-secondary);
+  --border: var(--border-color);
+  --border-muted: var(--border-subtle);
+  --foreground: var(--text-primary);
+  --foreground-muted: var(--text-secondary);
+
+  color-scheme: dark;
+}
+
+/* Administrator Dark Mode (Cool Slate Dark) */
+html.dark [data-theme="admin"],
+html.dark[data-theme="admin"] {
+  --page-bg: #11161F;
+  --surface-card: #18202C;
+  --surface-secondary: #202B3B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-color: #2B384B;
+  --border-subtle: #1E2837;
+  --action-primary: #3B4C63;
+  --action-primary-text: #FFFFFF;
+  --action-primary-hover: #4B5F7B;
+  --action-primary-active: #2E3D52;
+  --nav-selected-bg: #202B3B;
+  --nav-selected-text: #F1F5F9;
+  --nav-selected-border: #38485F;
+  --focus-ring: #4B5F7B;
+  --accent-tint: #1C2533;
+  --accent-badge-bg: #243042;
+  --accent-badge-text: #D5DEEA;
+  --accent-badge-border: #33445C;
+
+  /* Legacy semantic mappings */
+  --surface: var(--page-bg);
+  --surface-muted: var(--surface-secondary);
+  --surface-hover: var(--surface-secondary);
+  --border: var(--border-color);
+  --border-muted: var(--border-subtle);
+  --foreground: var(--text-primary);
+  --foreground-muted: var(--text-secondary);
+
   color-scheme: dark;
 }
 
 /* Tailwind v4 CSS theme tokens */
 @theme inline {
-  --color-primary-50: #f0fdfa;
-  --color-primary-100: #ccfbf1;
-  --color-primary-200: #99f6e4;
-  --color-primary-300: #5eead4;
-  --color-primary-400: #2dd4bf;
-  --color-primary-500: #14b8a6;
-  --color-primary-600: #0d9488;
-  --color-primary-700: #0f766e;
-  --color-primary-800: #115e59;
-  --color-primary-900: #134e4a;
-  --color-primary-950: #042f2e;
+  --color-page: var(--page-bg);
+  --color-card: var(--surface-card);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-primary-text: var(--text-primary);
+  --color-secondary-text: var(--text-secondary);
+  --color-muted-text: var(--text-muted);
+  --color-theme-border: var(--border-color);
+  --color-theme-border-subtle: var(--border-subtle);
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-text: var(--action-primary-text);
+  --color-action-primary-hover: var(--action-primary-hover);
+  --color-nav-selected-bg: var(--nav-selected-bg);
+  --color-nav-selected-text: var(--nav-selected-text);
+  --color-nav-selected-border: var(--nav-selected-border);
+  --color-focus-ring: var(--focus-ring);
+  --color-accent-tint: var(--accent-tint);
+  --color-accent-badge-bg: var(--accent-badge-bg);
+  --color-accent-badge-text: var(--accent-badge-text);
+  --color-accent-badge-border: var(--accent-badge-border);
+
+  /* Primary color palette mapped to neutral action tokens */
+  --color-primary-50: var(--accent-tint);
+  --color-primary-100: var(--accent-badge-bg);
+  --color-primary-200: var(--border-color);
+  --color-primary-300: var(--border-color);
+  --color-primary-400: var(--text-secondary);
+  --color-primary-500: var(--action-primary);
+  --color-primary-600: var(--action-primary);
+  --color-primary-700: var(--action-primary-hover);
+  --color-primary-800: var(--action-primary-active);
+  --color-primary-900: var(--text-primary);
+  --color-primary-950: var(--page-bg);
+
+  /* Teal palette remapped to neutral action & surface tokens for consistent theme inheritance */
+  --color-teal-50: var(--accent-tint);
+  --color-teal-100: var(--accent-badge-bg);
+  --color-teal-200: var(--border-color);
+  --color-teal-300: var(--text-secondary);
+  --color-teal-400: var(--text-secondary);
+  --color-teal-500: var(--action-primary);
+  --color-teal-600: var(--action-primary);
+  --color-teal-700: var(--action-primary-hover);
+  --color-teal-800: var(--action-primary-active);
+  --color-teal-900: var(--text-primary);
+  --color-teal-950: var(--surface-secondary);
+
+  /* Sky & Blue palettes remapped to neutral action & surface tokens */
+  --color-sky-50: var(--accent-tint);
+  --color-sky-100: var(--accent-badge-bg);
+  --color-sky-200: var(--border-color);
+  --color-sky-300: var(--text-secondary);
+  --color-sky-400: var(--text-secondary);
+  --color-sky-500: var(--action-primary);
+  --color-sky-600: var(--action-primary);
+  --color-sky-700: var(--action-primary-hover);
+  --color-sky-800: var(--action-primary-active);
+  --color-sky-900: var(--text-primary);
+  --color-sky-950: var(--surface-secondary);
+
+  --color-blue-50: var(--accent-tint);
+  --color-blue-100: var(--accent-badge-bg);
+  --color-blue-200: var(--border-color);
+  --color-blue-300: var(--text-secondary);
+  --color-blue-400: var(--text-secondary);
+  --color-blue-500: var(--action-primary);
+  --color-blue-600: var(--action-primary);
+  --color-blue-700: var(--action-primary-hover);
+  --color-blue-800: var(--action-primary-active);
+  --color-blue-900: var(--text-primary);
+  --color-blue-950: var(--surface-secondary);
 
   --color-surface: var(--surface);
   --color-surface-card: var(--surface-card);
@@ -50,8 +231,6 @@ html.dark {
   --color-border-muted: var(--border-muted);
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
-
-  --animate-shimmer: shimmer 2s infinite linear;
 }
 
 /* Smooth transitions for theme switching */
@@ -65,18 +244,7 @@ section,
 article {
   transition-property: background-color, border-color, color;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
-}
-
-/* Loading skeleton shimmer keyframes */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100%);
-  }
+  transition-duration: 150ms;
 }
 
 /* Custom scrollbar styles */
@@ -90,34 +258,21 @@ article {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  background-color: var(--border-color);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+  background-color: var(--text-muted);
 }
 
-html.dark ::-webkit-scrollbar-thumb {
-  background-color: #334155;
-}
-
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #475569;
-}
-
-/* Firefox scrollbar support */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-html.dark * {
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 body {
-  background-color: var(--surface);
-  color: var(--foreground);
+  background-color: var(--page-bg);
+  color: var(--text-primary);
   min-height: 100vh;
 }

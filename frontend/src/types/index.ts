@@ -104,6 +104,8 @@ export interface ActionableSuggestion {
   priority: "low" | "medium" | "high";
   course_code?: string;
   reason: string;
+  is_expired?: boolean;
+  is_historical?: boolean;
 }
 
 export interface CopilotQueryResponse {
@@ -193,12 +195,15 @@ export interface ImpactMetrics {
 
 export interface DailyActionItem {
   id: string;
-  category: "attendance" | "deadline" | "task" | string;
+  category: "attendance" | "deadline" | "task" | "conflict" | string;
   priority: "urgent" | "high" | "medium" | "low";
   title: string;
   course_code?: string;
   current_percent?: number;
   due_date?: string;
+  schedule_info?: string;
+  conflict_warning?: string;
+  risk_score?: number;
   reason: string;
   action_required?: string;
 }
@@ -208,7 +213,227 @@ export interface DailyPlanResponse {
   total_actions: number;
   urgent_count: number;
   high_count: number;
+  conflicts_count?: number;
+  recommended_focus?: string;
   actions: DailyActionItem[];
+}
+
+export interface ScheduleSlot {
+  course_code: string;
+  course_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  venue: string;
+  slot_type: string;
+  current_attendance_percent: number;
+  attendance_status: string;
+  is_attendance_mandatory: boolean;
+}
+
+export interface DecisionMatrixResponse {
+  date: string;
+  recommended_focus: string;
+  conflicts: DailyActionItem[];
+  today_schedule: ScheduleSlot[];
+  priorities: DailyActionItem[];
+  academic_standing_summary: {
+    safe: number;
+    warning: number;
+    critical: number;
+  };
+}
+
+// ============================================================
+// Opportunity Matching & Recommendations Types
+// ============================================================
+
+export interface Opportunity {
+  id: string;
+  title: string;
+  organization: string;
+  mentor_name?: string;
+  category: "research" | "hackathon" | "project" | "club" | "tutoring" | string;
+  role_type?: string;
+  stipend?: string;
+  description: string;
+  required_skills: string[];
+  preferred_skills?: string[];
+  preferred_qualifications?: string[];
+  preferred_branches?: string[];
+  eligible_branches?: string[];
+  min_cgpa?: number;
+  time_commitment_hrs_week: number;
+  location: string;
+  schedule_requirement?: string;
+  deadline?: string;
+  application_deadline?: string;
+  status: "open" | "closed" | "draft" | "archived" | string;
+  criteria?: {
+    min_cgpa?: number | null;
+    allowed_branches?: string[] | null;
+    max_active_backlogs?: number | null;
+    min_attendance_percentage?: number | null;
+  };
+  application_link?: string;
+  contact_email?: string;
+  created_at: string;
+}
+
+export interface OpportunityRecommendation {
+  opportunity: Opportunity;
+  eligibility?: OpportunityEligibility;
+  match_score: number;
+  skill_match_percent: number;
+  matched_skills: string[];
+  missing_skills: string[];
+  schedule_compatible: boolean;
+  schedule_collision_warning?: string;
+  academic_advisory?: string;
+  recommendation_reason: string;
+}
+
+export interface OpportunityRecommendationResponse {
+  student_id: string;
+  total_evaluated: number;
+  recommendations: OpportunityRecommendation[];
+  student_skills: string[];
+  opt_in_matching: boolean;
+}
+
+export interface StudentSkillProfile {
+  user_id: string;
+  skills: string[];
+  interests: string[];
+  opt_in_matching: boolean;
+  available_hours_per_week: number;
+  preferred_categories: string[];
+}
+
+export interface OpportunityApplication {
+  id: string;
+  opportunity_id: string;
+  opportunity_title: string;
+  organization: string;
+  user_id: string;
+  student_name: string;
+  student_roll_no: string;
+  student_branch: string;
+  statement_of_interest: string;
+  available_hours_per_week: number;
+  applied_at: string;
+  status: "submitted" | "under_review" | "shortlisted" | "accepted" | string;
+}
+
+export interface EducationEntry {
+  id: string;
+  program: string;
+  branch: string;
+  semester: number;
+  graduation_year: number;
+  cgpa_verified?: number | null;
+  student_entered_cgpa?: number | null;
+  institution: string;
+}
+
+export interface ProjectEntry {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  role: string;
+  link?: string | null;
+}
+
+export interface WorkExperienceEntry {
+  id: string;
+  role: string;
+  company: string;
+  location?: string | null;
+  start_date: string;
+  end_date?: string | null;
+  is_current: boolean;
+  description: string;
+}
+
+export interface CertificationEntry {
+  id: string;
+  title: string;
+  issuer: string;
+  issue_date: string;
+  credential_url?: string | null;
+}
+
+export interface StudentExperienceProfile {
+  user_id: string;
+  full_name: string;
+  roll_no: string;
+  email: string;
+  education: EducationEntry[];
+  skills: string[];
+  projects: ProjectEntry[];
+  work_experience: WorkExperienceEntry[];
+  certifications: CertificationEntry[];
+  achievements: string[];
+  career_interests: string[];
+  preferred_opportunity_types: string[];
+  resume_file_name?: string | null;
+  resume_filename?: string | null;
+  resume_updated_at?: string | null;
+  resume_uploaded_at?: string | null;
+  resume_file_id?: string | null;
+  resume_storage_path?: string | null;
+  portfolio_link?: string | null;
+  github_link?: string | null;
+  linkedin_link?: string | null;
+  discovery_opt_in: boolean;
+  resume_sharing_opt_in?: boolean;
+  cgpa_verified?: number | null;
+  updated_at: string;
+}
+
+export interface OpportunityEligibility {
+  status: "ELIGIBLE" | "NOT_ELIGIBLE" | "INCOMPLETE_PROFILE";
+  mandatory_passed: boolean;
+  mandatory_reasons: string[];
+  missing_requirements: string[];
+  matched_mandatory_skills: string[];
+  missing_mandatory_skills: string[];
+  preference_score: number;
+  preference_matches: string[];
+  explanation: string;
+}
+
+export interface CandidateMatch {
+  student_id: string;
+  full_name: string;
+  roll_no: string;
+  branch: string;
+  semester: number;
+  graduation_year: number;
+  cgpa_verified?: number | null;
+  skills: string[];
+  projects_count: number;
+  work_experience_count: number;
+  eligibility: OpportunityEligibility;
+  candidate_score: number;
+  invited: boolean;
+  has_resume: boolean;
+  resume_sharing_opt_in?: boolean;
+}
+
+export interface CandidateDiscoveryResponse {
+  opportunity_id: string;
+  opportunity_title?: string;
+  total_candidates?: number;
+  total_candidates_evaluated?: number;
+  total_opted_in_students?: number;
+  eligible_count?: number;
+  total_eligible_candidates?: number;
+  not_eligible_count?: number;
+  incomplete_profile_count?: number;
+  manual_review_count?: number;
+  candidates: CandidateMatch[] | any[];
 }
 
 export interface AcademicSummaryCourse {
@@ -438,6 +663,7 @@ export interface ReuseImpactResponse {
   total_waste_diverted_kg: number;
   co2_avoided_kg: number;
   sdg_framework: string;
+  estimation_assumptions?: Record<string, string>;
   per_month_series: MonthlyImpactSeries[];
 }
 
@@ -456,4 +682,374 @@ export interface NotificationsResponse {
   unread_count: number;
   notifications: ReuseNotification[];
 }
+
+// ============================================================
+// Academic RBAC & Offerings Types
+// ============================================================
+
+export interface Subject {
+  id: string;
+  code: string;
+  name: string;
+  credits: number;
+  department: string;
+}
+
+export interface SubjectOffering {
+  id: string;
+  subject_id: string;
+  subject_code: string;
+  subject_name: string;
+  term: string;
+  section: string;
+  attendance_threshold: number;
+  grade_policy: string;
+  professor_ids: string[];
+  professor_names: string[];
+  enrolled_count: number;
+  created_at: string;
+}
+
+export interface StudentEnrollment {
+  id: string;
+  offering_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  student_email: string;
+  status: "active" | "dropped" | "disenrolled";
+  enrolled_at: string;
+  disenrolled_at?: string | null;
+  disenroll_reason?: string | null;
+}
+
+export interface StudentDirectoryItem {
+  student_id: string;
+  full_name: string;
+  roll_no: string;
+  email: string;
+  branch: string;
+  semester: number;
+}
+
+export interface AttendanceSession {
+  id: string;
+  offering_id: string;
+  session_date: string;
+  slot_type: string;
+  topic?: string | null;
+  room?: string | null;
+  start_time?: string | null;
+  is_cancelled: boolean;
+  cancellation_reason?: string | null;
+  created_by: string;
+  created_at: string;
+  records_count: number;
+  present_count?: number;
+  absent_count?: number;
+  late_count?: number;
+  excused_count?: number;
+  total_enrolled?: number;
+  attendance_rate_percent?: number | null;
+}
+
+export interface StudentSessionAttendanceItem {
+  session_id: string;
+  session_date: string;
+  slot_type: string;
+  topic?: string | null;
+  room?: string | null;
+  start_time?: string | null;
+  status: "present" | "absent" | "late" | "excused" | "unmarked";
+  is_cancelled: boolean;
+  cancellation_reason?: string | null;
+  correction_reason?: string | null;
+  updated_at?: string | null;
+}
+
+export interface StudentSessionAttendanceResponse {
+  offering_id: string;
+  student_id: string;
+  total_held_sessions: number;
+  attended_sessions: number;
+  attendance_percentage: number;
+  sessions: StudentSessionAttendanceItem[];
+}
+
+export interface SessionAttendanceRecord {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  status: "present" | "absent" | "late" | "excused";
+  correction_reason?: string | null;
+  marked_by: string;
+  updated_at: string;
+}
+
+export interface Assessment {
+  id: string;
+  offering_id: string;
+  title: string;
+  assessment_type: string;
+  max_marks: number;
+  weight_percent: number;
+  due_date?: string | null;
+  is_published: boolean;
+  answer_key_content?: string | null;
+  answer_key_released: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export interface StudentAssessmentMark {
+  id: string;
+  assessment_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  obtained_marks?: number | null;
+  status: "graded" | "not_graded" | "absent" | "exempt";
+  feedback?: string | null;
+  correction_reason?: string | null;
+  graded_by?: string | null;
+  updated_at: string;
+}
+
+export interface OfferingAssignment {
+  id: string;
+  offering_id: string;
+  title: string;
+  instructions: string;
+  due_date: string;
+  allowed_formats: string[];
+  max_file_size_mb: number;
+  allow_late: boolean;
+  allow_resubmission: boolean;
+  is_published: boolean;
+  model_answer?: string | null;
+  model_answer_released: boolean;
+  created_by: string;
+  created_at: string;
+  submissions_count: number;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  submission_text?: string | null;
+  file_name?: string | null;
+  storage_path?: string | null;
+  submitted_at: string;
+  version: number;
+  is_late: boolean;
+  score?: number | null;
+  feedback?: string | null;
+  graded_by?: string | null;
+  graded_at?: string | null;
+}
+
+export interface OfferingAnnouncement {
+  id: string;
+  offering_id: string;
+  title: string;
+  content: string;
+  target_group: string;
+  target_student_ids: string[];
+  created_by: string;
+  created_at: string;
+}
+
+export interface RosterStudent {
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  student_email: string;
+  branch: string;
+  semester: number;
+  enrollment_status: string;
+  enrolled_at: string;
+  disenrolled_at?: string | null;
+  attended_sessions: number;
+  counted_sessions: number;
+  attendance_percentage?: number | null;
+  attendance_status: "safe" | "warning" | "critical" | "no_data";
+  assessment_marks: Record<string, number | null>;
+  total_obtained_marks: number;
+  total_possible_marks: number;
+  weighted_score?: number | null;
+  calculated_grade?: string | null;
+  missing_assignments_count: number;
+  needs_attendance_support: boolean;
+  needs_academic_support: boolean;
+  support_reasons: string[];
+}
+
+export interface RosterResponse {
+  offering_id: string;
+  subject_code: string;
+  subject_name: string;
+  term: string;
+  section: string;
+  total_students: number;
+  page: number;
+  page_size: number;
+  attendance_threshold: number;
+  students: RosterStudent[];
+}
+
+export interface AcademicAuditLog {
+  id: string;
+  timestamp: string;
+  actor_id: string;
+  actor_role: string;
+  action: string;
+  offering_id?: string | null;
+  resource_id?: string | null;
+  details: Record<string, any>;
+  reason?: string | null;
+}
+
+export interface UserRoleItem {
+  user_id: string;
+  role: string;
+  status: string;
+}
+
+export interface AdminAccountCreate {
+  email: string;
+  full_name: string;
+  user_id?: string;
+  admin_secret_key?: string;
+}
+
+export interface AdminAccountResponse {
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  status: string;
+  token: string;
+  message: string;
+}
+
+// --- Lost and Found Types ---
+export interface LostAndFoundClaim {
+  id: string;
+  item_id: string;
+  claimant_id: string;
+  claimant_email?: string | null;
+  distinguishing_proof: string;
+  status: "pending" | "verified" | "rejected";
+  created_at: string;
+  verified_at?: string | null;
+  verification_notes?: string | null;
+}
+
+export interface LostAndFoundItem {
+  id: string;
+  report_type: "lost" | "found";
+  title: string;
+  description: string;
+  category: "electronics" | "documents" | "books" | "clothing" | "accessories" | "keys" | "other" | string;
+  location: string;
+  event_date: string;
+  image_urls: string[];
+  status: "open" | "resolved" | "archived";
+  reporter_id: string;
+  reporter_role: string;
+  reporter_email_masked?: string | null;
+  resolved_at?: string | null;
+  resolved_by?: string | null;
+  resolution_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  claims_count?: number;
+  claims?: LostAndFoundClaim[];
+}
+
+export interface LostAndFoundCreate {
+  report_type: "lost" | "found";
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  event_date?: string;
+  image_urls?: string[];
+}
+
+export interface LostAndFoundUpdate {
+  title?: string;
+  description?: string;
+  category?: string;
+  location?: string;
+  event_date?: string;
+  image_urls?: string[];
+  status?: "open" | "resolved" | "archived";
+  resolution_notes?: string;
+}
+
+export interface LostAndFoundClaimCreate {
+  distinguishing_proof: string;
+}
+
+// --- Support Ticket Types ---
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  user_email: string;
+  category: "academic" | "technical" | "lost_found" | "opportunities" | "billing" | "general" | string;
+  subject: string;
+  description: string;
+  screenshot_url?: string | null;
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "open" | "in_progress" | "resolved" | "closed";
+  admin_response?: string | null;
+  responded_by?: string | null;
+  responded_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupportTicketCreate {
+  category: string;
+  subject: string;
+  description: string;
+  screenshot_url?: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+}
+
+export interface SupportTicketUpdate {
+  status?: "open" | "in_progress" | "resolved" | "closed";
+  admin_response?: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+}
+
+// --- Personal Assistant Types ---
+export interface AssistantChatRequest {
+  message: string;
+  conversation_history?: Array<{ role: string; content: string }>;
+}
+
+export interface AssistantChatResponse {
+  reply: string;
+  model: string;
+  timestamp: string;
+}
+
+export interface AssistantCalculateRequest {
+  expression: string;
+}
+
+export interface AssistantCalculateResponse {
+  expression: string;
+  result: number;
+}
+
+
+
 

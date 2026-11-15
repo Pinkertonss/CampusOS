@@ -34,6 +34,42 @@ import {
   ReuseNotification,
   CampusDocument,
   DocumentUploadResponse,
+  DecisionMatrixResponse,
+  Opportunity,
+  OpportunityRecommendation,
+  OpportunityRecommendationResponse,
+  StudentSkillProfile,
+  OpportunityApplication,
+  StudentExperienceProfile,
+  OpportunityEligibility,
+  CandidateDiscoveryResponse,
+  Subject,
+  SubjectOffering,
+  StudentEnrollment,
+  StudentDirectoryItem,
+  AttendanceSession,
+  SessionAttendanceRecord,
+  StudentSessionAttendanceResponse,
+  Assessment,
+  StudentAssessmentMark,
+  OfferingAssignment,
+  AssignmentSubmission,
+  OfferingAnnouncement,
+  RosterStudent,
+  RosterResponse,
+  AcademicAuditLog,
+  UserRoleItem,
+  AdminAccountCreate,
+  AdminAccountResponse,
+  LostAndFoundItem,
+  LostAndFoundCreate,
+  LostAndFoundUpdate,
+  LostAndFoundClaim,
+  SupportTicket,
+  SupportTicketCreate,
+  SupportTicketUpdate,
+  AssistantChatResponse,
+  AssistantCalculateResponse,
 } from "../types";
 import {
   MOCK_COURSES,
@@ -59,6 +95,23 @@ async function getAuthHeaders(customHeaders: Record<string, string> = {}): Promi
     ...customHeaders,
   };
 
+  // Check cookie or localStorage for active session token (e.g. dev-admin, dev-user-102203099, or Supabase JWT)
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(/campusos_auth_token=([^;]+)/);
+    if (match && match[1]) {
+      const cookieToken = decodeURIComponent(match[1]);
+      if (cookieToken) {
+        headers["Authorization"] = `Bearer ${cookieToken}`;
+        return headers;
+      }
+    }
+    const localToken = localStorage.getItem("campusos_auth_token");
+    if (localToken) {
+      headers["Authorization"] = `Bearer ${localToken}`;
+      return headers;
+    }
+  }
+
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
@@ -77,6 +130,15 @@ async function getAuthHeaders(customHeaders: Record<string, string> = {}): Promi
   return headers;
 }
 
+export async function getAuthToken(): Promise<string | null> {
+  const headers = await getAuthHeaders();
+  const auth = headers["Authorization"];
+  if (auth && auth.startsWith("Bearer ")) {
+    return auth.slice(7);
+  }
+  return null;
+}
+
 // --- Health Check API ---
 
 export async function checkHealth(): Promise<{ status: string; app?: string; campus?: string }> {
@@ -92,15 +154,13 @@ export async function checkHealth(): Promise<{ status: string; app?: string; cam
 // --- Academic API ---
 
 export async function getCourses(): Promise<Course[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/courses`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch courses");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback courses data:", e);
-    return MOCK_COURSES;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/courses`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch courses (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function addCourse(course: {
@@ -130,15 +190,13 @@ export async function deleteCourse(courseId: string): Promise<void> {
 }
 
 export async function getAttendance(): Promise<AttendanceRecord[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/attendance`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch attendance");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback attendance data:", e);
-    return MOCK_ATTENDANCE;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/attendance`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch attendance (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function updateAttendance(
@@ -186,34 +244,44 @@ export async function simulateGrades(
 // --- Official Academic Planning Engine API ---
 
 export async function getDailyPlan(referenceDate?: string): Promise<DailyPlanResponse> {
-  try {
-    const headers = await getAuthHeaders();
-    const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
-    const res = await fetch(`${API_BASE}/academics/daily-plan${query}`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch daily plan");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback daily plan:", e);
-    return MOCK_DAILY_PLAN as DailyPlanResponse;
+  const headers = await getAuthHeaders();
+  const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
+  const res = await fetch(`${API_BASE}/academics/daily-plan${query}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch daily plan (${res.status})`);
   }
+  return await res.json();
+}
+
+export async function getDecisionMatrix(referenceDate?: string): Promise<DecisionMatrixResponse> {
+  const headers = await getAuthHeaders();
+  const query = referenceDate ? `?reference_date=${encodeURIComponent(referenceDate)}` : "";
+  const res = await fetch(`${API_BASE}/academics/decision-matrix${query}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch decision matrix (${res.status})`);
+  }
+  return await res.json();
 }
 
 export async function getAcademicSummary(): Promise<AcademicSummaryResponse> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/academics/summary`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch academic summary");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback academic summary:", e);
-    return MOCK_ACADEMIC_SUMMARY as AcademicSummaryResponse;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/academics/summary`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch academic summary (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function postAttendanceWhatIf(
@@ -243,27 +311,23 @@ export async function postGradeWhatIf(
 }
 
 export async function getTimetable(): Promise<TimetableSlot[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/timetable`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch timetable");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback timetable data:", e);
-    return MOCK_TIMETABLE;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/timetable`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch timetable (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function getDeadlines(): Promise<DeadlineTask[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/academic/deadlines`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch deadlines");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback deadlines data:", e);
-    return MOCK_DEADLINES;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/deadlines`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch deadlines (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function createDeadline(task: {
@@ -472,18 +536,16 @@ export async function setVaultConsent(consentGiven: boolean) {
 }
 
 export async function getVaultDocuments(category?: string): Promise<VaultDocument[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const url = category && category !== "all"
-      ? `${API_BASE}/api/vault/documents?category=${category}`
-      : `${API_BASE}/api/vault/documents`;
-    const res = await fetch(url, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch vault documents");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback vault documents:", e);
-    return MOCK_VAULT_DOCS;
+  const headers = await getAuthHeaders();
+  const url = category && category !== "all"
+    ? `${API_BASE}/api/vault/documents?category=${category}`
+    : `${API_BASE}/api/vault/documents`;
+  const res = await fetch(url, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch vault documents (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function uploadVaultDocument(formData: FormData): Promise<VaultDocument> {
@@ -829,20 +891,18 @@ export async function getReuseItems(params?: {
   listing_type?: string;
   status?: string;
 }): Promise<ReuseItem[]> {
-  try {
-    const headers = await getAuthHeaders();
-    const query = new URLSearchParams();
-    if (params?.category && params.category !== "all") query.set("category", params.category);
-    if (params?.listing_type && params.listing_type !== "all") query.set("listing_type", params.listing_type);
-    if (params?.status && params.status !== "all") query.set("status", params.status);
+  const headers = await getAuthHeaders();
+  const query = new URLSearchParams();
+  if (params?.category && params.category !== "all") query.set("category", params.category);
+  if (params?.listing_type && params.listing_type !== "all") query.set("listing_type", params.listing_type);
+  if (params?.status && params.status !== "all") query.set("status", params.status);
 
-    const res = await fetch(`${API_BASE}/api/reuse/items?${query.toString()}`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch reuse items");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback reuse items:", e);
-    return MOCK_REUSE_ITEMS;
+  const res = await fetch(`${API_BASE}/api/reuse/items?${query.toString()}`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch reuse items (${res.status})`);
   }
+  return await res.json();
 }
 
 export async function createReuseItem(item: {
@@ -887,15 +947,13 @@ export async function completeReuseItem(itemId: string): Promise<ReuseItem> {
 }
 
 export async function getImpactMetrics(): Promise<ImpactMetrics> {
-  try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE}/api/reuse/impact`, { headers, cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch impact metrics");
-    return await res.json();
-  } catch (e) {
-    console.warn("Using fallback impact metrics:", e);
-    return MOCK_IMPACT;
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/reuse/impact`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch impact metrics (${res.status})`);
   }
+  return await res.json();
 }
 
 // ============================================================
@@ -1174,4 +1232,1348 @@ function getFallbackReuseImpact(): ReuseImpactResponse {
     ],
   };
 }
+
+// ============================================================
+// Opportunity Matching API
+// ============================================================
+
+export async function getOpportunities(
+  category?: string,
+  search?: string
+): Promise<Opportunity[]> {
+  try {
+    const params = new URLSearchParams();
+    if (category && category !== "all") params.set("category", category);
+    if (search && search.trim()) params.set("search", search.trim());
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const res = await fetch(`${API_BASE}/api/opportunities${query}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch opportunities");
+    return await res.json();
+  } catch (e) {
+    console.warn("Using fallback opportunities:", e);
+    return [];
+  }
+}
+
+export async function getRecommendedOpportunities(): Promise<OpportunityRecommendationResponse> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/recommended`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch recommended opportunities");
+  return await res.json();
+}
+
+export async function getStudentSkillProfile(): Promise<StudentSkillProfile> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/profile`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch student skill profile");
+  return await res.json();
+}
+
+export async function updateStudentSkillProfile(
+  profile: Partial<StudentSkillProfile>
+): Promise<StudentSkillProfile> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/profile`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error("Failed to update student skill profile");
+  return await res.json();
+}
+
+export async function getStudentExperienceProfile(): Promise<StudentExperienceProfile> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/experience-profile`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch student experience profile");
+  return await res.json();
+}
+
+export async function updateStudentExperienceProfile(
+  data: Partial<StudentExperienceProfile>
+): Promise<StudentExperienceProfile> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/experience-profile`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update experience profile");
+  }
+  return await res.json();
+}
+
+export async function uploadStudentResume(file: File): Promise<{ success: boolean; filename: string }> {
+  const headers = await getAuthHeaders();
+  const formData = new FormData();
+  formData.append("resume", file);
+  const res = await fetch(`${API_BASE}/api/opportunities/profile/me/resume`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload resume");
+  }
+  return await res.json();
+}
+
+export async function deleteStudentResume(): Promise<{ success: boolean; message: string }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/profile/me/resume`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to delete resume");
+  }
+  return await res.json();
+}
+
+export async function getOpportunityEligibility(oppId: string): Promise<OpportunityEligibility> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/eligibility`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to evaluate opportunity eligibility");
+  return await res.json();
+}
+
+export async function getCandidateDiscovery(oppId: string): Promise<CandidateDiscoveryResponse> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/candidates`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to discover candidates (Creator / Opp Manager only)");
+  }
+  return await res.json();
+}
+
+export async function sendOpportunityInvitations(
+  oppId: string,
+  candidateIds: string[]
+): Promise<{ success: boolean; invited_count: number; message: string }> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/invite`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ candidate_ids: candidateIds }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to send opportunity invitations");
+  }
+  return await res.json();
+}
+
+export async function toggleSaveOpportunity(
+  oppId: string
+): Promise<{ saved: boolean; message: string }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/${oppId}/save`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) throw new Error("Failed to toggle save opportunity");
+  return await res.json();
+}
+
+export async function getSavedOpportunities(): Promise<Opportunity[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/saved`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch saved opportunities");
+  return await res.json();
+}
+
+export async function applyToOpportunity(
+  oppId: string,
+  data?: { statement_of_interest?: string; available_hours_per_week?: number }
+): Promise<OpportunityApplication> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/opportunities/${oppId}/apply`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data || {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit application");
+  }
+  return await res.json();
+}
+
+export async function getAppliedOpportunities(): Promise<OpportunityApplication[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/opportunities/applied`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch applied opportunities");
+  return await res.json();
+}
+
+// ============================================================
+// --- Academic RBAC & Offerings Client APIs
+// ============================================================
+
+export async function fetchSubjects(): Promise<Subject[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/subjects`, { headers, cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch subjects");
+  return await res.json();
+}
+
+export async function fetchOfferings(): Promise<SubjectOffering[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/offerings`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch offerings");
+  }
+  return await res.json();
+}
+
+export async function fetchOfferingDetails(offeringId: string): Promise<SubjectOffering> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch offering details (${res.status})`);
+  }
+  return await res.json();
+}
+
+export async function createOffering(data: {
+  subject_code: string;
+  subject_name: string;
+  term: string;
+  section: string;
+  attendance_threshold?: number;
+  grade_policy?: string;
+  professor_ids?: string[];
+}): Promise<SubjectOffering> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/academic/offerings`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create offering");
+  }
+  return await res.json();
+}
+
+export async function assignProfessorToOffering(
+  offeringId: string,
+  professorId: string,
+  role: string = "primary"
+): Promise<SubjectOffering> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/professors`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ professor_id: professorId, role }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to assign professor");
+  }
+  return await res.json();
+}
+
+export async function fetchStudentDirectory(query: string = ""): Promise<StudentDirectoryItem[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/students/directory?query=${encodeURIComponent(query)}`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to search student directory");
+  }
+  return await res.json();
+}
+
+export async function fetchOfferingEnrollments(offeringId: string): Promise<StudentEnrollment[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/enrollments`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch enrollments");
+  }
+  return await res.json();
+}
+
+export async function enrollStudentInOffering(
+  offeringId: string,
+  payload: { student_id: string; student_name?: string; student_roll_no?: string; student_email?: string; effective_date?: string }
+): Promise<StudentEnrollment> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/enroll`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to enroll student");
+  }
+  return await res.json();
+}
+
+export async function bulkEnrollStudentsInOffering(
+  offeringId: string,
+  payload: { student_ids: string[]; effective_date?: string }
+): Promise<{ enrolled_count: number; enrolled_students: StudentEnrollment[]; skipped_duplicates: string[] }> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/enroll-bulk`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to bulk enroll students");
+  }
+  return await res.json();
+}
+
+export async function disenrollStudentFromOffering(
+  offeringId: string,
+  studentId: string,
+  reason: string,
+  effectiveDate?: string
+): Promise<StudentEnrollment> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/disenroll?student_id=${encodeURIComponent(studentId)}`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ reason, effective_date: effectiveDate }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to disenroll student");
+  }
+  return await res.json();
+}
+
+export async function fetchAttendanceSessions(offeringId: string): Promise<AttendanceSession[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch attendance sessions");
+  }
+  return await res.json();
+}
+
+export async function createAttendanceSession(
+  offeringId: string,
+  sessionDate: string,
+  slotType: string = "Lecture",
+  topic?: string,
+  room?: string,
+  startTime?: string
+): Promise<AttendanceSession> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        session_date: sessionDate,
+        slot_type: slotType,
+        topic: topic || null,
+        room: room || null,
+        start_time: startTime || null,
+      }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create attendance session");
+  }
+  return await res.json();
+}
+
+export async function fetchSessionAttendanceRecords(
+  offeringId: string,
+  sessionId: string
+): Promise<SessionAttendanceRecord[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}/records`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch session attendance records");
+  }
+  return await res.json();
+}
+
+export async function markSessionAttendance(
+  offeringId: string,
+  sessionId: string,
+  records: Array<{ student_id: string; status: string; correction_reason?: string }>
+): Promise<SessionAttendanceRecord[]> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}/mark`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ records }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to mark attendance");
+  }
+  return await res.json();
+}
+
+export async function markAllSessionAttendance(
+  offeringId: string,
+  sessionId: string,
+  status: string = "present",
+  correctionReason?: string
+): Promise<SessionAttendanceRecord[]> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}/mark-all`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ status, correction_reason: correctionReason || null }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to bulk mark attendance");
+  }
+  return await res.json();
+}
+
+export async function cancelAttendanceSession(
+  offeringId: string,
+  sessionId: string,
+  isCancelled: boolean = true,
+  reason?: string
+): Promise<AttendanceSession> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}/cancel`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ is_cancelled: isCancelled, reason: reason || null }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update session cancellation status");
+  }
+  return await res.json();
+}
+
+export async function deleteAttendanceSession(
+  offeringId: string,
+  sessionId: string
+): Promise<{ success: boolean; deleted_session_id: string; removed_records: number }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: "DELETE",
+      headers,
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to delete attendance session");
+  }
+  return await res.json();
+}
+
+export async function fetchMySessionAttendance(
+  offeringId: string,
+  studentId?: string
+): Promise<StudentSessionAttendanceResponse> {
+  const headers = await getAuthHeaders();
+  const url = studentId
+    ? `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/my-sessions?student_id=${encodeURIComponent(studentId)}`
+    : `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/attendance/my-sessions`;
+  const res = await fetch(url, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch session attendance history");
+  }
+  return await res.json();
+}
+
+export async function fetchOfferingAssessments(offeringId: string): Promise<Assessment[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assessments`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch assessments");
+  }
+  return await res.json();
+}
+
+export async function createOfferingAssessment(
+  offeringId: string,
+  data: {
+    title: string;
+    assessment_type?: string;
+    max_marks: number;
+    weight_percent?: number;
+    due_date?: string;
+    answer_key_content?: string;
+    is_published?: boolean;
+  }
+): Promise<Assessment> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assessments`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create assessment");
+  }
+  return await res.json();
+}
+
+export async function updateOfferingAssessment(
+  offeringId: string,
+  assessmentId: string,
+  data: Partial<Assessment>
+): Promise<Assessment> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assessments/${encodeURIComponent(assessmentId)}`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(data),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update assessment");
+  }
+  return await res.json();
+}
+
+export async function fetchAssessmentMarks(
+  offeringId: string,
+  assessmentId: string
+): Promise<StudentAssessmentMark[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assessments/${encodeURIComponent(assessmentId)}/marks`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch assessment marks");
+  }
+  return await res.json();
+}
+
+export async function updateAssessmentMarks(
+  offeringId: string,
+  assessmentId: string,
+  marks: Array<{ student_id: string; obtained_marks?: number; status?: string; feedback?: string; correction_reason?: string }>
+): Promise<StudentAssessmentMark[]> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assessments/${encodeURIComponent(assessmentId)}/marks`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ marks }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update assessment marks");
+  }
+  return await res.json();
+}
+
+export async function fetchOfferingAssignments(offeringId: string): Promise<OfferingAssignment[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assignments`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch assignments");
+  }
+  return await res.json();
+}
+
+export async function createOfferingAssignment(
+  offeringId: string,
+  data: {
+    title: string;
+    instructions: string;
+    due_date: string;
+    allowed_formats?: string[];
+    max_file_size_mb?: number;
+    allow_late?: boolean;
+    allow_resubmission?: boolean;
+    model_answer?: string;
+    is_published?: boolean;
+  }
+): Promise<OfferingAssignment> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assignments`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create assignment");
+  }
+  return await res.json();
+}
+
+export async function updateOfferingAssignment(
+  offeringId: string,
+  assignmentId: string,
+  data: Partial<OfferingAssignment>
+): Promise<OfferingAssignment> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assignments/${encodeURIComponent(assignmentId)}`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(data),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update assignment");
+  }
+  return await res.json();
+}
+
+export async function submitAssignment(
+  offeringId: string,
+  assignmentId: string,
+  submissionText?: string,
+  fileName?: string
+): Promise<AssignmentSubmission> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assignments/${encodeURIComponent(assignmentId)}/submit`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ submission_text: submissionText, file_name: fileName }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit assignment");
+  }
+  return await res.json();
+}
+
+export async function fetchAssignmentSubmissions(
+  offeringId: string,
+  assignmentId: string
+): Promise<AssignmentSubmission[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assignments/${encodeURIComponent(assignmentId)}/submissions`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch submissions");
+  }
+  return await res.json();
+}
+
+export async function gradeAssignmentSubmission(
+  offeringId: string,
+  assignmentId: string,
+  submissionId: string,
+  score: number,
+  feedback?: string
+): Promise<AssignmentSubmission> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/assignments/${encodeURIComponent(assignmentId)}/submissions/${encodeURIComponent(submissionId)}/grade`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ score, feedback }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to grade submission");
+  }
+  return await res.json();
+}
+
+export async function fetchOfferingAnnouncements(offeringId: string): Promise<OfferingAnnouncement[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/announcements`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch announcements");
+  }
+  return await res.json();
+}
+
+export async function createOfferingAnnouncement(
+  offeringId: string,
+  data: { title: string; content: string; target_group?: string; target_student_ids?: string[] }
+): Promise<OfferingAnnouncement> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/announcements`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create announcement");
+  }
+  return await res.json();
+}
+
+export async function fetchOfferingRoster(
+  offeringId: string,
+  params?: {
+    search?: string;
+    status_filter?: string;
+    support_filter?: string;
+    sort_by?: string;
+    sort_order?: string;
+    page?: number;
+    page_size?: number;
+  }
+): Promise<RosterResponse> {
+  const headers = await getAuthHeaders();
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.status_filter) query.set("status_filter", params.status_filter);
+  if (params?.support_filter) query.set("support_filter", params.support_filter);
+  if (params?.sort_by) query.set("sort_by", params.sort_by);
+  if (params?.sort_order) query.set("sort_order", params.sort_order);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
+
+  const res = await fetch(
+    `${API_BASE}/api/academic/offerings/${encodeURIComponent(offeringId)}/roster?${query.toString()}`,
+    { headers, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch offering roster");
+  }
+  return await res.json();
+}
+
+export async function fetchUserRoles(): Promise<UserRoleItem[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/academic/users/roles`, { headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch user roles");
+  }
+  return await res.json();
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: string,
+  status: string = "active"
+): Promise<{ user_id: string; role: string; status: string }> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/academic/users/roles`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ user_id: userId, role, status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update user role");
+  }
+  return await res.json();
+}
+
+export async function fetchAcademicAuditLogs(
+  offeringId?: string,
+  limit: number = 100
+): Promise<AcademicAuditLog[]> {
+  const headers = await getAuthHeaders();
+  const query = new URLSearchParams();
+  if (offeringId) query.set("offering_id", offeringId);
+  query.set("limit", String(limit));
+
+  const res = await fetch(`${API_BASE}/api/academic/audit-logs?${query.toString()}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch academic audit logs");
+  }
+  return await res.json();
+}
+
+export async function createAdminAccount(data: {
+  email: string;
+  full_name: string;
+  user_id?: string;
+  admin_secret_key?: string;
+}): Promise<AdminAccountResponse> {
+  const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+  const res = await fetch(`${API_BASE}/api/academic/admin/create-account`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create administrator account");
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Explicit Demo Mode Controls (No Silent Production Fallback)
+// ============================================================
+
+export function isDemoModeActive(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem("campusos_demo_mode") === "true";
+}
+
+export function setDemoModeActive(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  if (enabled) {
+    window.localStorage.setItem("campusos_demo_mode", "true");
+  } else {
+    window.localStorage.removeItem("campusos_demo_mode");
+  }
+}
+
+export function getDemoAcademicData() {
+  return {
+    courses: MOCK_COURSES,
+    attendance: MOCK_ATTENDANCE,
+    timetable: MOCK_TIMETABLE,
+    deadlines: MOCK_DEADLINES,
+    summary: MOCK_ACADEMIC_SUMMARY,
+    dailyPlan: MOCK_DAILY_PLAN,
+    impact: MOCK_IMPACT,
+  };
+}
+
+// ============================================================
+// --- Lost and Found API
+// ============================================================
+
+export async function getLostAndFoundReports(filters?: {
+  report_type?: string;
+  category?: string;
+  status?: string;
+  query?: string;
+  my_reports?: boolean;
+}): Promise<LostAndFoundItem[]> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const params = new URLSearchParams();
+  if (filters?.report_type && filters.report_type !== "all") params.append("report_type", filters.report_type);
+  if (filters?.category && filters.category !== "all") params.append("category", filters.category);
+  if (filters?.status && filters.status !== "all") params.append("status", filters.status);
+  if (filters?.query) params.append("query", filters.query);
+  if (filters?.my_reports) params.append("my_reports", "true");
+
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_BASE}/api/lost-and-found${qs}`, { headers });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Lost & Found reports: ${res.statusText}`);
+  }
+  return await res.json();
+}
+
+export async function getLostAndFoundItem(id: string): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}`, { headers });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch report ${id}`);
+  }
+  return await res.json();
+}
+
+export async function createLostAndFoundReport(data: LostAndFoundCreate): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create Lost & Found report");
+  }
+  return await res.json();
+}
+
+export async function updateLostAndFoundReport(id: string, data: LostAndFoundUpdate): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update Lost & Found report");
+  }
+  return await res.json();
+}
+
+export async function resolveLostAndFoundReport(id: string, notes?: string): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}/resolve`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ resolution_notes: notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to resolve report");
+  }
+  return await res.json();
+}
+
+export async function archiveLostAndFoundReport(id: string): Promise<LostAndFoundItem> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${id}/archive`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to archive report");
+  }
+  return await res.json();
+}
+
+export async function submitLostAndFoundClaim(itemId: string, distinguishingProof: string): Promise<LostAndFoundClaim> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${itemId}/claim`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ distinguishing_proof: distinguishingProof }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit ownership claim");
+  }
+  return await res.json();
+}
+
+export async function getLostAndFoundItemClaims(itemId: string): Promise<LostAndFoundClaim[]> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${itemId}/claims`, { headers });
+  if (!res.ok) {
+    throw new Error("Failed to load claims");
+  }
+  return await res.json();
+}
+
+export async function verifyLostAndFoundClaim(
+  itemId: string,
+  claimId: string,
+  action: "verify" | "reject",
+  notes?: string
+): Promise<LostAndFoundClaim> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/${itemId}/claims/${claimId}/verify`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ action, notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to verify claim");
+  }
+  return await res.json();
+}
+
+export async function uploadLostAndFoundImage(file: File): Promise<{ image_url: string; filename: string }> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/lost-and-found/images/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload image");
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Support Tickets API
+// ============================================================
+
+export async function getSupportTickets(statusFilter?: string): Promise<SupportTicket[]> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const qs = statusFilter && statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+  const res = await fetch(`${API_BASE}/api/support/tickets${qs}`, { headers });
+  if (!res.ok) {
+    throw new Error("Failed to load support tickets");
+  }
+  return await res.json();
+}
+
+export async function createSupportTicket(data: SupportTicketCreate): Promise<SupportTicket> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/support/tickets`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit support ticket");
+  }
+  return await res.json();
+}
+
+export async function updateSupportTicket(id: string, data: SupportTicketUpdate): Promise<SupportTicket> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/support/tickets/${id}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update support ticket");
+  }
+  return await res.json();
+}
+
+export async function uploadSupportScreenshot(file: File): Promise<{ screenshot_url: string }> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/support/upload-screenshot`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload screenshot");
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Gemini Personal Assistant API
+// ============================================================
+
+export async function chatWithPersonalAssistant(
+  message: string,
+  history?: Array<{ role: string; content: string }>
+): Promise<AssistantChatResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/assistant/chat`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ message, conversation_history: history || [] }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to get response from Personal Assistant");
+  }
+  return await res.json();
+}
+
+export async function calculateWithPersonalAssistant(expression: string): Promise<AssistantCalculateResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/assistant/calculate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ expression }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Calculation error");
+  }
+  return await res.json();
+}
+
+export async function getAssistantStatus(): Promise<{ enabled: boolean; model: string; rate_limit_rpm: number }> {
+  const res = await fetch(`${API_BASE}/api/assistant/status`);
+  if (!res.ok) {
+    return { enabled: false, model: "gemini-1.5-flash", rate_limit_rpm: 30 };
+  }
+  return await res.json();
+}
+
+// ============================================================
+// --- Admin Opportunities & Matching Preview API
+// ============================================================
+
+export async function previewOpportunityMatching(
+  draftOpp: Partial<Opportunity>
+): Promise<CandidateDiscoveryResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/preview-matching`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(draftOpp),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to preview matching");
+  }
+  return await res.json();
+}
+
+export async function updateOpportunity(
+  opportunityId: string,
+  data: Partial<Opportunity>
+): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update opportunity");
+  }
+  return await res.json();
+}
+
+export async function publishOpportunity(opportunityId: string): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}/publish`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to publish opportunity");
+  }
+  return await res.json();
+}
+
+export async function closeOpportunity(opportunityId: string): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}/close`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to close opportunity");
+  }
+  return await res.json();
+}
+
+export async function archiveOpportunity(opportunityId: string): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities/${opportunityId}/archive`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to archive opportunity");
+  }
+  return await res.json();
+}
+
+export async function createOpportunity(data: Partial<Opportunity>): Promise<Opportunity> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/opportunities`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create opportunity");
+  }
+  return await res.json();
+}
+
+export async function getOpportunityCandidatesFiltered(
+  oppId: string,
+  filters?: { status?: string; branch?: string; query?: string; page?: number; page_size?: number }
+): Promise<CandidateDiscoveryResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const params = new URLSearchParams();
+  if (filters?.status && filters.status !== "all") params.append("status", filters.status);
+  if (filters?.branch && filters.branch !== "all") params.append("branch", filters.branch);
+  if (filters?.query) params.append("query", filters.query);
+  if (filters?.page) params.append("page", String(filters.page));
+  if (filters?.page_size) params.append("page_size", String(filters.page_size));
+
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_BASE}/api/opportunities/${encodeURIComponent(oppId)}/candidates${qs}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to discover candidates");
+  }
+  return await res.json();
+}
+
+
+
 

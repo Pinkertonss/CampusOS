@@ -51,10 +51,10 @@ export default function UpcomingDeadlinesList({
     <Card className="p-5 sm:p-6 border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
             Upcoming Deadlines
             {pendingDeadlines.length > 0 && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-mono">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-badge-bg)] text-[var(--action-primary)] font-mono">
                 {pendingDeadlines.length}
               </span>
             )}
@@ -79,7 +79,7 @@ export default function UpcomingDeadlinesList({
       {deadlines.length === 0 ? (
         <EmptyState
           compact
-          icon={<Calendar className="w-8 h-8 text-teal-500" />}
+          icon={<Calendar className="w-8 h-8 text-[var(--action-primary)]" />}
           title="No deadlines listed"
           description="Add coursework submissions or exam dates to keep your action plan updated."
         />
@@ -103,25 +103,25 @@ export default function UpcomingDeadlinesList({
                     type="button"
                     disabled={togglingId === task.id}
                     onClick={() => handleToggle(task)}
-                    className="mt-0.5 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition cursor-pointer shrink-0"
+                    className="mt-0.5 text-slate-400 hover:text-[var(--action-primary)] dark:hover:text-[var(--action-primary)] transition cursor-pointer shrink-0"
                     aria-label={isCompleted ? "Mark pending" : "Mark completed"}
                   >
                     {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5 text-teal-500" />
+                      <CheckCircle2 className="w-5 h-5 text-[var(--action-primary)]" />
                     ) : (
-                      <Circle className="w-5 h-5 hover:text-teal-400" />
+                      <Circle className="w-5 h-5 hover:text-[var(--action-primary)]" />
                     )}
                   </button>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       {task.course_code && (
-                        <span className="font-mono text-[11px] font-bold text-teal-600 dark:text-teal-400">
+                        <span className="font-mono text-[11px] font-bold text-[var(--action-primary)]">
                           {task.course_code}
                         </span>
                       )}
                       <h4
-                        className={`text-sm font-medium text-slate-900 dark:text-slate-100 leading-snug ${
+                        className={`text-sm font-medium text-[var(--text-primary)] leading-snug ${
                           isCompleted ? "line-through text-slate-400 dark:text-slate-500" : ""
                         }`}
                       >

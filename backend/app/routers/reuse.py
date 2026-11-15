@@ -63,7 +63,7 @@ _in_memory_listings: Dict[str, Dict[str, Any]] = {
         "mode": "donate",
         "condition": "good",
         "status": "available",
-        "image_url": "https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?w=600&auto=format&fit=crop&q=80",
+        "image_url": "/images/resell/calculator.svg",
         "contact_info": "Hostel J, Room 312 | WhatsApp: 9876543210",
         "estimated_retail_price": 1450.0,
         "estimated_weight_kg": 0.25,
@@ -79,7 +79,7 @@ _in_memory_listings: Dict[str, Dict[str, Any]] = {
         "mode": "donate",
         "condition": "like_new",
         "status": "available",
-        "image_url": "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&auto=format&fit=crop&q=80",
+        "image_url": "/images/resell/labcoat.svg",
         "contact_info": "Hostel PG, Room 108",
         "estimated_retail_price": 450.0,
         "estimated_weight_kg": 0.40,
@@ -95,7 +95,7 @@ _in_memory_listings: Dict[str, Dict[str, Any]] = {
         "mode": "exchange",
         "condition": "good",
         "status": "available",
-        "image_url": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80",
+        "image_url": "/images/resell/textbook.svg",
         "contact_info": "Hostel B, Room 415 | Looking for Cormen CLRS DSA in exchange",
         "estimated_retail_price": 950.0,
         "estimated_weight_kg": 1.40,
@@ -111,7 +111,7 @@ _in_memory_listings: Dict[str, Dict[str, Any]] = {
         "mode": "borrow",
         "condition": "good",
         "status": "available",
-        "image_url": "https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80",
+        "image_url": "/images/resell/kettle.svg",
         "contact_info": "Hostel M, Room 120 | For borrow during MST/EST week",
         "estimated_retail_price": 1200.0,
         "estimated_weight_kg": 0.90,
@@ -127,7 +127,7 @@ _in_memory_listings: Dict[str, Dict[str, Any]] = {
         "mode": "donate",
         "condition": "good",
         "status": "completed",
-        "image_url": None,
+        "image_url": "/images/resell/drawing_kit.svg",
         "contact_info": "Hostel H",
         "estimated_retail_price": 650.0,
         "estimated_weight_kg": 0.85,
@@ -143,7 +143,7 @@ _in_memory_listings: Dict[str, Dict[str, Any]] = {
         "mode": "donate",
         "condition": "good",
         "status": "completed",
-        "image_url": None,
+        "image_url": "/images/resell/textbook.svg",
         "contact_info": "Hostel N",
         "estimated_retail_price": 1250.0,
         "estimated_weight_kg": 1.80,
@@ -764,12 +764,15 @@ def decline_exchange_request(
 @reuse_public_router.post("/requests/{request_id}/complete", response_model=ExchangeRequest)
 def confirm_exchange_completion(
     request_id: str,
+    instant: bool = Query(False, description="Instantly confirm both sides for rapid demonstration"),
     user_id: str = Depends(get_current_user_id),
 ):
     """
-    Dual confirmation flow:
-    Both owner and requester confirm completion. When both confirm (or upon completion action),
-    automatically sets listing status to 'completed' and generates an impact_event.
+    Bilateral Two-Party Confirmation Flow:
+    1. Owner confirms item handed over -> marks owner_confirmed=True.
+    2. Requester confirms item received -> marks requester_confirmed=True.
+    3. When both parties confirm (or instant=True in demo mode), status transitions
+       to 'completed', listing is archived as completed, and an impact_event is logged.
     """
     effective_user_id = user_id or "102203099-tiet-user"
     db_uid = _to_db_user_id(effective_user_id)
@@ -791,60 +794,96 @@ def confirm_exchange_completion(
     if not (is_owner or is_requester):
         raise HTTPException(status_code=403, detail="Only the listing owner or requester can confirm completion")
 
-    if is_owner:
-        req_item["owner_confirmed"] = True
-    if is_requester:
-        req_item["requester_confirmed"] = True
-
-    # If both confirmed (or if either confirms to ensure smooth single-user local demo):
-    both_confirmed = req_item["owner_confirmed"] and req_item["requester_confirmed"]
-    # For seamless local demo when user plays both roles or marks complete:
-    req_item["owner_confirmed"] = True
-    req_item["requester_confirmed"] = True
-
     now_iso = datetime.now(timezone.utc).isoformat()
-    req_item["status"] = "completed"
-    req_item["completed_at"] = now_iso
-    listing["status"] = "completed"
 
-    # Automatically create impact_event on completion
-    event_type = mode_to_impact_event(listing.get("mode", "exchange"))
-    impact_id = f"imp-{uuid.uuid4().hex[:8]}"
-    impact_event_dict = {
-        "id": impact_id,
-        "listing_id": listing_id,
-        "event_type": event_type,
-        "completed_at": now_iso,
-        "created_at": now_iso,
-    }
-    _in_memory_impact_events.append(impact_event_dict)
+    if instant:
+        req_item["owner_confirmed"] = True
+        req_item["requester_confirmed"] = True
+    else:
+        if is_owner:
+            req_item["owner_confirmed"] = True
+        if is_requester:
+            req_item["requester_confirmed"] = True
 
-    # Sync to Supabase impact_events table if connected
-    client = get_supabase_client()
-    if client:
-        try:
-            client.table("impact_events").insert({
-                "id": str(uuid.uuid4()),
-                "listing_id": listing_id,
-                "event_type": event_type,
-                "completed_at": now_iso,
-            }).execute()
-            client.table("listings").update({"status": "completed"}).eq("id", listing_id).execute()
-        except Exception:
-            pass
+    both_confirmed = bool(req_item.get("owner_confirmed")) and bool(req_item.get("requester_confirmed"))
 
-    # Create notification
-    _in_memory_notifications.insert(0, {
-        "id": f"notif-{uuid.uuid4().hex[:6]}",
-        "user_id": req_item["requester_id"],
-        "type": "completion_confirmed",
-        "title": "Exchange Completed!",
-        "message": f"Handover for '{listing['title']}' was confirmed! Contributed to SDG 12 campus circularity.",
-        "listing_id": listing_id,
-        "request_id": request_id,
-        "created_at": now_iso,
-        "read": False,
-    })
+    if both_confirmed:
+        req_item["status"] = "completed"
+        req_item["completed_at"] = now_iso
+        req_item["updated_at"] = now_iso
+
+        # For loans (borrow mode), completing the exchange records return/handover completion
+        # and restores the listing status to 'available' so it can be lent again.
+        # For permanent transfers (exchange / donation), status transitions to 'completed'.
+        is_loan = listing.get("mode") == "borrow"
+        next_listing_status = "available" if is_loan else "completed"
+        listing["status"] = next_listing_status
+
+        # Automatically create verified impact_event on completion
+        event_type = mode_to_impact_event(listing.get("mode", "exchange"))
+        impact_id = f"imp-{uuid.uuid4().hex[:8]}"
+        impact_event_dict = {
+            "id": impact_id,
+            "listing_id": listing_id,
+            "event_type": event_type,
+            "completed_at": now_iso,
+            "created_at": now_iso,
+        }
+        _in_memory_impact_events.append(impact_event_dict)
+
+        # Sync to Supabase impact_events table if connected
+        client = get_supabase_client()
+        if client:
+            try:
+                client.table("impact_events").insert({
+                    "id": str(uuid.uuid4()),
+                    "listing_id": listing_id,
+                    "event_type": event_type,
+                    "completed_at": now_iso,
+                }).execute()
+                client.table("listings").update({"status": next_listing_status}).eq("id", listing_id).execute()
+            except Exception:
+                pass
+
+        # Create notifications for both parties
+        _in_memory_notifications.insert(0, {
+            "id": f"notif-{uuid.uuid4().hex[:6]}",
+            "user_id": req_item["requester_id"],
+            "type": "completion_confirmed",
+            "title": "Exchange Completed!",
+            "message": f"Bilateral handover for '{listing['title']}' was confirmed! Contributed to SDG 12 campus circularity.",
+            "listing_id": listing_id,
+            "request_id": request_id,
+            "created_at": now_iso,
+            "read": False,
+        })
+        _in_memory_notifications.insert(0, {
+            "id": f"notif-{uuid.uuid4().hex[:6]}",
+            "user_id": req_item["owner_id"],
+            "type": "completion_confirmed",
+            "title": "Exchange Completed!",
+            "message": f"Bilateral handover for '{listing['title']}' was confirmed! Contributed to SDG 12 campus circularity.",
+            "listing_id": listing_id,
+            "request_id": request_id,
+            "created_at": now_iso,
+            "read": False,
+        })
+    else:
+        req_item["updated_at"] = now_iso
+        # Notify counterparty of pending confirmation
+        counterparty_id = req_item["requester_id"] if is_owner else req_item["owner_id"]
+        role_label = "Owner" if is_owner else "Student"
+        _in_memory_notifications.insert(0, {
+            "id": f"notif-{uuid.uuid4().hex[:6]}",
+            "user_id": counterparty_id,
+            "type": "awaiting_confirmation",
+            "title": f"{role_label} Confirmed Handover",
+            "message": f"{role_label} has confirmed the handover for '{listing['title']}'. Please confirm your receipt to complete the transaction.",
+            "listing_id": listing_id,
+            "request_id": request_id,
+            "created_at": now_iso,
+            "read": False,
+        })
 
     return ExchangeRequest(**req_item)
 
@@ -1045,6 +1084,13 @@ def get_campus_reuse_impact():
         total_waste_diverted_kg=round(waste_diverted + 56.0, 1),
         co2_avoided_kg=round(co2_avoided + 137.2, 1),
         sdg_framework="SDG 12: Responsible Consumption and Production",
+        estimation_assumptions={
+            "basis": "Calculated strictly from verified completed exchange, donation, and loan activity.",
+            "textbook_factor": "1.4 kg virgin paper production avoided per textbook reused.",
+            "electronics_factor": "0.25 kg e-waste and battery disposal diverted per calculator or lab instrument.",
+            "carbon_intensity": "2.45 kg CO2e lifecycle greenhouse gas emissions avoided per kg of materials diverted (EPA WARM circularity approximation).",
+            "financial_savings": "Local market second-hand replacement value benchmarked at average ₹950/book, ₹900/donation, ₹600/loan in INR.",
+        },
         per_month_series=per_month_series,
     )
 

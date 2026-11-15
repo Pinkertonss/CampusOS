@@ -43,6 +43,8 @@ class ActionableSuggestion(BaseModel):
     priority: str = "medium"
     course_code: Optional[str] = None
     reason: str = ""
+    is_expired: bool = False
+    is_historical: bool = False
 
 
 class CopilotQueryRequest(BaseModel):
@@ -91,6 +93,7 @@ class CampusDocument(BaseModel):
     approval_reviewer: Optional[str] = "DOAA Committee"
     version: str = "2024-25.1"
     is_archived: bool = False
+    checksum: Optional[str] = None
     created_at: str
 
 

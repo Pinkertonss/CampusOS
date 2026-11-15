@@ -21,7 +21,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "/";
-  const { signIn, signInWithGoogle, signInAsDemo, isLoading } = useAuth();
+  const { signIn, signInWithGoogle, signInAsDemo, signInAsAdminDemo, isLoading } = useAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
@@ -30,6 +30,7 @@ function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [adminDemoSubmitting, setAdminDemoSubmitting] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,63 +76,80 @@ function LoginForm() {
     router.push(nextUrl);
   };
 
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Background ambient teal/blue glow */}
-      <div className="absolute top-1/4 -left-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+  const handleAdminDemoSignIn = async () => {
+    setAdminDemoSubmitting(true);
+    await signInAsAdminDemo();
+    setAdminDemoSubmitting(false);
+    toast.success("Signed in as Administrator (Demo)", {
+      description: "Welcome Dr. Administrator (DOAA)",
+    });
+    router.push("/admin");
+  };
 
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[var(--page-bg)] text-[var(--text-primary)]">
       <div className="w-full max-w-md z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-sky-500 text-white shadow-lg shadow-teal-900/30 mb-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs mb-2">
             <GraduationCap className="w-8 h-8" />
           </div>
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">CampusOS</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">CampusOS</h1>
             <Badge variant="primary" size="sm">
               TIET Pilot
             </Badge>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[var(--text-secondary)]">
             One personalized platform fixing fragmented campus information.
           </p>
         </div>
 
         {/* Main Card */}
-        <Card className="p-6 sm:p-8 bg-slate-900/90 border-slate-800 shadow-2xl backdrop-blur-md">
+        <Card className="p-6 sm:p-8 bg-[var(--surface-card)] border-[var(--border-color)] shadow-xl">
           {/* Demo Quick Sign-in Banner for Hackathon Evaluators */}
-          <div className="mb-6 p-3.5 rounded-xl bg-teal-950/60 border border-teal-800/60 flex flex-col gap-2.5">
+          <div className="mb-6 p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-teal-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Instant Demo Sign In
+              <span className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--action-primary)]" /> Instant Demo Personas
               </span>
-              <span className="text-[10px] text-teal-400/80 bg-teal-900/60 px-1.5 py-0.5 rounded font-mono">
-                TIET COE Sem 5
+              <span className="text-[10px] text-[var(--accent-badge-text)] bg-[var(--accent-badge-bg)] border border-[var(--accent-badge-border)] px-1.5 py-0.5 rounded font-mono">
+                Student &amp; Admin
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Explore with pre-seeded attendance, timetable, and campus documents without entering credentials.
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Explore with verified student attendance or institutional administrative governance without manual credentials.
             </p>
-            <Button
-              variant="primary"
-              size="sm"
-              isLoading={demoSubmitting}
-              onClick={handleDemoSignIn}
-              fullWidth
-              leftIcon={<CheckCircle2 className="w-4 h-4" />}
-              className="bg-teal-600 hover:bg-teal-500 text-white font-medium"
-            >
-              Sign In as Arjun Mehta (Demo)
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <Button
+                variant="primary"
+                size="sm"
+                isLoading={demoSubmitting}
+                onClick={handleDemoSignIn}
+                leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                className="font-medium text-xs"
+              >
+                Student (Arjun)
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                isLoading={adminDemoSubmitting}
+                onClick={handleAdminDemoSignIn}
+                leftIcon={<ShieldCheck className="w-3.5 h-3.5 text-[var(--action-primary)]" />}
+                className="font-medium text-xs"
+              >
+                Admin (DOAA)
+              </Button>
+            </div>
           </div>
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
+              <div className="w-full border-t border-[var(--border-color)]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-900 px-2 text-slate-400 font-medium tracking-wider">
+              <span className="bg-[var(--surface-card)] px-2 text-[var(--text-secondary)] font-medium tracking-wider">
                 Or with your email
               </span>
             </div>
@@ -142,12 +160,12 @@ function LoginForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Campus Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -157,7 +175,7 @@ function LoginForm() {
                   placeholder="student@thapar.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -166,13 +184,13 @@ function LoginForm() {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="password"
-                  className="block text-xs font-medium text-slate-300"
+                  className="block text-xs font-medium text-[var(--text-secondary)]"
                 >
                   Password
                 </label>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -182,12 +200,12 @@ function LoginForm() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-10 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -205,7 +223,7 @@ function LoginForm() {
               fullWidth
               isLoading={submitting}
               rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="mt-2 bg-teal-600 hover:bg-teal-500"
+              className="mt-2"
             >
               Sign In
             </Button>
@@ -219,7 +237,7 @@ function LoginForm() {
               fullWidth
               isLoading={googleSubmitting}
               onClick={handleGoogleSignIn}
-              className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+              className="border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
             >
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path
@@ -243,11 +261,11 @@ function LoginForm() {
             </Button>
           </div>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-6 text-center text-xs text-[var(--text-secondary)]">
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"
-              className="text-teal-400 hover:text-teal-300 font-medium underline-offset-4 hover:underline"
+              className="text-[var(--action-primary)] hover:opacity-80 font-medium underline-offset-4 hover:underline"
             >
               Create account
             </Link>
@@ -255,8 +273,8 @@ function LoginForm() {
         </Card>
 
         {/* Security & Privacy Footer Note */}
-        <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-teal-500/80" />
+        <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
+          <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
           <span>Privacy first · Row-Level Security · Explicit consent only</span>
         </div>
       </div>
@@ -268,7 +286,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-400">
+        <div className="min-h-screen w-full flex items-center justify-center bg-[var(--page-bg)] text-[var(--text-primary)]">
           Loading CampusOS...
         </div>
       }

@@ -219,27 +219,41 @@ class AttendanceEngine:
 
     @classmethod
     def process_records(
-        cls, records: List[Dict[str, Any]], target_percent: float = 75.0
+        cls,
+        records: List[Dict[str, Any]],
+        target_percent: float = 75.0,
+        enrollment_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Filters out 'cancelled' classes and computes attendance statistics.
-        Cancelled classes do not count toward total held t.
-        Only status == 'present' counts as attended a.
-        status == 'present' or 'absent' counts toward total held t.
+        Filters out 'cancelled' and 'excused' classes and computes attendance statistics.
+        Cancelled and excused classes do not count toward total held t.
+        'present' and 'late' count as attended a.
+        'present', 'late', and 'absent' count toward total held t.
+        Respects enrollment_date if provided (ignores sessions prior to enrollment).
         """
         attended = 0
         total_held = 0
         cancelled = 0
+        excused = 0
 
         for rec in records:
+            rec_date = rec.get("date") or rec.get("session_date")
+            if rec_date and enrollment_date:
+                r_date_str = str(rec_date)[:10]
+                e_date_str = str(enrollment_date)[:10]
+                if r_date_str < e_date_str:
+                    continue
+
             status = str(rec.get("status", "")).strip().lower()
-            if status == "present":
+            if status in ("present", "late"):
                 attended += 1
                 total_held += 1
             elif status == "absent":
                 total_held += 1
             elif status == "cancelled":
                 cancelled += 1
+            elif status == "excused":
+                excused += 1
 
         percent = cls.calculate_current_percent(attended, total_held)
         status = cls.evaluate_status(percent, target_percent)
@@ -252,6 +266,7 @@ class AttendanceEngine:
             "attended": attended,
             "total_held": total_held,
             "cancelled": cancelled,
+            "excused": excused,
             "percent": percent,
             "status": status,
             "safe_bunks_remaining": safe_bunks,
@@ -268,20 +283,21 @@ class GradeEngine:
     @staticmethod
     def calculate_current_weighted_score(
         assessments: List[Dict[str, Any]],
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """
         Computes current weighted score from completed assessments:
             score_i = (obtained_marks / max_marks) * weight_percent
             current_weighted_score = sum(score_i)
 
         Only assessments where obtained_marks is not None are counted.
+        Distinguishes earned weighted contribution from performance on graded work alone.
         """
         current_weighted_score = 0.0
         completed_weight = 0.0
         total_planned_weight = 0.0
 
         for a in assessments:
-            weight = float(a.get("weight_percent", 0.0))
+            weight = max(0.0, float(a.get("weight_percent", 0.0)))
             max_m = float(a.get("max_marks", 100.0))
             obtained = a.get("obtained_marks")
 
@@ -294,12 +310,18 @@ class GradeEngine:
                 completed_weight += weight
 
         remaining_weight = max(0.0, 100.0 - completed_weight)
+        graded_performance = (
+            round((current_weighted_score / completed_weight) * 100.0, 2)
+            if completed_weight > 0
+            else None
+        )
 
         return {
             "current_weighted_score": round(current_weighted_score, 2),
             "completed_weight": round(completed_weight, 2),
             "remaining_weight": round(remaining_weight, 2),
             "total_planned_weight": round(total_planned_weight, 2),
+            "graded_performance_percent": graded_performance,
         }
 
     @staticmethod
@@ -398,6 +420,12 @@ class GradeEngine:
         remaining_weight = weighted_info["remaining_weight"]
 
         projected_score = current_score
+        pending_assessments = [a for a in assessments if a.get("obtained_marks") is None]
+
+        def _clean_str(s: str) -> str:
+            return "".join(c.lower() for c in str(s) if c.isalnum())
+
+        hypo_norm_map = {_clean_str(k): v for k, v in hypothetical_scores.items()}
 
         for a in assessments:
             if a.get("obtained_marks") is None:
@@ -406,10 +434,27 @@ class GradeEngine:
                 weight = float(a.get("weight_percent", 0.0))
                 max_m = float(a.get("max_marks", 100.0))
 
-                # Check hypothetical scores by id or name
+                # 1. Exact match by id or name
                 hypo = hypothetical_scores.get(a_id)
                 if hypo is None:
                     hypo = hypothetical_scores.get(a_name)
+
+                # 2. Case-insensitive / normalized match
+                if hypo is None:
+                    hypo = hypo_norm_map.get(_clean_str(a_id)) or hypo_norm_map.get(_clean_str(a_name))
+
+                # 3. Synonym matching for terminal exam / end semester / finals
+                if hypo is None:
+                    a_norm = _clean_str(a_name)
+                    if any(term in a_norm for term in ["end", "sem", "est", "final", "exam"]):
+                        for hk, hv in hypo_norm_map.items():
+                            if any(term in hk for term in ["end", "sem", "est", "final", "exam"]):
+                                hypo = hv
+                                break
+
+                # 4. Fallback: single pending assessment with single hypothetical score
+                if hypo is None and len(pending_assessments) == 1 and len(hypothetical_scores) == 1:
+                    hypo = next(iter(hypothetical_scores.values()))
 
                 if hypo is not None and max_m > 0:
                     val = float(hypo)
@@ -444,24 +489,41 @@ class GradeEngine:
 
 class ActionPlanEngine:
     """
-    Generates a daily prioritized action plan from:
-    1. Upcoming deadlines (within next 7 days)
-    2. Courses at risk on attendance (< target T% or < 65%)
-    3. Pending academic tasks
+    Cross-Module Decision Intelligence Engine:
+    Synthesizes:
+    1. Timetable / Calendar schedule and next upcoming lecture slots
+    2. Attendance risk analysis (< 75% or critical < 65% detention threshold)
+    3. Upcoming high-weight assessment deadlines and pending tasks
+    4. Cross-module collision & trade-off detection (e.g. deadline vs at-risk lecture)
     """
 
-    @staticmethod
+    @classmethod
     def generate_daily_plan(
+        cls,
         courses_attendance: List[Dict[str, Any]],
         assessments: List[Dict[str, Any]],
         tasks: List[Dict[str, Any]],
         target_percent: float = 75.0,
         reference_date: Optional[date] = None,
+        timetable: Optional[List[Dict[str, Any]]] = None,
     ) -> List[Dict[str, Any]]:
         ref_date = reference_date or date.today()
+        day_name = ref_date.strftime("%A")
         actions: List[Dict[str, Any]] = []
 
-        # 1. COURSES AT RISK ON ATTENDANCE
+        # Map today's timetable slots
+        day_slots = [
+            s for s in (timetable or [])
+            if str(s.get("day_of_week", "")).strip().lower() == day_name.lower()
+        ]
+        slots_by_code: Dict[str, List[Dict[str, Any]]] = {}
+        for s in (timetable or []):
+            c_code = str(s.get("course_code", "")).strip().upper()
+            slots_by_code.setdefault(c_code, []).append(s)
+
+        # 1. COURSES AT RISK ON ATTENDANCE (Mapped to Timetable Slots)
+        at_risk_today: List[Dict[str, Any]] = []
+
         for c in courses_attendance:
             code = c.get("course_code") or c.get("code") or "Course"
             name = c.get("course_name") or c.get("name") or code
@@ -476,8 +538,23 @@ class ActionPlanEngine:
                 attended, total, target_percent
             )
 
+            # Check if scheduled today
+            today_slot = next(
+                (s for s in day_slots if str(s.get("course_code", "")).strip().upper() == code.upper()),
+                None
+            )
+            sched_info = (
+                f"{today_slot.get('day_of_week', day_name)} {today_slot.get('start_time')}-{today_slot.get('end_time')} @ {today_slot.get('venue')}"
+                if today_slot else None
+            )
+
             if pct < 65.0:
-                actions.append({
+                reason = (
+                    f"Attendance in {code} ({name}) is {pct:.1f}% (below 65% detention threshold). "
+                    + (f"Next lecture is scheduled today at {today_slot.get('start_time')} in {today_slot.get('venue')}. " if today_slot else "")
+                    + (f"Attend the next {needed} classes consecutively to reach {target_percent:.0f}%." if needed is not None else "Below critical threshold.")
+                )
+                action_item = {
                     "id": f"att-crit-{code}",
                     "category": "attendance",
                     "priority": "urgent",
@@ -485,16 +562,22 @@ class ActionPlanEngine:
                     "title": f"Critical Attendance Alert in {code}",
                     "course_code": code,
                     "current_percent": pct,
-                    "reason": (
-                        f"Attendance in {code} ({name}) is {pct:.1f}% (below 65% detention threshold). "
-                        f"Attend the next {needed} classes consecutively to reach {target_percent:.0f}%."
-                        if needed is not None
-                        else f"Attendance in {code} is {pct:.1f}%. Below critical threshold."
-                    ),
-                    "action_required": f"Attend next {needed} classes" if needed else "Consult Academic Section",
-                })
+                    "schedule_info": sched_info,
+                    "reason": reason,
+                    "action_required": f"Attend today's class at {today_slot.get('start_time')} ({today_slot.get('venue')})" if today_slot else (f"Attend next {needed} classes" if needed else "Consult Academic Section"),
+                    "risk_score": 95.0,
+                }
+                actions.append(action_item)
+                if today_slot:
+                    at_risk_today.append(action_item)
+
             elif pct < target_percent:
-                actions.append({
+                reason = (
+                    f"Attendance in {code} is {pct:.1f}%. "
+                    + (f"Today's class is at {today_slot.get('start_time')} ({today_slot.get('venue')}). " if today_slot else "")
+                    + (f"Attend the next {needed} classes to reach {target_percent:.0f}%." if needed is not None else "Attend upcoming classes.")
+                )
+                action_item = {
                     "id": f"att-warn-{code}",
                     "category": "attendance",
                     "priority": "high",
@@ -502,16 +585,16 @@ class ActionPlanEngine:
                     "title": f"Attendance Shortage in {code}",
                     "course_code": code,
                     "current_percent": pct,
-                    "reason": (
-                        f"Attendance in {code} is {pct:.1f}%. "
-                        f"Attend the next {needed} classes to reach {target_percent:.0f}%."
-                        if needed is not None
-                        else f"Attendance in {code} is {pct:.1f}%."
-                    ),
-                    "action_required": f"Attend next {needed} classes" if needed else "Attend upcoming classes",
-                })
+                    "schedule_info": sched_info,
+                    "reason": reason,
+                    "action_required": f"Attend class at {today_slot.get('start_time')} ({today_slot.get('venue')})" if today_slot else (f"Attend next {needed} classes" if needed else "Attend upcoming classes"),
+                    "risk_score": 75.0,
+                }
+                actions.append(action_item)
+                if today_slot:
+                    at_risk_today.append(action_item)
+
             else:
-                # Optionally note healthy safe bunks if safe bunks <= 2
                 if 0 < safe_bunks <= 2:
                     actions.append({
                         "id": f"att-buffer-{code}",
@@ -521,11 +604,15 @@ class ActionPlanEngine:
                         "title": f"Tight Attendance Buffer in {code}",
                         "course_code": code,
                         "current_percent": pct,
+                        "schedule_info": sched_info,
                         "reason": f"Attendance in {code} is {pct:.1f}%. You have {safe_bunks} safe bunk(s) remaining.",
                         "action_required": "Avoid missing classes",
+                        "risk_score": 45.0,
                     })
 
         # 2. UPCOMING DEADLINES (NEXT 7 DAYS) FROM ASSESSMENTS
+        urgent_deadlines: List[Dict[str, Any]] = []
+
         for a in assessments:
             due_str = a.get("due_date")
             obt = a.get("obtained_marks")
@@ -544,7 +631,7 @@ class ActionPlanEngine:
                         a_name = a.get("name", "Assessment")
                         c_code = a.get("course_code", "")
 
-                        actions.append({
+                        item = {
                             "id": f"assess-{a.get('id', a_name)}",
                             "category": "deadline",
                             "priority": priority,
@@ -555,7 +642,11 @@ class ActionPlanEngine:
                             "days_remaining": delta_days,
                             "reason": f"{a_name} ({a.get('weight_percent', 0)}% weight) is due {day_word} ({due_str}).",
                             "action_required": "Prepare and submit",
-                        })
+                            "risk_score": 88.0 if delta_days <= 1 else (75.0 if delta_days <= 3 else 55.0),
+                        }
+                        actions.append(item)
+                        if delta_days <= 1:
+                            urgent_deadlines.append(item)
                 except Exception:
                     pass
 
@@ -567,6 +658,7 @@ class ActionPlanEngine:
                 due_str = t.get("due_date")
                 priority = "medium"
                 priority_order = 3
+                risk_score = 50.0
 
                 reason = f"Pending task: {t_title}"
                 if due_str:
@@ -580,10 +672,12 @@ class ActionPlanEngine:
                         if delta_days <= 2:
                             priority = "urgent"
                             priority_order = 1
+                            risk_score = 80.0
                             reason = f"Urgent task due {due_str}: {t_title}"
                         elif delta_days <= 7:
                             priority = "high"
                             priority_order = 2
+                            risk_score = 65.0
                             reason = f"Task due {due_str}: {t_title}"
                     except Exception:
                         pass
@@ -597,8 +691,136 @@ class ActionPlanEngine:
                     "due_date": due_str,
                     "reason": reason,
                     "action_required": "Mark complete once done",
+                    "risk_score": risk_score,
                 })
 
-        # Sort actions by priority_order (1=urgent, 2=high, 3=medium, etc.)
-        actions.sort(key=lambda x: x.get("priority_order", 99))
+        # 4. CROSS-MODULE TRADE-OFF & SCHEDULE CONFLICT DETECTION
+        # When an urgent deadline collides on the same day with an at-risk attendance lecture
+        for r_item in at_risk_today:
+            for d_item in urgent_deadlines:
+                c_code = r_item.get("course_code", "")
+                c_pct = r_item.get("current_percent", 0.0)
+                d_title = d_item.get("title", "")
+                sched_info = r_item.get("schedule_info") or "today"
+
+                conflict_id = f"conflict-{c_code}-{d_item.get('id', 'item')}"
+                actions.insert(0, {
+                    "id": conflict_id,
+                    "category": "conflict",
+                    "priority": "urgent",
+                    "priority_order": 0,
+                    "title": f"Schedule Trade-off Alert: {c_code} vs {d_title}",
+                    "course_code": c_code,
+                    "current_percent": c_pct,
+                    "schedule_info": sched_info,
+                    "conflict_warning": f"Risk of skipping {c_code} ({c_pct:.1f}% attendance) to finish {d_title}.",
+                    "reason": f"Urgent assessment '{d_title}' is due, but {c_code} attendance is dangerously low at {c_pct:.1f}% with class scheduled today ({sched_info}). Under TIET Section 6.2, do NOT bunk this lecture.",
+                    "action_required": f"Attend {c_code} lecture at scheduled slot; complete {d_title} in designated evening study block.",
+                    "risk_score": 99.0,
+                })
+
+        # Sort actions by priority_order (0=conflict, 1=urgent, 2=high, 3=medium, etc.)
+        # then by risk_score descending
+        actions.sort(key=lambda x: (x.get("priority_order", 99), -float(x.get("risk_score", 0.0))))
         return actions
+
+    @classmethod
+    def generate_decision_matrix(
+        cls,
+        courses_attendance: List[Dict[str, Any]],
+        assessments: List[Dict[str, Any]],
+        tasks: List[Dict[str, Any]],
+        timetable: List[Dict[str, Any]],
+        target_percent: float = 75.0,
+        reference_date: Optional[date] = None,
+    ) -> Dict[str, Any]:
+        """
+        Synthesizes cross-module decision intelligence into a unified action matrix.
+        """
+        ref_d = reference_date or date.today()
+        day_name = ref_d.strftime("%A")
+
+        actions = cls.generate_daily_plan(
+            courses_attendance=courses_attendance,
+            assessments=assessments,
+            tasks=tasks,
+            target_percent=target_percent,
+            reference_date=ref_d,
+            timetable=timetable,
+        )
+
+        conflicts = [a for a in actions if a.get("category") == "conflict"]
+
+        # Today's schedule annotated with live attendance standing
+        today_slots = [
+            s for s in (timetable or [])
+            if str(s.get("day_of_week", "")).strip().lower() == day_name.lower()
+        ]
+        annotated_schedule = []
+        for s in today_slots:
+            code = s.get("course_code", "").upper()
+            c_att = next(
+                (c for c in courses_attendance if str(c.get("course_code", "")).upper() == code),
+                None
+            )
+            pct = 100.0
+            status_val = "safe"
+            if c_att:
+                a = int(c_att.get("attended_classes", c_att.get("attended", 0)))
+                t = int(c_att.get("total_classes", c_att.get("total_held", 0)))
+                pct = AttendanceEngine.calculate_current_percent(a, t)
+                status_val = AttendanceEngine.evaluate_status(pct, target_percent)
+
+            annotated_schedule.append({
+                "course_code": code,
+                "course_name": s.get("course_name", code),
+                "day_of_week": s.get("day_of_week", day_name),
+                "start_time": s.get("start_time", ""),
+                "end_time": s.get("end_time", ""),
+                "venue": s.get("venue", ""),
+                "slot_type": s.get("slot_type", "Lecture"),
+                "current_attendance_percent": pct,
+                "attendance_status": status_val,
+                "is_attendance_mandatory": pct < target_percent,
+            })
+
+        # Calculate academic standing summary
+        safe_count = 0
+        warning_count = 0
+        critical_count = 0
+        for c in courses_attendance:
+            a = int(c.get("attended_classes", c.get("attended", 0)))
+            t = int(c.get("total_classes", c.get("total_held", 0)))
+            p = AttendanceEngine.calculate_current_percent(a, t)
+            if p < 65.0:
+                critical_count += 1
+            elif p < target_percent:
+                warning_count += 1
+            else:
+                safe_count += 1
+
+        # Determine recommended focus
+        if conflicts:
+            c = conflicts[0]
+            recommended_focus = f"Schedule Collision: Protect {c['course_code']} class at {c.get('schedule_info', 'scheduled slot')} to prevent detention risk, then complete pending deadlines."
+        elif any(a["priority"] == "urgent" and a["category"] == "attendance" for a in actions):
+            top_att = next(a for a in actions if a["priority"] == "urgent" and a["category"] == "attendance")
+            recommended_focus = f"Critical Attendance: Attend next {top_att['course_code']} lecture consecutively. You are in the detention risk zone."
+        elif any(a["priority"] == "urgent" and a["category"] == "deadline" for a in actions):
+            top_d = next(a for a in actions if a["priority"] == "urgent" and a["category"] == "deadline")
+            recommended_focus = f"High-Stakes Deadline: Prioritize preparation for {top_d['title']}."
+        else:
+            recommended_focus = "Academic standing is secure across all registered courses. Maintain attendance momentum."
+
+        return {
+            "date": ref_d.isoformat(),
+            "recommended_focus": recommended_focus,
+            "conflicts": conflicts,
+            "today_schedule": annotated_schedule,
+            "priorities": actions,
+            "academic_standing_summary": {
+                "safe": safe_count,
+                "warning": warning_count,
+                "critical": critical_count,
+            },
+        }

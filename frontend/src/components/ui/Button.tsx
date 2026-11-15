@@ -19,13 +19,13 @@ export interface ButtonProps
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 border border-transparent shadow-sm shadow-primary-950/20 focus-visible:ring-primary-500",
+    "bg-[var(--action-primary)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] active:bg-[var(--action-primary-active)] border border-transparent shadow-xs focus-visible:ring-[var(--focus-ring)]",
   secondary:
-    "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 active:bg-slate-100 dark:active:bg-slate-700 shadow-sm focus-visible:ring-primary-500",
+    "bg-[var(--surface-card)] text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--surface-secondary)] active:bg-[var(--border-color)] shadow-xs focus-visible:ring-[var(--focus-ring)]",
   ghost:
-    "bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white active:bg-slate-200 dark:active:bg-slate-700 border border-transparent focus-visible:ring-primary-500",
+    "bg-transparent text-[var(--text-primary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)] active:bg-[var(--border-color)] border border-transparent focus-visible:ring-[var(--focus-ring)]",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 border border-transparent shadow-sm shadow-red-950/20 focus-visible:ring-red-500",
+    "bg-rose-700 text-white hover:bg-rose-800 active:bg-rose-900 border border-transparent shadow-xs focus-visible:ring-rose-600",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -66,7 +66,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           fullWidth ? "w-full" : ""
         } ${
           isDisabled
-            ? "opacity-60 cursor-not-allowed pointer-events-none shadow-none"
+            ? "opacity-50 cursor-not-allowed pointer-events-none shadow-none"
             : "cursor-pointer"
         } ${className}`}
         {...props}

@@ -12,7 +12,7 @@ env_paths = [
 ]
 for p in env_paths:
     if p.exists():
-        load_dotenv(p)
+        load_dotenv(p, override=True)
         break
 
 class Settings(BaseModel):
@@ -43,6 +43,7 @@ class Settings(BaseModel):
     
     # LLM keys (optional)
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
 
 settings = Settings()

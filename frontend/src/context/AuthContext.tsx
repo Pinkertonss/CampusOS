@@ -12,6 +12,7 @@ export interface StudentProfile {
   branch: string;
   semester: number;
   consent_given: boolean;
+  role?: string;
   created_at?: string;
 }
 
@@ -21,10 +22,13 @@ interface AuthContextType {
   profile: StudentProfile | null;
   isLoading: boolean;
   isOnboarded: boolean;
+  isAdmin: boolean;
+  role: string;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error?: string }>;
   signInWithGoogle: () => Promise<{ error?: string }>;
   signInAsDemo: () => Promise<void>;
+  signInAsAdminDemo: () => Promise<void>;
   signOut: () => Promise<void>;
   completeOnboarding: (data: Omit<StudentProfile, "user_id" | "id">) => Promise<{ error?: string }>;
   refreshProfile: () => Promise<void>;
@@ -42,6 +46,20 @@ export const DEMO_PROFILE: StudentProfile = {
   branch: "COE",
   semester: 5,
   consent_given: true,
+  role: "student",
+};
+
+// Demo profile for Administrator (DOAA)
+const DEMO_ADMIN_ID = "admin-00000000-0000-0000-0000-000000000001";
+export const DEMO_ADMIN_PROFILE: StudentProfile = {
+  id: "demo-admin-profile-id",
+  user_id: DEMO_ADMIN_ID,
+  full_name: "Dr. Administrator (DOAA)",
+  roll_no: "ADMIN-001",
+  branch: "ACADEMIC-ADMIN",
+  semester: 0,
+  consent_given: true,
+  role: "admin",
 };
 
 function setCookie(name: string, value: string, days = 7) {
@@ -64,8 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Load profile from Supabase or LocalStorage
   const loadProfile = useCallback(async (userId: string, isDemo = false) => {
-    if (isDemo || userId === DEMO_USER_ID) {
-      setProfile(DEMO_PROFILE);
+    if (isDemo || userId === DEMO_USER_ID || userId === DEMO_ADMIN_ID) {
+      if (userId === DEMO_ADMIN_ID) {
+        setProfile(DEMO_ADMIN_PROFILE);
+      } else {
+        setProfile(DEMO_PROFILE);
+      }
       setIsOnboarded(true);
       setCookie("campusos_onboarded", "true");
       return;
@@ -138,22 +160,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isMockSupabase = !supabaseUrl || supabaseUrl.includes("mock-project");
       const isDemoMode = isMockSupabase || localStorage.getItem("campusos_demo_auth") === "true";
 
-      // If mock Supabase or demo mode, immediately hydrate demo profile (Arjun Mehta)
+      // If mock Supabase or demo mode, immediately hydrate demo profile (Arjun Mehta or Admin)
       if (isDemoMode) {
+        const isAdmin = localStorage.getItem("campusos_role") === "admin";
+        const uid = isAdmin ? DEMO_ADMIN_ID : DEMO_USER_ID;
         const mockUser = {
-          id: DEMO_USER_ID,
-          email: "arjun.mehta@thapar.edu",
-          user_metadata: { full_name: "Arjun Mehta" },
+          id: uid,
+          email: isAdmin ? "admin@thapar.edu" : "arjun.mehta@thapar.edu",
+          user_metadata: { full_name: isAdmin ? "Dr. Administrator (DOAA)" : "Arjun Mehta", role: isAdmin ? "admin" : "student" },
           aud: "authenticated",
           created_at: new Date().toISOString(),
-          app_metadata: {},
+          app_metadata: { role: isAdmin ? "admin" : "student" },
         } as unknown as User;
 
         if (isMounted) {
           setUser(mockUser);
-          setCookie("campusos_auth_token", "dev-user-102203099");
+          setCookie("campusos_auth_token", isAdmin ? "dev-admin" : "dev-user-102203099");
+          setCookie("campusos_role", isAdmin ? "admin" : "student");
           setCookie("campusos_onboarded", "true");
-          await loadProfile(DEMO_USER_ID, true);
+          await loadProfile(uid, true);
           setIsLoading(false);
         }
         return;
@@ -185,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } as unknown as User;
             setUser(mockUser);
             setCookie("campusos_auth_token", "dev-user-102203099");
+            setCookie("campusos_role", "student");
             setCookie("campusos_onboarded", "true");
             await loadProfile(DEMO_USER_ID, true);
           }
@@ -322,13 +348,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("campusos_logged_out");
     deleteCookie("campusos_logged_out");
     localStorage.setItem("campusos_demo_auth", "true");
+    localStorage.setItem("campusos_role", "student");
+    localStorage.setItem("campusos_auth_token", "dev-user-102203099");
     const mockUser = {
       id: DEMO_USER_ID,
       email: "arjun.mehta@thapar.edu",
-      user_metadata: { full_name: "Arjun Mehta" },
+      user_metadata: { full_name: "Arjun Mehta", role: "student" },
       aud: "authenticated",
       created_at: new Date().toISOString(),
-      app_metadata: {},
+      app_metadata: { role: "student" },
     } as unknown as User;
 
     setUser(mockUser);
@@ -336,6 +364,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(DEMO_PROFILE);
     setIsOnboarded(true);
     setCookie("campusos_auth_token", "dev-user-102203099");
+    setCookie("campusos_role", "student");
+    setCookie("campusos_onboarded", "true");
+    setIsLoading(false);
+  };
+
+  const signInAsAdminDemo = async () => {
+    setIsLoading(true);
+    localStorage.removeItem("campusos_logged_out");
+    deleteCookie("campusos_logged_out");
+    localStorage.setItem("campusos_demo_auth", "true");
+    localStorage.setItem("campusos_role", "admin");
+    localStorage.setItem("campusos_auth_token", "dev-admin");
+    const mockUser = {
+      id: DEMO_ADMIN_ID,
+      email: "admin@thapar.edu",
+      user_metadata: { full_name: "Dr. Administrator (DOAA)", role: "admin" },
+      aud: "authenticated",
+      created_at: new Date().toISOString(),
+      app_metadata: { role: "admin" },
+    } as unknown as User;
+
+    setUser(mockUser);
+    setSession(null);
+    setProfile(DEMO_ADMIN_PROFILE);
+    setIsOnboarded(true);
+    setCookie("campusos_auth_token", "dev-admin");
+    setCookie("campusos_role", "admin");
     setCookie("campusos_onboarded", "true");
     setIsLoading(false);
   };
@@ -344,8 +399,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     localStorage.setItem("campusos_logged_out", "true");
     localStorage.removeItem("campusos_demo_auth");
+    localStorage.removeItem("campusos_role");
+    localStorage.removeItem("campusos_auth_token");
     setCookie("campusos_logged_out", "true");
     deleteCookie("campusos_auth_token");
+    deleteCookie("campusos_role");
     deleteCookie("campusos_onboarded");
 
     try {
@@ -411,6 +469,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const role = (
+    profile?.role ||
+    user?.user_metadata?.role ||
+    user?.app_metadata?.role ||
+    (typeof window !== "undefined" ? localStorage.getItem("campusos_role") : null) ||
+    "student"
+  ).toLowerCase();
+
+  const isAdmin =
+    role === "admin" ||
+    user?.id === DEMO_ADMIN_ID ||
+    (typeof window !== "undefined" &&
+      (localStorage.getItem("campusos_auth_token") === "dev-admin" ||
+        localStorage.getItem("campusos_auth_token")?.startsWith("admin-token-") ||
+        document.cookie.includes("campusos_role=admin") ||
+        document.cookie.includes("campusos_auth_token=dev-admin") ||
+        document.cookie.includes("campusos_auth_token=admin-token-")));
+
   return (
     <AuthContext.Provider
       value={{
@@ -419,10 +495,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         isLoading,
         isOnboarded,
+        isAdmin,
+        role,
         signIn,
         signUp,
         signInWithGoogle,
         signInAsDemo,
+        signInAsAdminDemo,
         signOut,
         completeOnboarding,
         refreshProfile,

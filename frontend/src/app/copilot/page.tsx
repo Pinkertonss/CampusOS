@@ -43,6 +43,7 @@ import {
   CopilotQueryResponse,
   CampusDocument,
 } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 import {
   askCopilotStream,
   askCopilot,
@@ -65,13 +66,75 @@ interface ChatMessage {
   timestamp: string;
 }
 
-const SAMPLE_QUESTIONS = [
-  "What is the minimum attendance requirement to appear in exams?",
-  "What time is the hostel curfew and turnstile entry?",
-  "When is the last date to pay tuition fees for even semester?",
-  "What is the penalty if my attendance is below 65%?",
-  "Can I apply for a minor degree in AI/ML?",
-  "What are the library operating hours during exam periods?",
+interface StarterQuestion {
+  question: string;
+  category: "Academic" | "Hostel" | "Finance" | "Library";
+  badge: string;
+}
+
+const QUESTION_CATEGORIES = ["All", "Academic", "Hostel", "Finance", "Library"] as const;
+
+const SAMPLE_QUESTIONS: StarterQuestion[] = [
+  {
+    question: "What is the minimum attendance requirement to appear in exams?",
+    category: "Academic",
+    badge: "Attendance",
+  },
+  {
+    question: "What is the penalty if my attendance is below 65%?",
+    category: "Academic",
+    badge: "Detention Rule",
+  },
+  {
+    question: "How is CGPA calculated and what is the 10-point grading scale?",
+    category: "Academic",
+    badge: "Grading System",
+  },
+  {
+    question: "How do I apply for a makeup exam if I missed an exam due to illness?",
+    category: "Academic",
+    badge: "Make-up Exam",
+  },
+  {
+    question: "Can I apply for a minor degree in AI/ML or Data Science?",
+    category: "Academic",
+    badge: "Minor Degree",
+  },
+  {
+    question: "When are the Mid Semester (MST) and End Semester (EST) exams held?",
+    category: "Academic",
+    badge: "Academic Dates",
+  },
+  {
+    question: "What time is the hostel curfew and turnstile entry?",
+    category: "Hostel",
+    badge: "Hostel Curfew",
+  },
+  {
+    question: "Are room heaters and high-wattage electrical appliances allowed in hostels?",
+    category: "Hostel",
+    badge: "Appliances",
+  },
+  {
+    question: "When is the last date to pay tuition fees for even semester?",
+    category: "Finance",
+    badge: "Fee Deadline",
+  },
+  {
+    question: "What is the late fee surcharge if tuition is not paid on time?",
+    category: "Finance",
+    badge: "Late Surcharge",
+  },
+  {
+    question: "What are the library operating hours during exam periods?",
+    category: "Library",
+    badge: "Library Hours",
+  },
+  {
+    question: "What is the book borrowing limit and late return fine at the library?",
+    category: "Library",
+    badge: "Borrowing Rules",
+  },
 ];
 
 let msgSequenceCounter = 0;
@@ -82,12 +145,21 @@ function createUniqueMsgId(prefix: string): string {
 }
 
 export default function CampusCopilotPage() {
+  const { isAdmin } = useAuth();
+
   // Navigation / View Tabs
   const [activeTab, setActiveTab] = useState<"chat" | "admin">("chat");
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === "admin") {
+      setActiveTab("chat");
+    }
+  }, [isAdmin, activeTab]);
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [selectedQuestionCategory, setSelectedQuestionCategory] = useState<string>("All");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [streamingCitations, setStreamingCitations] = useState<Citation[]>([]);
@@ -113,12 +185,12 @@ export default function CampusCopilotPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingText]);
 
-  // Load documents when opening admin tab
+  // Load documents when opening admin tab (administrators only)
   useEffect(() => {
-    if (activeTab === "admin") {
+    if (activeTab === "admin" && isAdmin) {
       fetchDocuments();
     }
-  }, [activeTab]);
+  }, [activeTab, isAdmin]);
 
   const fetchDocuments = async () => {
     setDocLoading(true);
@@ -304,8 +376,8 @@ export default function CampusCopilotPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-              Campus Copilot
+              <Sparkles className="w-6 h-6 text-[var(--action-primary)]" />
+              Campus Guide
             </h1>
             <Badge variant="primary" size="md">
               Source-Grounded RAG
@@ -316,32 +388,34 @@ export default function CampusCopilotPage() {
           </p>
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg">
-          <button
-            type="button"
-            onClick={() => setActiveTab("chat")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
-              activeTab === "chat"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Assistant Chat
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("admin")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
-              activeTab === "admin"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Manage Documents (Admin)
-          </button>
-        </div>
+        {/* Tab Controls (Administrator Only) */}
+        {isAdmin && (
+          <div className="flex items-center gap-2 bg-[var(--surface-secondary)] p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setActiveTab("chat")}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
+                activeTab === "chat"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Assistant Chat
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("admin")}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
+                activeTab === "admin"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Manage Documents (Admin)
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
@@ -357,26 +431,58 @@ export default function CampusCopilotPage() {
                 {messages.length === 0 && !streamingText && (
                   <div className="py-8">
                     <EmptyState
-                      icon={<BookOpen className="w-10 h-10 text-teal-600 dark:text-teal-400" />}
+                      icon={<BookOpen className="w-10 h-10 text-[var(--action-primary)]" />}
                       title="Strict Campus Knowledge Assistant"
                       description="Ask about attendance cutoffs, detention rules, hostel curfews, exam schedules, or fee deadlines. Answers strictly cite approved campus documents."
                     />
 
                     {/* Starter Questions */}
-                    <div className="mt-8 space-y-2.5 max-w-2xl mx-auto">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block text-center">
-                        Suggested Starter Inquiries
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {SAMPLE_QUESTIONS.map((q, idx) => (
+                    <div className="mt-8 space-y-3.5 max-w-2xl mx-auto">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pb-1">
+                        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                          Suggested Campus Inquiries
+                        </span>
+                        {/* Category filter pills */}
+                        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                          {QUESTION_CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setSelectedQuestionCategory(cat)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition shrink-0 ${
+                                selectedQuestionCategory === cat
+                                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                                  : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {SAMPLE_QUESTIONS.filter(
+                          (q) => selectedQuestionCategory === "All" || q.category === selectedQuestionCategory
+                        ).map((q, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => handleSendMessage(q)}
-                            className="text-left text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 transition line-clamp-2 hover:border-teal-300 dark:hover:border-teal-700"
+                            onClick={() => handleSendMessage(q.question)}
+                            className="text-left text-xs p-3.5 rounded-xl bg-[var(--surface-card)] hover:bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] transition hover:border-[var(--action-primary)] flex flex-col justify-between gap-2 shadow-xs group"
                           >
-                            <span className="font-medium text-teal-700 dark:text-teal-400 mr-1.5">Q:</span>
-                            {q}
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-[10px] font-mono uppercase font-semibold px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)]">
+                                {q.badge}
+                              </span>
+                              <span className="text-[11px] text-[var(--action-primary)] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                Ask →
+                              </span>
+                            </div>
+                            <p className="line-clamp-2 leading-relaxed">
+                              <span className="font-semibold text-[var(--action-primary)] mr-1">Q:</span>
+                              {q.question}
+                            </p>
                           </button>
                         ))}
                       </div>
@@ -395,10 +501,10 @@ export default function CampusCopilotPage() {
                     <div
                       className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-4 text-sm ${
                         msg.sender === "user"
-                          ? "bg-teal-600 text-white rounded-br-sm"
+                          ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] rounded-br-sm"
                           : msg.isDeclined
                           ? "bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-slate-900 dark:text-slate-100 rounded-bl-sm"
-                          : "bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200/70 dark:border-slate-700/70 rounded-bl-sm shadow-xs"
+                          : "bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-bl-sm shadow-xs"
                       }`}
                     >
                       {/* Declined State Header */}
@@ -414,9 +520,9 @@ export default function CampusCopilotPage() {
 
                       {/* Source Citation Chips */}
                       {msg.sender === "copilot" && msg.citations && msg.citations.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
+                        <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-1.5">
                           <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                            <BookOpen className="w-3 h-3 text-teal-600" />
+                            <BookOpen className="w-3 h-3 text-[var(--action-primary)]" />
                             Authoritative Sources Cited:
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -425,13 +531,13 @@ export default function CampusCopilotPage() {
                                 key={cIdx}
                                 type="button"
                                 onClick={() => setSelectedCitation(cit)}
-                                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition shadow-2xs font-medium cursor-pointer"
+                                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] hover:opacity-90 transition shadow-2xs font-medium cursor-pointer"
                               >
-                                <span className="bg-teal-600 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold">
+                                <span className="bg-[var(--action-primary)] text-[var(--action-primary-text)] rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold">
                                   {cIdx + 1}
                                 </span>
                                 <span className="truncate max-w-[160px]">{cit.document_title}</span>
-                                <span className="text-[10px] text-teal-600 dark:text-teal-400 font-normal">
+                                <span className="text-[10px] text-[var(--action-primary)] font-normal">
                                   ({cit.page_ref || `Page ${cit.page_number || 1}`})
                                 </span>
                                 {cit.is_archived && (
@@ -447,17 +553,38 @@ export default function CampusCopilotPage() {
 
                       {/* Actionable Suggestion Card */}
                       {msg.actionableSuggestion && msg.actionableSuggestion.has_action && (
-                        <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-2">
+                        <div
+                          className={`mt-3 p-3 rounded-xl space-y-2 border ${
+                            msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                              ? "bg-slate-100/90 dark:bg-slate-800/60 border-[var(--border-color)] text-slate-800 dark:text-slate-200"
+                              : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200"
+                          }`}
+                        >
                           <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold">
+                            <div className="flex items-center gap-1.5 font-semibold">
                               <Calendar className="w-3.5 h-3.5" />
-                              <span>Actionable Campus Notice Detected</span>
+                              <span>
+                                {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                  ? "Historical Campus Notice (Past-Due)"
+                                  : "Actionable Campus Notice Detected"}
+                              </span>
                             </div>
-                            <Badge variant={msg.actionableSuggestion.priority === "high" ? "danger" : "warning"} size="sm">
-                              {msg.actionableSuggestion.priority.toUpperCase()}
+                            <Badge
+                              variant={
+                                msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                  ? "default"
+                                  : msg.actionableSuggestion.priority === "high"
+                                  ? "danger"
+                                  : "warning"
+                              }
+                              size="sm"
+                            >
+                              {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                ? "HISTORICAL"
+                                : msg.actionableSuggestion.priority.toUpperCase()}
                             </Badge>
                           </div>
-                          <div className="text-xs text-amber-900 dark:text-amber-200 font-medium">
+                          <div className="text-xs font-medium">
                             {msg.actionableSuggestion.title}
                           </div>
                           {msg.actionableSuggestion.reason && (
@@ -466,7 +593,12 @@ export default function CampusCopilotPage() {
                             </p>
                           )}
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                            <span>Deadline: {new Date(msg.actionableSuggestion.due_date).toLocaleDateString()}</span>
+                            <span>
+                              {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                ? "Past Date: "
+                                : "Deadline: "}
+                              {new Date(msg.actionableSuggestion.due_date).toLocaleDateString()}
+                            </span>
                             {msg.actionableSuggestion.course_code && (
                               <span className="font-mono text-[10px]">{msg.actionableSuggestion.course_code}</span>
                             )}
@@ -477,12 +609,14 @@ export default function CampusCopilotPage() {
                             </Badge>
                           ) : (
                             <Button
-                              variant="primary"
+                              variant={msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired ? "secondary" : "primary"}
                               size="sm"
                               className="w-full text-xs mt-1"
                               onClick={() => handleConfirmTask(msg.id, msg.actionableSuggestion!)}
                             >
-                              Add to Academic Deadlines
+                              {msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
+                                ? "Record as Historical Task"
+                                : "Add to Academic Deadlines"}
                             </Button>
                           )}
                         </div>
@@ -498,7 +632,7 @@ export default function CampusCopilotPage() {
                 {/* Real-time Streaming Response Card */}
                 {isLoading && (
                   <div className="flex flex-col items-start">
-                    <div className="max-w-[80%] rounded-2xl rounded-bl-sm p-4 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-xs">
+                    <div className="max-w-[80%] rounded-2xl rounded-bl-sm p-4 text-sm bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-xs">
                       {streamingDeclined && (
                         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-rose-200 text-rose-700 font-semibold text-xs">
                           <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -508,11 +642,11 @@ export default function CampusCopilotPage() {
 
                       <div className="whitespace-pre-line leading-relaxed">
                         {streamingText}
-                        <span className="inline-block w-1.5 h-4 ml-1 bg-teal-600 dark:bg-teal-400 animate-pulse align-middle" />
+                        <span className="inline-block w-1.5 h-4 ml-1 bg-[var(--action-primary)] animate-pulse align-middle" />
                       </div>
 
                       {streamingCitations.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1">
+                        <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-1">
                           <span className="text-[11px] font-semibold text-slate-500 uppercase">
                             Sources Identified:
                           </span>
@@ -520,7 +654,7 @@ export default function CampusCopilotPage() {
                             {streamingCitations.map((c, i) => (
                               <span
                                 key={i}
-                                className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950 text-teal-800 dark:text-teal-300 font-medium"
+                                className="text-xs px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-primary)] font-medium"
                               >
                                 [{i + 1}] {c.document_title}
                               </span>
@@ -536,7 +670,7 @@ export default function CampusCopilotPage() {
               </div>
 
               {/* Chat Input Bar */}
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 rounded-b-xl">
+              <div className="p-4 border-t border-[var(--border-color)] bg-[var(--surface-secondary)] rounded-b-xl">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -550,7 +684,7 @@ export default function CampusCopilotPage() {
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask a question about Thapar academic policies, curfews, or fees..."
                     disabled={isLoading}
-                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white placeholder-slate-400 disabled:opacity-60"
+                    className="flex-1 bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] placeholder-[var(--text-muted)] disabled:opacity-60 shadow-xs"
                   />
                   <Button
                     type="submit"
@@ -564,7 +698,7 @@ export default function CampusCopilotPage() {
                 </form>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
                   <span>Zero guessing policy: answers strictly cite approved campus documents.</span>
-                  <span className="text-teal-600 dark:text-teal-400 font-medium">Citation-Grounded Verified Search · 768-dim Embeddings</span>
+                  <span className="text-[var(--action-primary)] font-medium">Citation-Grounded Verified Search · 768-dim Embeddings</span>
                 </div>
               </div>
             </Card>
@@ -573,16 +707,17 @@ export default function CampusCopilotPage() {
           {/* Source Inspector Side Panel (Slides open when citation clicked) */}
           {selectedCitation && (
             <div className="lg:col-span-1 space-y-4">
-              <Card className="h-full border-teal-200 dark:border-teal-900 shadow-md flex flex-col justify-between">
+              <Card className="h-full border-[var(--border-color)] shadow-md flex flex-col justify-between">
                 <div>
-                  <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border-color)] pb-3">
                     <div className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                      <BookOpen className="w-4 h-4 text-[var(--action-primary)]" />
                       <CardTitle className="text-sm font-semibold">Source Inspector</CardTitle>
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedCitation(null)}
+                      aria-label="Close source inspector"
                       className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     >
                       <X className="w-4 h-4" />
@@ -629,7 +764,7 @@ export default function CampusCopilotPage() {
                     )}
 
                     {selectedCitation.section_title && (
-                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-300">
+                      <div className="text-xs font-semibold text-[var(--action-primary)]">
                         {selectedCitation.section_title}
                       </div>
                     )}
@@ -638,14 +773,14 @@ export default function CampusCopilotPage() {
                       <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">
                         Exact Retrieved Chunk Excerpt
                       </span>
-                      <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-mono whitespace-pre-line max-h-[320px] overflow-y-auto">
+                      <div className="p-3 rounded-lg bg-[var(--surface-secondary)] border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-mono whitespace-pre-line max-h-[320px] overflow-y-auto">
                         {selectedCitation.snippet || selectedCitation.excerpt}
                       </div>
                     </div>
                   </CardContent>
                 </div>
 
-                <CardFooter className="border-t border-slate-100 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/40 flex justify-end">
+                <CardFooter className="border-t border-[var(--border-color)] p-3 bg-[var(--surface-secondary)] flex justify-end">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -661,15 +796,15 @@ export default function CampusCopilotPage() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 2: ADMIN DOCUMENT MANAGEMENT UI */}
+      {/* TAB 2: ADMIN DOCUMENT MANAGEMENT UI (Admin Only)             */}
       {/* ============================================================ */}
-      {activeTab === "admin" && (
+      {activeTab === "admin" && isAdmin && (
         <div className="space-y-6">
           {/* Upload Form Card */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <FileCheck className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <FileCheck className="w-5 h-5 text-[var(--action-primary)]" />
                 <CardTitle className="text-lg">Ingest Approved Campus Document</CardTitle>
               </div>
               <CardDescription>
@@ -682,7 +817,7 @@ export default function CampusCopilotPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Document Title */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-xs font-semibold text-[var(--text-secondary)]">
                       Document Title *
                     </label>
                     <input
@@ -691,19 +826,19 @@ export default function CampusCopilotPage() {
                       placeholder="e.g. TIET Hostel Rules Winter 2024"
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none dark:text-white"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--focus-ring)] focus:outline-none placeholder-[var(--text-muted)]"
                     />
                   </div>
 
                   {/* Category */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-xs font-semibold text-[var(--text-secondary)]">
                       Source Category
                     </label>
                     <select
                       value={uploadCategory}
                       onChange={(e) => setUploadCategory(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none dark:text-white"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--focus-ring)] focus:outline-none"
                     >
                       <option value="circular">General Campus Circular</option>
                       <option value="academic_ordinance">Academic Regulations &amp; Ordinance</option>
@@ -720,7 +855,7 @@ export default function CampusCopilotPage() {
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Document File (.pdf, .docx, .txt) *
                   </label>
-                  <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-500 rounded-xl p-6 text-center transition bg-slate-50/50 dark:bg-slate-900/30">
+                  <div className="border-2 border-dashed border-[var(--border-color)] hover:border-[var(--action-primary)] rounded-xl p-6 text-center transition bg-[var(--surface-secondary)]">
                     <input
                       type="file"
                       id="doc-upload"
@@ -806,7 +941,7 @@ export default function CampusCopilotPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-semibold border-b border-slate-200 dark:border-slate-700">
+                    <thead className="bg-[var(--surface-secondary)] text-slate-500 uppercase font-semibold border-b border-[var(--border-color)]">
                       <tr>
                         <th className="p-3">Document Title</th>
                         <th className="p-3">Category</th>
@@ -821,7 +956,7 @@ export default function CampusCopilotPage() {
                         <tr key={doc.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
                           <td className="p-3 font-medium text-slate-900 dark:text-white">
                             <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-teal-600 shrink-0" />
+                              <FileText className="w-4 h-4 text-[var(--action-primary)] shrink-0" />
                               <span className="truncate max-w-[260px]">{doc.title}</span>
                             </div>
                           </td>
@@ -830,7 +965,7 @@ export default function CampusCopilotPage() {
                               {doc.source_label}
                             </Badge>
                           </td>
-                          <td className="p-3 font-semibold text-teal-700 dark:text-teal-400">
+                          <td className="p-3 font-semibold text-[var(--action-primary)]">
                             {doc.chunk_count} chunks
                           </td>
                           <td className="p-3">
@@ -845,6 +980,7 @@ export default function CampusCopilotPage() {
                             <button
                               type="button"
                               onClick={() => setDocToDelete(doc)}
+                              aria-label={`Delete ${doc.title} and vector chunks`}
                               className="text-rose-600 hover:text-rose-800 dark:hover:text-rose-400 p-1 rounded transition"
                               title="Delete document and vector chunks"
                             >

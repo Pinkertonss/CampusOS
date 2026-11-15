@@ -3,7 +3,7 @@ import io
 import uuid
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
 
 from ..core.auth import get_current_user_id, get_optional_user_id
 from ..core.supabase import get_supabase_client
@@ -26,6 +26,7 @@ from ..models.academic import (
     GradeWhatIfResponse,
     DailyPlanResponse,
     DailyActionItem,
+    DecisionMatrixResponse,
     AcademicSummaryResponse,
     AssessmentItem,
 )
@@ -42,6 +43,9 @@ router = APIRouter(prefix="/api/academic", tags=["Academic Dashboard"])
 
 # Router for official REST academic endpoints (/academics/...)
 academics_router = APIRouter(prefix="/academics", tags=["Academic Planning Engine"])
+
+# Router for singular prefix (/academic/...)
+academic_singular_router = APIRouter(prefix="/academic", tags=["Academic Short Prefix"])
 
 
 # ============================================================
@@ -132,16 +136,88 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
                 ]
             }
 
+    # Seamlessly incorporate official subject-offering enrollments and professor-marked sessions
+    try:
+        official_offerings = db.academic_rbac.list_offerings(user_id=user_id, role="student", is_admin=False)
+        existing_codes = {c.get("code") for c in courses_list}
+        for off in official_offerings:
+            if off.subject_code not in existing_codes:
+                courses_list.append({
+                    "id": off.id,
+                    "code": off.subject_code,
+                    "name": off.subject_name,
+                    "credits": 4.0,
+                    "grade": None,
+                    "target_grade": "A",
+                    "semester": 5,
+                    "is_official": True,
+                    "section": off.section,
+                })
+                existing_codes.add(off.subject_code)
+
+            if off.subject_code not in attendance_map:
+                enr = db.academic_rbac.offering_enrollments.get(off.id, {}).get(user_id)
+                enrolled_date_str = enr.enrolled_at[:10] if enr else None
+                sessions = db.academic_rbac.attendance_sessions.get(off.id, [])
+                att_count = 0
+                held_count = 0
+                recs = []
+                for s in sessions:
+                    if s.is_cancelled:
+                        continue
+                    if enrolled_date_str and s.session_date < enrolled_date_str:
+                        continue
+                    s_rec = db.academic_rbac.session_attendance_records.get(s.id, {}).get(user_id)
+                    if s_rec:
+                        if s_rec.status in ("excused", "unmarked"):
+                            continue
+                        held_count += 1
+                        if s_rec.status in ("present", "late"):
+                            att_count += 1
+                            recs.append({"status": "present", "date": s.session_date})
+                        elif s_rec.status == "absent":
+                            recs.append({"status": "absent", "date": s.session_date})
+                    # Unmarked sessions are not counted as absences
+
+                if held_count > 0:
+                    attendance_map[off.subject_code] = {
+                        "attended": att_count,
+                        "total_held": held_count,
+                        "records": recs,
+                        "is_official": True,
+                    }
+    except Exception:
+        pass
+
     if not assessments_list:
         today = date.today()
         assessments_list = [
-            {"id": "ass-1", "course_code": "UCS301", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 24.0, "due_date": (today - timedelta(days=40)).isoformat()},
-            {"id": "ass-2", "course_code": "UCS301", "name": "MST-2", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=15)).isoformat()},
-            {"id": "ass-3", "course_code": "UCS301", "name": "Assignment 1", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=45)).isoformat()},
-            {"id": "ass-4", "course_code": "UCS301", "name": "Assignment 2", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=20)).isoformat()},
-            {"id": "ass-5", "course_code": "UCS301", "name": "End Semester", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
-            {"id": "ass-6", "course_code": "UCS405", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=40)).isoformat()},
-            {"id": "ass-7", "course_code": "UCS405", "name": "Lab Eval 2", "weight_percent": 10.0, "max_marks": 25.0, "obtained_marks": None, "due_date": (today + timedelta(days=3)).isoformat()},
+            # UCS301 - Data Structures & Algorithms (100% total weight)
+            {"id": "ass-ucs301-1", "course_code": "UCS301", "name": "MST-1", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 24.0, "due_date": (today - timedelta(days=40)).isoformat()},
+            {"id": "ass-ucs301-2", "course_code": "UCS301", "name": "MST-2", "weight_percent": 20.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=15)).isoformat()},
+            {"id": "ass-ucs301-3", "course_code": "UCS301", "name": "Assignment 1", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=45)).isoformat()},
+            {"id": "ass-ucs301-4", "course_code": "UCS301", "name": "Assignment 2", "weight_percent": 5.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=20)).isoformat()},
+            {"id": "ass-ucs301-5", "course_code": "UCS301", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
+
+            # UCS310 - Database Management Systems (100% total weight)
+            {"id": "ass-ucs310-1", "course_code": "UCS310", "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 23.0, "due_date": (today - timedelta(days=35)).isoformat()},
+            {"id": "ass-ucs310-2", "course_code": "UCS310", "name": "Lab & Quizzes", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=10)).isoformat()},
+            {"id": "ass-ucs310-3", "course_code": "UCS310", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=18)).isoformat()},
+
+            # UCS405 - Operating Systems (100% total weight)
+            {"id": "ass-ucs405-1", "course_code": "UCS405", "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 21.0, "due_date": (today - timedelta(days=38)).isoformat()},
+            {"id": "ass-ucs405-2", "course_code": "UCS405", "name": "Lab Evaluation", "weight_percent": 20.0, "max_marks": 25.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=12)).isoformat()},
+            {"id": "ass-ucs405-3", "course_code": "UCS405", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=22)).isoformat()},
+
+            # UMA010 - Mathematics - III (100% total weight)
+            {"id": "ass-uma010-1", "course_code": "UMA010", "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 17.0, "due_date": (today - timedelta(days=36)).isoformat()},
+            {"id": "ass-uma010-2", "course_code": "UMA010", "name": "Tutorial Quizzes", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 12.0, "due_date": (today - timedelta(days=14)).isoformat()},
+            {"id": "ass-uma010-3", "course_code": "UMA010", "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=15)).isoformat()},
+
+            # UED101 - Engineering Design Project - I (100% total weight)
+            {"id": "ass-ued101-1", "course_code": "UED101", "name": "Mid-Term Project Review", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 27.0, "due_date": (today - timedelta(days=30)).isoformat()},
+            {"id": "ass-ued101-2", "course_code": "UED101", "name": "Continuous Sessional Work", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 18.0, "due_date": (today - timedelta(days=8)).isoformat()},
+            {"id": "ass-ued101-3", "course_code": "UED101", "name": "End Semester Prototype & Viva", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=25)).isoformat()},
         ]
 
     if not tasks_list:
@@ -154,12 +230,26 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
                 "priority": t.priority,
             })
 
+    timetable_list = []
+    for s in db.get_timetable(user_id):
+        timetable_list.append({
+            "id": s.id,
+            "course_code": s.course_code,
+            "course_name": s.course_name,
+            "day_of_week": s.day_of_week,
+            "start_time": s.start_time,
+            "end_time": s.end_time,
+            "venue": s.venue,
+            "slot_type": s.slot_type,
+        })
+
     return {
         "profile": profile,
         "courses": courses_list,
         "attendance": attendance_map,
         "assessments": assessments_list,
         "tasks": tasks_list,
+        "timetable": timetable_list,
     }
 
 
@@ -168,6 +258,7 @@ def _fetch_student_data(user_id: str) -> Dict[str, Any]:
 # ============================================================
 
 @academics_router.get("/summary", response_model=AcademicSummaryResponse)
+@academic_singular_router.get("/summary", response_model=AcademicSummaryResponse)
 @router.get("/summary", response_model=AcademicSummaryResponse)
 def get_academic_summary(user_id: str = Depends(get_current_user_id)):
     """
@@ -253,6 +344,7 @@ def get_academic_summary(user_id: str = Depends(get_current_user_id)):
 # ============================================================
 
 @academics_router.post("/attendance/what-if", response_model=AttendanceWhatIfResponse)
+@academic_singular_router.post("/attendance/what-if", response_model=AttendanceWhatIfResponse)
 @router.post("/attendance/what-if", response_model=AttendanceWhatIfResponse)
 def attendance_what_if_endpoint(
     req: AttendanceWhatIfRequest,
@@ -316,6 +408,7 @@ def attendance_what_if_endpoint(
 # ============================================================
 
 @academics_router.post("/grades/what-if", response_model=GradeWhatIfResponse)
+@academic_singular_router.post("/grades/what-if", response_model=GradeWhatIfResponse)
 @router.post("/grades/what-if", response_model=GradeWhatIfResponse)
 def grades_what_if_endpoint(
     req: GradeWhatIfRequest,
@@ -340,6 +433,15 @@ def grades_what_if_endpoint(
             assessments_data = [
                 a for a in assessments_data if a.get("course_code") == req.course_code
             ]
+            if not assessments_data:
+                # Provide standard fallback assessment breakdown so any course can be simulated
+                today = date.today()
+                code = req.course_code.upper()
+                assessments_data = [
+                    {"id": f"ass-{code}-mst", "course_code": code, "name": "Mid Semester Test", "weight_percent": 30.0, "max_marks": 30.0, "obtained_marks": 22.5, "due_date": (today - timedelta(days=30)).isoformat()},
+                    {"id": f"ass-{code}-sess", "course_code": code, "name": "Continuous Assessment", "weight_percent": 20.0, "max_marks": 20.0, "obtained_marks": 16.0, "due_date": (today - timedelta(days=10)).isoformat()},
+                    {"id": f"ass-{code}-est", "course_code": code, "name": "End Semester Exam", "weight_percent": 50.0, "max_marks": 100.0, "obtained_marks": None, "due_date": (today + timedelta(days=20)).isoformat()},
+                ]
 
     weighted_info = GradeEngine.calculate_current_weighted_score(assessments_data)
     curr_score = weighted_info["current_weighted_score"]
@@ -397,6 +499,7 @@ def grades_what_if_endpoint(
 # ============================================================
 
 @academics_router.get("/daily-plan", response_model=DailyPlanResponse)
+@academic_singular_router.get("/daily-plan", response_model=DailyPlanResponse)
 @router.get("/daily-plan", response_model=DailyPlanResponse)
 def get_daily_plan(
     reference_date: Optional[str] = None,
@@ -451,10 +554,26 @@ def get_daily_plan(
         tasks=tasks,
         target_percent=75.0,
         reference_date=ref_d,
+        timetable=data.get("timetable", []),
     )
 
     urgent_count = sum(1 for a in actions if a["priority"] == "urgent")
     high_count = sum(1 for a in actions if a["priority"] == "high")
+    conflicts_count = sum(1 for a in actions if a.get("category") == "conflict")
+
+    # Determine top focus message
+    recommended_focus = None
+    if conflicts_count > 0:
+        c = next(a for a in actions if a.get("category") == "conflict")
+        recommended_focus = f"Schedule Collision: Protect {c['course_code']} class at {c.get('schedule_info', 'scheduled slot')} to prevent detention risk, then complete pending deadlines."
+    elif any(a["priority"] == "urgent" and a["category"] == "attendance" for a in actions):
+        top_att = next(a for a in actions if a["priority"] == "urgent" and a["category"] == "attendance")
+        recommended_focus = f"Critical Attendance: Attend next {top_att['course_code']} lecture consecutively. You are in the detention risk zone."
+    elif any(a["priority"] == "urgent" and a["category"] == "deadline" for a in actions):
+        top_d = next(a for a in actions if a["priority"] == "urgent" and a["category"] == "deadline")
+        recommended_focus = f"High-Stakes Deadline: Prioritize preparation for {top_d['title']}."
+    else:
+        recommended_focus = "Academic standing is secure across all registered courses. Maintain attendance momentum."
 
     formatted_actions: List[DailyActionItem] = [
         DailyActionItem(
@@ -465,6 +584,9 @@ def get_daily_plan(
             course_code=a.get("course_code"),
             current_percent=a.get("current_percent"),
             due_date=a.get("due_date"),
+            schedule_info=a.get("schedule_info"),
+            conflict_warning=a.get("conflict_warning"),
+            risk_score=a.get("risk_score"),
             reason=a["reason"],
             action_required=a.get("action_required"),
         )
@@ -476,7 +598,98 @@ def get_daily_plan(
         total_actions=len(formatted_actions),
         urgent_count=urgent_count,
         high_count=high_count,
+        conflicts_count=conflicts_count,
+        recommended_focus=recommended_focus,
         actions=formatted_actions,
+    )
+
+
+# ============================================================
+# 4b. GET /academics/decision-matrix
+# ============================================================
+
+@academics_router.get("/decision-matrix", response_model=DecisionMatrixResponse)
+@academic_singular_router.get("/decision-matrix", response_model=DecisionMatrixResponse)
+@router.get("/decision-matrix", response_model=DecisionMatrixResponse)
+def get_decision_matrix(
+    reference_date: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Synthesizes academic attendance risk, calendar/timetable schedule, and
+    urgent deadlines into an integrated student decision intelligence matrix.
+    """
+    data = _fetch_student_data(user_id)
+    courses = data["courses"]
+    attendance_data = data["attendance"]
+    assessments = data["assessments"]
+    tasks = data["tasks"]
+    timetable = data.get("timetable", [])
+
+    ref_d = date.today()
+    if reference_date:
+        try:
+            ref_d = datetime.strptime(reference_date, "%Y-%m-%d").date()
+        except Exception:
+            pass
+
+    courses_att: List[Dict[str, Any]] = []
+    for c in courses:
+        code = c.get("code") or c.get("course_code") or ""
+        cid = c.get("id") or code
+        att_entry = attendance_data.get(cid) or attendance_data.get(code)
+
+        if att_entry and "records" in att_entry:
+            stats = AttendanceEngine.process_records(att_entry["records"])
+            a = stats["attended"]
+            t = stats["total_held"]
+        elif att_entry:
+            a = int(att_entry.get("attended", 0))
+            t = int(att_entry.get("total_held", 0))
+        else:
+            a, t = 0, 0
+
+        courses_att.append({
+            "course_code": code,
+            "course_name": c.get("name") or c.get("course_name") or code,
+            "attended_classes": a,
+            "total_classes": t,
+        })
+
+    matrix = ActionPlanEngine.generate_decision_matrix(
+        courses_attendance=courses_att,
+        assessments=assessments,
+        tasks=tasks,
+        timetable=timetable,
+        target_percent=75.0,
+        reference_date=ref_d,
+    )
+
+    formatted_priorities = [
+        DailyActionItem(
+            id=a["id"],
+            category=a["category"],
+            priority=a["priority"],
+            title=a["title"],
+            course_code=a.get("course_code"),
+            current_percent=a.get("current_percent"),
+            due_date=a.get("due_date"),
+            schedule_info=a.get("schedule_info"),
+            conflict_warning=a.get("conflict_warning"),
+            risk_score=a.get("risk_score"),
+            reason=a["reason"],
+            action_required=a.get("action_required"),
+        )
+        for a in matrix["priorities"]
+    ]
+
+    return DecisionMatrixResponse(
+        date=matrix["date"],
+        recommended_focus=matrix["recommended_focus"],
+        conflicts=matrix["conflicts"],
+        today_schedule=matrix["today_schedule"],
+        priorities=formatted_priorities,
+        academic_standing_summary=matrix["academic_standing_summary"],
     )
 
 
@@ -803,3 +1016,37 @@ async def import_academic_csv(
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV file: {str(e)}")
+
+
+@router.get("/import-csv-template")
+@academics_router.get("/import-csv-template")
+@academic_singular_router.get("/import-csv-template")
+def get_csv_template(template_type: str = Query("attendance", pattern="^(attendance|courses)$")):
+    """
+    Returns an RFC 4180 compliant CSV template for bulk academic record import.
+    """
+    if template_type == "attendance":
+        content = (
+            "course_code,course_name,attended,total\n"
+            "UCS301,Data Structures & Algorithms,36,40\n"
+            "UCS310,Database Management Systems,25,32\n"
+            "UCS405,Operating Systems,18,25\n"
+            "UMA010,Mathematics - III,17,28\n"
+            "UED101,Engineering Design Project - I,19,20\n"
+        )
+        filename = "thapar_attendance_template.csv"
+    else:
+        content = (
+            "course_code,course_name,credits,target_grade\n"
+            "UCS301,Data Structures & Algorithms,4.5,A\n"
+            "UCS310,Database Management Systems,4.0,A-\n"
+            "UCS405,Operating Systems,4.0,B\n"
+            "UMA010,Mathematics - III,3.5,B+\n"
+        )
+        filename = "thapar_courses_template.csv"
+
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

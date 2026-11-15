@@ -161,6 +161,7 @@ class ReuseImpactResponse(BaseModel):
     total_waste_diverted_kg: float
     co2_avoided_kg: float
     sdg_framework: str = "SDG 12: Responsible Consumption and Production"
+    estimation_assumptions: Optional[Dict[str, str]] = None
     per_month_series: List[MonthlyImpactSeries]
 
 # ============================================================
