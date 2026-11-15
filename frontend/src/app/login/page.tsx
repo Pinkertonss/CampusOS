@@ -146,7 +146,7 @@ function LoginForm() {
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
+              <div className="w-full border-t border-[var(--border-color)]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-[var(--surface-card)] px-2 text-[var(--text-secondary)] font-medium tracking-wider">
@@ -160,12 +160,12 @@ function LoginForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Campus Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -184,13 +184,13 @@ function LoginForm() {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="password"
-                  className="block text-xs font-medium text-slate-300"
+                  className="block text-xs font-medium text-[var(--text-secondary)]"
                 >
                   Password
                 </label>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -205,7 +205,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -223,7 +223,7 @@ function LoginForm() {
               fullWidth
               isLoading={submitting}
               rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="mt-2 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
+              className="mt-2"
             >
               Sign In
             </Button>
@@ -237,7 +237,7 @@ function LoginForm() {
               fullWidth
               isLoading={googleSubmitting}
               onClick={handleGoogleSignIn}
-              className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+              className="border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
             >
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path
@@ -261,7 +261,7 @@ function LoginForm() {
             </Button>
           </div>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-6 text-center text-xs text-[var(--text-secondary)]">
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"
@@ -273,7 +273,7 @@ function LoginForm() {
         </Card>
 
         {/* Security & Privacy Footer Note */}
-        <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
           <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
           <span>Privacy first · Row-Level Security · Explicit consent only</span>
         </div>

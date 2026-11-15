@@ -161,12 +161,12 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Full Name
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <UserIcon className="w-4 h-4" />
                 </div>
                 <input
@@ -208,7 +208,7 @@ export default function SignupPage() {
                     className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-[var(--text-muted)] mt-1">
                   Required by TIET Senate to verify administrative governance permissions.
                 </p>
               </div>
@@ -217,12 +217,12 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="signup-email"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Campus Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -240,12 +240,12 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="signup-password"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -260,7 +260,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -275,12 +275,12 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="signup-confirm-password"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Confirm Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -301,7 +301,7 @@ export default function SignupPage() {
               fullWidth
               isLoading={submitting}
               rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="mt-2 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
+              className="mt-2"
             >
               Sign Up & Continue
             </Button>
@@ -309,7 +309,7 @@ export default function SignupPage() {
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
+              <div className="w-full border-t border-[var(--border-color)]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-[var(--surface-card)] px-2 text-[var(--text-secondary)] font-medium tracking-wider">
@@ -324,7 +324,7 @@ export default function SignupPage() {
             fullWidth
             isLoading={googleSubmitting}
             onClick={handleGoogleSignIn}
-            className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+            className="border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
@@ -347,7 +347,7 @@ export default function SignupPage() {
             Sign up with Google
           </Button>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-6 text-center text-xs text-[var(--text-secondary)]">
             Already have an account?{" "}
             <Link
               href="/login"
@@ -358,7 +358,7 @@ export default function SignupPage() {
           </div>
         </Card>
 
-        <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
           <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
           <span>Privacy first · Row-Level Security on all user tables</span>
         </div>

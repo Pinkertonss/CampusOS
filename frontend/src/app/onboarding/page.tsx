@@ -129,12 +129,12 @@ export default function OnboardingPage() {
             <div>
               <label
                 htmlFor="onboarding-name"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Full Name
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <UserIcon className="w-4 h-4" />
                 </div>
                 <input
@@ -154,12 +154,12 @@ export default function OnboardingPage() {
               <div>
                 <label
                   htmlFor="onboarding-roll"
-                  className="block text-xs font-medium text-slate-300 mb-1.5"
+                  className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
                 >
                   TIET Roll Number
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                     <Hash className="w-4 h-4" />
                   </div>
                   <input
@@ -177,12 +177,12 @@ export default function OnboardingPage() {
               <div>
                 <label
                   htmlFor="onboarding-semester"
-                  className="block text-xs font-medium text-slate-300 mb-1.5"
+                  className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
                 >
                   Current Semester
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                     <Layers className="w-4 h-4" />
                   </div>
                   <select
@@ -205,12 +205,12 @@ export default function OnboardingPage() {
             <div>
               <label
                 htmlFor="onboarding-branch"
-                className="block text-xs font-medium text-slate-300 mb-1.5"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
               >
                 Engineering Branch / Department
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                   <BookOpen className="w-4 h-4" />
                 </div>
                 <select
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
                 <ShieldCheck className="w-4 h-4" />
                 <span>Privacy & Data Personalization Consent</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 CampusOS processes your course enrollments, attendance records, and
                 grades <strong>strictly to personalize your dashboard</strong> and
                 compute What-If projections. Your personal data is protected by
@@ -246,9 +246,9 @@ export default function OnboardingPage() {
                   type="checkbox"
                   checked={consentGiven}
                   onChange={(e) => setConsentGiven(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[var(--surface-card)] text-[var(--action-primary)] focus:ring-[var(--focus-ring)] focus:ring-offset-slate-950 cursor-pointer"
+                  className="mt-0.5 h-4 w-4 rounded border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--action-primary)] focus:ring-[var(--focus-ring)] cursor-pointer"
                 />
-                <span className="text-xs font-medium text-slate-200">
+                <span className="text-xs font-medium text-[var(--text-primary)]">
                   I consent to CampusOS using my academic data solely to personalize
                   my dashboard, attendance tracker, and Copilot suggestions.
                 </span>
@@ -262,7 +262,7 @@ export default function OnboardingPage() {
               fullWidth
               isLoading={submitting}
               rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="mt-4 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] py-2.5 text-sm font-semibold"
+              className="mt-4 py-2.5 text-sm font-semibold"
             >
               Complete Setup & Enter CampusOS
             </Button>
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
         </Card>
 
         {/* Footer info */}
-        <div className="text-center text-xs text-slate-500">
+        <div className="text-center text-xs text-[var(--text-muted)]">
           Thapar Institute of Engineering & Technology · Single-Campus Hackathon Pilot
         </div>
       </div>

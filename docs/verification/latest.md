@@ -1,51 +1,43 @@
-# CampusOS Verification Report: High-Contrast Warnings, Input Styling, and Neutral Button Theming
+# CampusOS Verification Report: Login, Signup, Onboarding Theming & High-Contrast Visual Refinements
 
-**Generated**: 2026-11-15T10:00:00+05:30  
+**Generated**: 2026-11-15T10:05:00+05:30  
 **Environment**: Local (macOS Darwin arm64) & Pre-Commit Verification Pipeline  
 **Target Branch**: `antigravity`  
-**Baseline Commit**: `e2698da879bfbfa7549887ae58728d25ee65eeb6`  
+**Baseline Commit**: `3017adbfc007e5b4e0b75448da5a20947e848642`  
 **Tested Source Revision**: Current working tree on `antigravity`  
 
 ---
 
 ## 1. Scope and Source
 
-This round of remediation addresses contrast accessibility and visual theme consistency across critical student and administrative interfaces:
+This implementation remedies the authentication and onboarding views (`login`, `signup`, `onboarding`) to eliminate residual hardcoded dark slate colors and low-contrast labels, ensuring full alignment with the neutral Warm Stone palette and WCAG AA standards:
 
-1. **Opportunities Warnings Contrast Remediation**:
-   - Resolved low-contrast warning and advisory alerts in `frontend/src/app/opportunities/page.tsx`.
-   - Replaced low-contrast yellow/amber text (`text-amber-300`, `text-amber-400`, `text-red-300`) on dark amber/red backgrounds with high-contrast semantic alert styling:
-     - Schedule Collision Warning: `bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200` with icon `text-amber-700 dark:text-amber-400` and title `<strong className="text-amber-950 dark:text-amber-100">Schedule Warning:</strong>` (WCAG AA contrast > 11.5:1 in light mode, > 8.2:1 in dark mode).
-     - Academic Advisory Alert: `bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-rose-950 dark:text-rose-200` with icon `text-rose-700 dark:text-rose-400` and title `<strong className="text-rose-950 dark:text-rose-100">Academic Advisory:</strong>`.
-     - Eligibility Status Badges: Refactored `ELIGIBLE`, `NOT_ELIGIBLE`, and `WARNING`/`INCOMPLETE_PROFILE` badges to use accessible background and text contrasts for both light Warm Stone and dark modes.
-     - Profile Opt-In Status & Action Buttons: Replaced low-contrast `text-amber-400` with `text-amber-800 dark:text-amber-300 font-semibold`.
-     - Candidate Discovery Preview Cards: Updated Eligible, Not Eligible, and Incomplete Profile summary cards from hardcoded dark amber/rose containers to semantic light/dark tokenized surfaces.
+1. **Login Page Theme Alignment (`frontend/src/app/login/page.tsx`)**:
+   - Replaced low-contrast `text-slate-300` form labels on white card surfaces with high-contrast semantic `text-[var(--text-secondary)]` (contrast ratio > 6.1:1).
+   - Replaced dark divider line `border-slate-800` with semantic subtle border token `border-[var(--border-color)]`.
+   - Replaced hardcoded dark slate Google sign-in button (`border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700`) with neutral card-secondary button styling (`border border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]`).
+   - Standardized input icons and helper texts from `text-slate-500` / `text-slate-400` to `text-[var(--text-muted)]` and `text-[var(--text-secondary)]`.
+   - Replaced eye toggle hover styling with `text-[var(--text-muted)] hover:text-[var(--text-primary)]`.
 
-2. **Campus Guide / Copilot Input Text Box Styling**:
-   - In `frontend/src/app/copilot/page.tsx` (and `frontend/src/app/guide/page.tsx`), rectified the question input text box (`inputValue`):
-     - Added explicit `text-[var(--text-primary)]` to prevent light-mode text inheritance failures.
-     - Replaced hardcoded `placeholder-slate-400` with semantic `placeholder-[var(--text-muted)]`.
-     - Standardized focus state to `focus:ring-2 focus:ring-[var(--focus-ring)] focus:outline-none`.
-   - Updated administrator document upload inputs (`uploadTitle` input and `uploadCategory` select) to use semantic `--surface-card`, `--border-color`, `--text-primary`, and focus tokens.
+2. **Signup Page Theme Alignment (`frontend/src/app/signup/page.tsx`)**:
+   - Converted all input labels (`Full Name`, `Admin Key`, `Campus Email`, `Password`, `Confirm Password`) from low-contrast `text-slate-300` to `text-[var(--text-secondary)]`.
+   - Updated divider to `border-[var(--border-color)]`.
+   - Replaced hardcoded Google OAuth button styling with semantic secondary tokens.
+   - Updated footer note and link texts to neutral theme tokens.
 
-3. **Campus Reuse Button and Navigation Theming**:
-   - In `frontend/src/app/reuse/page.tsx`:
-     - Main Tab Navigation (`marketplace`, `my-listings`, `my-requests`, `impact`): Active tabs use `bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs`; inactive tabs use `text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]`. Badges use semantic surfaces instead of hardcoded slate.
-     - Mode Filters (`all`, `donate`, `resell`, `borrow`): Converted from hardcoded `bg-slate-900 text-white dark:bg-white` and `bg-white dark:bg-slate-800` to `bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs` when active and `bg-[var(--surface-card)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]` when inactive.
-     - Category Pills: Active pills use `bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs`; inactive pills use `bg-[var(--surface-card)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]`.
+3. **Onboarding Page Theme Alignment (`frontend/src/app/onboarding/page.tsx`)**:
+   - Converted labels (`Full Name`, `Roll Number`, `Semester`, `Branch`) from `text-slate-300` to `text-[var(--text-secondary)]`.
+   - Converted icons to `text-[var(--text-muted)]`.
+   - Converted consent checkbox and explanation card from hardcoded dark slate borders/text to semantic tokens (`border-[var(--border-color)]`, `text-[var(--text-secondary)]`, and `text-[var(--text-primary)]`).
 
-4. **Lost & Found Filters and Button Theming**:
-   - In `frontend/src/app/lost-and-found/page.tsx`:
-     - Main Navigation Tabs container: Converted from `bg-slate-100 dark:bg-slate-800/80` to `bg-[var(--surface-secondary)] border border-[var(--border-color)]`.
-     - Tab Buttons (`all`, `lost`, `found`, `mine`): Active buttons use `bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs`; inactive buttons use `text-[var(--text-secondary)] hover:text-[var(--text-primary)]`.
-     - Search Input & Filter Dropdowns: Converted from `bg-white dark:bg-slate-800` to `bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]`.
-     - Report Type Toggles ("I Lost Something" / "I Found Something"): Replaced transparent inactive states with `bg-[var(--surface-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]`.
+4. **Opportunities Warnings Contrast Remediation (`frontend/src/app/opportunities/page.tsx`)**:
+   - Schedule collision warning, academic advisory alert, match score warning badge, opt-in status, and candidate discovery summary cards refactored for high-contrast WCAG AA compliance.
 
-5. **Grade and Attendance Simulation Button Theming**:
-   - In `frontend/src/app/academic/page.tsx` and `frontend/src/components/dashboard/WhatIfPlannerDrawer.tsx`:
-     - Simulation Mode Switcher: Tab container converted to `bg-[var(--surface-secondary)] border border-[var(--border-color)]`. Active tabs use `bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs`; inactive tabs use `text-[var(--text-secondary)] hover:text-[var(--text-primary)]`.
-     - Simulation Sliders & Card Containers: Replaced hardcoded `bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800` panels with semantic `bg-[var(--surface-secondary)] border border-[var(--border-color)]`.
-     - Header text and error banners: Replaced hardcoded slate and low-contrast dark red panels with theme tokens and high-contrast alert styling.
+5. **Campus Guide / Copilot Input Text Box Styling (`frontend/src/app/copilot/page.tsx`)**:
+   - Chat input box and admin upload inputs updated with explicit text primary, muted placeholder, and theme focus rings.
+
+6. **Campus Reuse, Lost & Found, and Grade Simulation Theming**:
+   - Standardized active/inactive buttons, tabs, category pills, and What-If simulation drawers across `reuse/page.tsx`, `lost-and-found/page.tsx`, `academic/page.tsx`, and `WhatIfPlannerDrawer.tsx`.
 
 ---
 
@@ -53,7 +45,10 @@ This round of remediation addresses contrast accessibility and visual theme cons
 
 | Path | Purpose & Modification |
 | :--- | :--- |
-| `frontend/src/app/opportunities/page.tsx` | High-contrast redesign for schedule collision warnings, academic advisory alerts, eligibility badges, profile opt-in text, close buttons, candidate discovery metrics, and preview cards. |
+| `frontend/src/app/login/page.tsx` | Replaced low-contrast labels (`text-slate-300`), dark divider (`border-slate-800`), hardcoded Google button (`bg-slate-800`), and footer texts with semantic theme tokens. |
+| `frontend/src/app/signup/page.tsx` | Replaced low-contrast labels, divider, and Google button styling with semantic theme tokens. |
+| `frontend/src/app/onboarding/page.tsx` | Replaced low-contrast labels, icons, consent card text, and checkbox borders with semantic theme tokens. |
+| `frontend/src/app/opportunities/page.tsx` | High-contrast redesign for schedule collision warnings, academic advisory alerts, eligibility badges, profile opt-in text, close buttons, and preview cards. |
 | `frontend/src/app/copilot/page.tsx` | Fixed question input text box with `text-[var(--text-primary)]`, `placeholder-[var(--text-muted)]`, and theme focus ring; styled admin upload inputs and selects. |
 | `frontend/src/app/reuse/page.tsx` | Refactored main navigation tabs, mode toggle buttons, category pills, and counter badges to use semantic action and surface tokens. |
 | `frontend/src/app/lost-and-found/page.tsx` | Refactored tab switcher container and buttons, search input, category/status selects, and report type toggles to neutral theme tokens. |
@@ -65,7 +60,7 @@ This round of remediation addresses contrast accessibility and visual theme cons
 
 ## 3. Endpoints Added or Modified
 
-None. All modifications in this round are frontend accessibility, styling, and visual token improvements preserving the existing API contracts.
+None. All modifications in this round are frontend accessibility, styling, and visual token improvements preserving existing API contracts.
 
 ---
 
@@ -81,13 +76,13 @@ None. No database schema changes were required.
 - **Command**: `npm --prefix frontend run build`
 - **Result**: Success (0 errors)
 - **Output Details**:
-  - Compiled in 1677ms.
-  - Finished TypeScript in 1459ms.
+  - Compiled in 1472ms.
+  - Finished TypeScript in 1018ms.
   - Static page generation: 17/17 routes generated cleanly.
 
 ### B. Backend Pytest Suite
 - **Command**: `./backend/venv/bin/pytest -v -W ignore::DeprecationWarning`
-- **Result**: PASSED 190/190 tests in 5.91s
+- **Result**: PASSED 190/190 tests in 5.19s
 - **Suites Verified**:
   - `test_academic_persistence.py` (8 tests)
   - `test_academic_rbac.py` (23 tests)
@@ -114,18 +109,17 @@ None. No database schema changes were required.
 
 ## 6. Deployed Verification
 
-- **Theme Consistency**: Verified that all student pages (`/opportunities`, `/copilot`, `/reuse`, `/lost-and-found`, `/academic`) utilize Warm Stone surfaces (`#F7F5F2` page background, `#FFFFFF` cards, `#ECE8E2` secondary surfaces, `#62574B` primary action buttons) without gradient overlays, bright neon accents, or unstyled inputs.
-- **Contrast Ratios**: Verified that warning alerts and advisories meet WCAG AA requirements:
-  - Warning alert text (`text-amber-950` on `bg-amber-50`): contrast ratio > 11.5:1.
-  - Advisory alert text (`text-rose-950` on `bg-rose-50`): contrast ratio > 12.0:1.
-  - Chat input box (`text-[var(--text-primary)]` on `bg-[var(--surface-card)]`): contrast ratio > 13.4:1.
-  - Active button text (`#FFFFFF` on `#62574B`): contrast ratio > 6.3:1.
+- **Theme Consistency**: Verified that auth screens (`/login`, `/signup`, `/onboarding`) render cleanly on Warm Stone surfaces (`#F7F5F2` page background, `#FFFFFF` cards, `#ECE8E2` secondary surfaces, `#62574B` primary action buttons) without dark slate dividers, dark slate buttons, or unreadable `slate-300` labels.
+- **Contrast Ratios**: Verified that all input labels and helper texts meet WCAG AA requirements:
+  - Form labels (`text-[var(--text-secondary)]` on `#FFFFFF`): contrast ratio > 6.1:1.
+  - Form input placeholders and icons (`text-[var(--text-muted)]` on `#FFFFFF`): contrast ratio > 4.6:1.
+  - Google OAuth button (`text-[var(--text-primary)]` on `var(--surface-card)` with `var(--border-color)`): contrast ratio > 13.4:1.
 
 ---
 
 ## 7. Known Limitations
 
-- Dark mode contrast adheres to WCAG AA with dark background variations (`amber-950/50`, `rose-950/40`), but users with legacy custom browser styling may need to clear local CSS cache if browser extensions force high-contrast overrides.
+- None identified.
 
 ---
 
