@@ -144,7 +144,7 @@ export default function OnboardingPage() {
                   placeholder="e.g. Arjun Mehta"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                  className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function OnboardingPage() {
                     placeholder="e.g. 102203099"
                     value={rollNo}
                     onChange={(e) => setRollNo(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                    className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                   />
                 </div>
               </div>
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
                     id="onboarding-semester"
                     value={semester}
                     onChange={(e) => setSemester(Number(e.target.value))}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                    className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
                       <option key={s} value={s}>
@@ -217,7 +217,7 @@ export default function OnboardingPage() {
                   id="onboarding-branch"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                  className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 >
                   {BRANCH_OPTIONS.map((b) => (
                     <option key={b.code} value={b.code}>
@@ -229,7 +229,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Privacy & Consent Checkbox Card */}
-            <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3">
+            <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-3">
               <div className="flex items-center gap-2 text-[var(--action-primary)] font-semibold text-xs">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Privacy & Data Personalization Consent</span>
@@ -246,7 +246,7 @@ export default function OnboardingPage() {
                   type="checkbox"
                   checked={consentGiven}
                   onChange={(e) => setConsentGiven(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-slate-900 text-[var(--action-primary)] focus:ring-[var(--focus-ring)] focus:ring-offset-slate-950 cursor-pointer"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[var(--surface-card)] text-[var(--action-primary)] focus:ring-[var(--focus-ring)] focus:ring-offset-slate-950 cursor-pointer"
                 />
                 <span className="text-xs font-medium text-slate-200">
                   I consent to CampusOS using my academic data solely to personalize

@@ -207,7 +207,7 @@ export default function DataEntryModal({
             <Plus className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-base font-bold text-slate-900 dark:text-white">
+            <div className="text-base font-bold text-[var(--text-primary)]">
               Data Entry &amp; Import
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -219,14 +219,14 @@ export default function DataEntryModal({
     >
       <div className="space-y-4">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab("course")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "course"
                 ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             Add Course
@@ -237,7 +237,7 @@ export default function DataEntryModal({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "attendance"
                 ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             Log Attendance
@@ -248,7 +248,7 @@ export default function DataEntryModal({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "assessment"
                 ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             Add Deadline
@@ -259,7 +259,7 @@ export default function DataEntryModal({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "csv"
                 ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             Bulk CSV Import
@@ -271,7 +271,7 @@ export default function DataEntryModal({
           <form onSubmit={handleAddCourse} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Course Code
                 </label>
                 <input
@@ -280,12 +280,12 @@ export default function DataEntryModal({
                   placeholder="e.g. UCS503"
                   value={courseCode}
                   onChange={(e) => setCourseCode(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono uppercase text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs font-mono uppercase text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Credits
                 </label>
                 <input
@@ -296,13 +296,13 @@ export default function DataEntryModal({
                   required
                   value={credits}
                   onChange={(e) => setCredits(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Course Name
               </label>
               <input
@@ -311,18 +311,18 @@ export default function DataEntryModal({
                 placeholder="e.g. Design & Analysis of Algorithms"
                 value={courseName}
                 onChange={(e) => setCourseName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Target Grade
               </label>
               <select
                 value={targetGrade}
                 onChange={(e) => setTargetGrade(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
               >
                 <option value="A+">A+ (10.0)</option>
                 <option value="A">A (10.0)</option>
@@ -349,7 +349,7 @@ export default function DataEntryModal({
         {activeTab === "attendance" && (
           <form onSubmit={handleLogAttendance} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Course
               </label>
               <select
@@ -362,7 +362,7 @@ export default function DataEntryModal({
                     setAttTotal(found.total_held);
                   }
                 }}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
               >
                 {courses.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -374,7 +374,7 @@ export default function DataEntryModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Attended Classes
                 </label>
                 <input
@@ -383,12 +383,12 @@ export default function DataEntryModal({
                   required
                   value={attAttended}
                   onChange={(e) => setAttAttended(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Total Classes Held
                 </label>
                 <input
@@ -397,12 +397,12 @@ export default function DataEntryModal({
                   required
                   value={attTotal}
                   onChange={(e) => setAttTotal(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
                 />
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            <div className="p-3 rounded-lg bg-[var(--surface-secondary)] text-xs text-[var(--text-secondary)]">
               Computed Attendance:{" "}
               <strong className="text-[var(--action-primary)] font-mono">
                 {attTotal > 0 ? Math.round((attAttended / attTotal) * 100) : 100}%
@@ -430,7 +430,7 @@ export default function DataEntryModal({
         {activeTab === "assessment" && (
           <form onSubmit={handleAddTask} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Title / Assessment Name
               </label>
               <input
@@ -439,19 +439,19 @@ export default function DataEntryModal({
                 placeholder="e.g. UCS503 Assignment 4 or Lab Exam"
                 value={taskTitle}
                 onChange={(e) => setTaskTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Course
                 </label>
                 <select
                   value={taskCourseCode}
                   onChange={(e) => setTaskCourseCode(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
                 >
                   {courses.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -462,7 +462,7 @@ export default function DataEntryModal({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Due Date
                 </label>
                 <input
@@ -470,19 +470,19 @@ export default function DataEntryModal({
                   required
                   value={taskDueDate}
                   onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Priority
               </label>
               <select
                 value={taskPriority}
                 onChange={(e) => setTaskPriority(e.target.value as "low" | "medium" | "high")}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]"
               >
                 <option value="high">High (Due within 7 days)</option>
                 <option value="medium">Medium</option>
@@ -540,11 +540,11 @@ export default function DataEntryModal({
             </div>
 
             {/* Drop / Select File Box */}
-            <div className="p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center space-y-2">
+            <div className="p-6 border-2 border-dashed border-[var(--border-color)] rounded-xl text-center space-y-2">
               <FileSpreadsheet className="w-8 h-8 text-[var(--action-primary)] mx-auto" />
-              <div className="text-xs text-slate-600 dark:text-slate-400">
+              <div className="text-xs text-[var(--text-secondary)]">
                 {selectedFile ? (
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="font-semibold text-[var(--text-primary)]">
                     Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
                   </span>
                 ) : (

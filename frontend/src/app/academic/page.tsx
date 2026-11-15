@@ -251,14 +251,14 @@ export default function AcademicPlannerPage() {
 
               <div className="p-6 space-y-6">
                 {/* Course Selection */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Select Target Course:
                   </span>
                   <select
                     value={selectedCourseCode}
                     onChange={(e) => setSelectedCourseCode(e.target.value)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
+                    className="px-3.5 py-1.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
                   >
                     {summary?.courses.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -273,7 +273,7 @@ export default function AcademicPlannerPage() {
                   <div className="space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Target Grade Selector */}
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                           <Target className="w-4 h-4 text-[var(--action-primary)]" />
                           Target Overall Score:
@@ -281,7 +281,7 @@ export default function AcademicPlannerPage() {
                         <select
                           value={targetGrade}
                           onChange={(e) => setTargetGrade(Number(e.target.value))}
-                          className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-slate-100"
+                          className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-primary)]"
                         >
                           <option value="90">90% — Grade A+ (Exceptional)</option>
                           <option value="85">85% — Grade A (Excellent)</option>
@@ -293,7 +293,7 @@ export default function AcademicPlannerPage() {
                       </div>
 
                       {/* End Semester Hypothetical Slider */}
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
                         <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                           <span className="flex items-center gap-1.5">
                             <Sliders className="w-4 h-4 text-[var(--action-primary)]" />
@@ -377,7 +377,7 @@ export default function AcademicPlannerPage() {
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-sky-900/30 border border-sky-800/60 text-xs text-sky-200">
+                        <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]">
                           {gradeResult.message}
                         </div>
                       </div>
@@ -390,7 +390,7 @@ export default function AcademicPlannerPage() {
                   <div className="space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Attend Next N Slider */}
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
                         <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                           <span className="flex items-center gap-1.5">
                             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -416,7 +416,7 @@ export default function AcademicPlannerPage() {
                       </div>
 
                       {/* Skip Next M Slider */}
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
                         <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                           <span className="flex items-center gap-1.5">
                             <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -537,7 +537,7 @@ export default function AcademicPlannerPage() {
             >
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-700/60 uppercase">
+                  <thead className="bg-[var(--surface-secondary)] text-[var(--text-secondary)] font-semibold border-b border-[var(--border-color)] uppercase">
                     <tr>
                       <th className="p-3">Course</th>
                       <th className="p-3">Attendance</th>
@@ -629,7 +629,7 @@ export default function AcademicPlannerPage() {
             <Card
               header={
                 <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-sky-500" />
+                  <GraduationCap className="w-4 h-4 text-[var(--action-primary)]" />
                   <span>Evaluation &amp; Grading</span>
                 </CardTitle>
               }

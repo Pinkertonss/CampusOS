@@ -198,6 +198,31 @@ html.dark[data-theme="admin"] {
   --color-teal-900: var(--text-primary);
   --color-teal-950: var(--surface-secondary);
 
+  /* Sky & Blue palettes remapped to neutral action & surface tokens */
+  --color-sky-50: var(--accent-tint);
+  --color-sky-100: var(--accent-badge-bg);
+  --color-sky-200: var(--border-color);
+  --color-sky-300: var(--text-secondary);
+  --color-sky-400: var(--text-secondary);
+  --color-sky-500: var(--action-primary);
+  --color-sky-600: var(--action-primary);
+  --color-sky-700: var(--action-primary-hover);
+  --color-sky-800: var(--action-primary-active);
+  --color-sky-900: var(--text-primary);
+  --color-sky-950: var(--surface-secondary);
+
+  --color-blue-50: var(--accent-tint);
+  --color-blue-100: var(--accent-badge-bg);
+  --color-blue-200: var(--border-color);
+  --color-blue-300: var(--text-secondary);
+  --color-blue-400: var(--text-secondary);
+  --color-blue-500: var(--action-primary);
+  --color-blue-600: var(--action-primary);
+  --color-blue-700: var(--action-primary-hover);
+  --color-blue-800: var(--action-primary-active);
+  --color-blue-900: var(--text-primary);
+  --color-blue-950: var(--surface-secondary);
+
   --color-surface: var(--surface);
   --color-surface-card: var(--surface-card);
   --color-surface-muted: var(--surface-muted);

@@ -51,7 +51,7 @@ export default function UpcomingDeadlinesList({
     <Card className="p-5 sm:p-6 border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
             Upcoming Deadlines
             {pendingDeadlines.length > 0 && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-badge-bg)] text-[var(--action-primary)] font-mono">
@@ -121,7 +121,7 @@ export default function UpcomingDeadlinesList({
                         </span>
                       )}
                       <h4
-                        className={`text-sm font-medium text-slate-900 dark:text-slate-100 leading-snug ${
+                        className={`text-sm font-medium text-[var(--text-primary)] leading-snug ${
                           isCompleted ? "line-through text-slate-400 dark:text-slate-500" : ""
                         }`}
                       >

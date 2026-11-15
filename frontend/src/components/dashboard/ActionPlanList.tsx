@@ -132,12 +132,12 @@ export default function ActionPlanList({
                       </span>
                     )}
                     {action.schedule_info && (
-                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-slate-800/90 text-[var(--text-primary)] border border-[var(--border-color)] font-medium">
+                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] font-medium">
                         <Clock className="w-3 h-3 text-[var(--action-primary)]" />
                         {action.schedule_info}
                       </span>
                     )}
-                    <h3 className="text-sm font-semibold text-slate-100 truncate">
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">
                       {action.title}
                     </h3>
                   </div>
@@ -149,13 +149,13 @@ export default function ActionPlanList({
                     </div>
                   )}
 
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                     {action.reason}
                   </p>
 
                   {action.action_required && (
-                    <p className="text-[11px] text-slate-400">
-                      <strong className="text-slate-300">Action:</strong> {action.action_required}
+                    <p className="text-[11px] text-[var(--text-muted)]">
+                      <strong className="text-[var(--text-primary)]">Action:</strong> {action.action_required}
                     </p>
                   )}
                 </div>
@@ -177,7 +177,7 @@ export default function ActionPlanList({
                     size="sm"
                     onClick={() => handleMarkDone(action)}
                     leftIcon={<Check className="w-3.5 h-3.5" />}
-                    className="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-slate-700"
+                    className="text-xs"
                   >
                     Mark done
                   </Button>

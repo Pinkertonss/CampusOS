@@ -31,9 +31,9 @@ export default function GradesSection({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
             Grades &amp; Weighted Assessments
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--surface-secondary)] text-[var(--text-secondary)] font-mono">
               TIET Relative Scale
             </span>
           </h2>
@@ -73,7 +73,7 @@ export default function GradesSection({
                       </span>
                       <span className="text-[11px] text-slate-400">· {course.credits} Credits</span>
                     </div>
-                    <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 line-clamp-1 mt-0.5">
+                    <h3 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-1 mt-0.5">
                       {course.name}
                     </h3>
                   </div>
@@ -91,7 +91,7 @@ export default function GradesSection({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">
                       Weighted Score:{" "}
-                      <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                      <span className="font-bold text-[var(--text-primary)] font-mono">
                         {weightedScore}%
                       </span>{" "}
                       / {completedWeight}% completed
@@ -102,7 +102,7 @@ export default function GradesSection({
                   </div>
 
                   {/* Multi-segment Progress Bar */}
-                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
+                  <div className="w-full bg-[var(--surface-secondary)] h-2.5 rounded-full overflow-hidden flex">
                     <div
                       className="bg-[var(--action-primary)] h-full transition-all duration-500 rounded-l-full"
                       style={{ width: `${weightedScore}%` }}

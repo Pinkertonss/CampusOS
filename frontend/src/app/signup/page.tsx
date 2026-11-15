@@ -176,7 +176,7 @@ export default function SignupPage() {
                   placeholder={accountType === "admin" ? "e.g. Dr. Rajeshwar Singh (DOAA)" : "e.g. Arjun Mehta"}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                  className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function SignupPage() {
                     placeholder="TIET-ADMIN-2026"
                     value={adminSecretKey}
                     onChange={(e) => setAdminSecretKey(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] font-mono"
+                    className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] font-mono"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -232,7 +232,7 @@ export default function SignupPage() {
                   placeholder="student@thapar.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                  className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function SignupPage() {
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                  className="w-full pl-9 pr-10 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
                 <button
                   type="button"
@@ -290,7 +290,7 @@ export default function SignupPage() {
                   placeholder="Repeat your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
+                  className="w-full pl-9 pr-3 py-2 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function SignupPage() {
               <div className="w-full border-t border-slate-800" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-900 px-2 text-slate-400 font-medium tracking-wider">
+              <span className="bg-[var(--surface-card)] px-2 text-[var(--text-secondary)] font-medium tracking-wider">
                 Or continue with
               </span>
             </div>

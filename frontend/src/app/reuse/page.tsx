@@ -310,7 +310,7 @@ export default function CampusReusePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Campus Reuse
             </h1>
             <Badge variant="primary" size="md">
@@ -436,7 +436,7 @@ export default function CampusReusePage() {
                     className={`px-3.5 py-2 rounded-xl text-xs font-medium transition shrink-0 ${
                       isActive
                         ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-sm"
-                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50"
+                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-[var(--border-color)] hover:bg-slate-50"
                     }`}
                   >
                     {m.label}
@@ -453,7 +453,7 @@ export default function CampusReusePage() {
                 placeholder="Search calculator, book, coat..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-8 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
+                className="w-full pl-8 pr-8 py-2 rounded-xl text-xs bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
               />
               {searchQuery && (
                 <button
@@ -515,7 +515,7 @@ export default function CampusReusePage() {
               {listings.map((item) => (
                 <Card
                   key={item.id}
-                  className="flex flex-col justify-between overflow-hidden border border-slate-200/80 dark:border-slate-700/80 hover:shadow-md transition group"
+                  className="flex flex-col justify-between overflow-hidden border border-[var(--border-color)] hover:shadow-md transition group"
                 >
                   {/* Image or Category Visual Header */}
                   {item.image_url ? (
@@ -553,7 +553,7 @@ export default function CampusReusePage() {
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
                       <h3
-                        className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-[var(--action-primary)] transition"
+                        className="font-semibold text-sm text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--action-primary)] transition"
                         title={item.title}
                       >
                         {item.title}
@@ -605,7 +605,7 @@ export default function CampusReusePage() {
       {activeTab === "my-listings" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               Items You Posted ({myListings.length})
             </h2>
             <Button
@@ -634,7 +634,7 @@ export default function CampusReusePage() {
           ) : (
             <div className="space-y-4">
               {myListings.map(({ listing, requests }) => (
-                <Card key={listing.id} className="p-5 border border-slate-200/80 dark:border-slate-700/80">
+                <Card key={listing.id} className="p-5 border border-[var(--border-color)]">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="space-y-1 max-w-xl">
                       <div className="flex items-center gap-2">
@@ -644,7 +644,7 @@ export default function CampusReusePage() {
                           {new Date(listing.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
                         {listing.title}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -678,10 +678,10 @@ export default function CampusReusePage() {
                         {requests.map((req) => (
                           <div
                             key={req.id}
-                            className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                            className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                           >
                             <div>
-                              <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-white">
+                              <div className="flex items-center gap-2 font-semibold text-[var(--text-primary)]">
                                 <span>{req.requester_name}</span>
                                 <Badge
                                   variant={
@@ -780,7 +780,7 @@ export default function CampusReusePage() {
          ============================================================ */}
       {activeTab === "my-requests" && (
         <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Items You Requested ({myRequests.length})
           </h2>
 
@@ -800,7 +800,7 @@ export default function CampusReusePage() {
           ) : (
             <div className="space-y-3">
               {myRequests.map((req) => (
-                <Card key={req.id} className="p-4 border border-slate-200/80 dark:border-slate-700/80">
+                <Card key={req.id} className="p-4 border border-[var(--border-color)]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -827,7 +827,7 @@ export default function CampusReusePage() {
                         </Badge>
                       </div>
 
-                      <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
+                      <h3 className="font-semibold text-sm text-[var(--text-primary)]">
                         {req.listing_title}
                       </h3>
                       <p className="text-slate-500 dark:text-slate-400 mt-0.5">
@@ -907,7 +907,7 @@ export default function CampusReusePage() {
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4 border border-slate-200/80 dark:border-slate-700/80">
+            <Card className="p-4 border border-[var(--border-color)]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Total Completed Handouts
@@ -916,7 +916,7 @@ export default function CampusReusePage() {
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">
                 {impactData.total_completed}
               </div>
               <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
@@ -928,7 +928,7 @@ export default function CampusReusePage() {
               </div>
             </Card>
 
-            <Card className="p-4 border border-slate-200/80 dark:border-slate-700/80">
+            <Card className="p-4 border border-[var(--border-color)]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Student Money Saved
@@ -943,7 +943,7 @@ export default function CampusReusePage() {
               <p className="text-[11px] text-slate-400 mt-1">Direct savings on textbooks & calculators</p>
             </Card>
 
-            <Card className="p-4 border border-slate-200/80 dark:border-slate-700/80">
+            <Card className="p-4 border border-[var(--border-color)]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Landfill Waste Diverted
@@ -952,22 +952,22 @@ export default function CampusReusePage() {
                   <Package className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">
                 {impactData.total_waste_diverted_kg} kg
               </div>
               <p className="text-[11px] text-slate-400 mt-1">Paper, plastics & electronics recycled</p>
             </Card>
 
-            <Card className="p-4 border border-slate-200/80 dark:border-slate-700/80">
+            <Card className="p-4 border border-[var(--border-color)]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   CO2 Emissions Avoided
                 </span>
-                <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center">
                   <Leaf className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-sky-600 dark:text-sky-400">
+              <div className="text-2xl font-bold text-[var(--text-primary)]">
                 {impactData.co2_avoided_kg} kg
               </div>
               <p className="text-[11px] text-slate-400 mt-1">Manufacturing & freight offset</p>
@@ -975,10 +975,10 @@ export default function CampusReusePage() {
           </div>
 
           {/* Simple Activity Chart Over Time */}
-          <Card className="p-5 border border-slate-200/80 dark:border-slate-700/80">
+          <Card className="p-5 border border-[var(--border-color)]">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                   Monthly Campus Reuse Activity
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -992,7 +992,7 @@ export default function CampusReusePage() {
 
             {/* SVG Histogram Chart */}
             <div className="space-y-4">
-              <div className="grid grid-cols-4 gap-4 h-48 items-end pt-8 pb-2 border-b border-slate-200 dark:border-slate-700">
+              <div className="grid grid-cols-4 gap-4 h-48 items-end pt-8 pb-2 border-b border-[var(--border-color)]">
                 {impactData.per_month_series.map((pt, idx) => {
                   const maxVal = Math.max(...impactData.per_month_series.map((p) => p.total), 30);
                   const heightPercent = Math.round((pt.total / maxVal) * 100);
@@ -1027,7 +1027,7 @@ export default function CampusReusePage() {
           </Card>
 
           {/* Environmental Estimation Transparency Note */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+          <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs text-slate-500 dark:text-slate-400 space-y-1">
             <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <Leaf className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
               <span>Environmental & Economic Estimation Model</span>
@@ -1074,7 +1074,7 @@ export default function CampusReusePage() {
               placeholder="e.g. Casio FX-991EX ClassWiz or CLRS Algorithms"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
             />
           </div>
 
@@ -1086,7 +1086,7 @@ export default function CampusReusePage() {
               <select
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
               >
                 <option value="book">Book / Textbook</option>
                 <option value="calculator">Scientific Calculator</option>
@@ -1102,7 +1102,7 @@ export default function CampusReusePage() {
               <select
                 value={newMode}
                 onChange={(e) => setNewMode(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
               >
                 <option value="exchange">Exchange (Swap for another item)</option>
                 <option value="donate">Donate (Give away for free)</option>
@@ -1119,7 +1119,7 @@ export default function CampusReusePage() {
               <select
                 value={newCondition}
                 onChange={(e) => setNewCondition(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
               >
                 <option value="like_new">Like New (Mint)</option>
                 <option value="good">Good (Fully functional)</option>
@@ -1136,7 +1136,7 @@ export default function CampusReusePage() {
                 value={newPrice || ""}
                 onChange={(e) => setNewPrice(Number(e.target.value))}
                 placeholder="e.g. 950"
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
               />
             </div>
           </div>
@@ -1150,7 +1150,7 @@ export default function CampusReusePage() {
               placeholder="Mention semester relevance, chapters highlighted, or items you want in exchange..."
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
 
@@ -1163,7 +1163,7 @@ export default function CampusReusePage() {
               placeholder="https://... (or leave empty for category banner)"
               value={newImageUrl}
               onChange={(e) => setNewImageUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
 
@@ -1176,7 +1176,7 @@ export default function CampusReusePage() {
               placeholder="e.g. Hostel B, Room 415 | WhatsApp: 9876543210"
               value={newContact}
               onChange={(e) => setNewContact(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
         </div>
@@ -1262,7 +1262,7 @@ export default function CampusReusePage() {
             </div>
 
             {selectedListing.contact_info ? (
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--border-color)] space-y-1">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Campus Location & Handover Note
                 </span>
@@ -1271,7 +1271,7 @@ export default function CampusReusePage() {
                 </p>
               </div>
             ) : !selectedListing.owner_name.includes("You") ? (
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-[var(--border-color)] text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 shrink-0 text-[var(--action-primary)]" />
                 <span>Hostel room & contact details are shielded until your exchange request is accepted by the owner.</span>
               </div>
@@ -1323,7 +1323,7 @@ export default function CampusReusePage() {
               value={requestMessage}
               onChange={(e) => setRequestMessage(e.target.value)}
               placeholder="Explain why you need this item or what you can offer in exchange..."
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
 
@@ -1336,7 +1336,7 @@ export default function CampusReusePage() {
               value={requestContact}
               onChange={(e) => setRequestContact(e.target.value)}
               placeholder="e.g. Hostel B, Room 415 | WhatsApp: 9812345678"
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
         </div>
@@ -1363,10 +1363,10 @@ export default function CampusReusePage() {
             notifications.map((n) => (
               <div
                 key={n.id}
-                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-xs space-y-1"
+                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--border-color)] text-xs space-y-1"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-900 dark:text-white">{n.title}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{n.title}</span>
                   <span className="text-[10px] text-slate-400">
                     {new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>

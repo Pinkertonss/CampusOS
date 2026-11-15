@@ -41,7 +41,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
     <Card className="p-5 sm:p-6 border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
             Class Timetable
             <Badge variant="primary" size="sm">
               Odd Semester 2024
@@ -53,14 +53,14 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 self-start sm:self-auto">
+        <div className="flex items-center p-1 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setViewMode("today")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               viewMode === "today"
                 ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             Today ({currentWeekdayName})
@@ -71,7 +71,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               viewMode === "weekly"
                 ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             Weekly Schedule
@@ -96,7 +96,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 ${
                   isSelected
                     ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                    : "bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                    : "bg-[var(--surface-secondary)]/60 text-[var(--text-secondary)] hover:bg-slate-200"
                 }`}
               >
                 {day} ({count})
@@ -138,7 +138,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
                       <span className="font-mono text-xs font-bold text-[var(--action-primary)]">
                         {slot.course_code}
                       </span>
-                      <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
+                      <h4 className="font-semibold text-sm text-[var(--text-primary)] truncate">
                         {slot.course_name}
                       </h4>
                     </div>

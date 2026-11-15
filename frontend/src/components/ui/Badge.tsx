@@ -29,7 +29,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   danger:
     "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60",
   info:
-    "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
+    "bg-[var(--surface-secondary)] text-[var(--text-primary)] border-[var(--border-color)]",
 };
 
 const dotStyles: Record<BadgeVariant, string> = {
@@ -38,7 +38,7 @@ const dotStyles: Record<BadgeVariant, string> = {
   success: "bg-emerald-600 dark:bg-emerald-400",
   warning: "bg-amber-600 dark:bg-amber-400",
   danger: "bg-rose-600 dark:bg-rose-400",
-  info: "bg-slate-600 dark:bg-slate-400",
+  info: "bg-[var(--action-primary)]",
 };
 
 const sizeStyles: Record<BadgeSize, string> = {

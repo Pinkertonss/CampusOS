@@ -703,7 +703,7 @@ export default function OpportunitiesPage() {
             size="sm"
             onClick={() => setEditModalOpen(true)}
             leftIcon={<Sliders className="w-3.5 h-3.5 text-[var(--action-primary)]" />}
-            className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs"
+            className="border-[var(--border-color)] bg-[var(--surface-secondary)] text-[var(--text-primary)] hover:bg-slate-700 text-xs"
           >
             Matching Preferences
           </Button>
@@ -712,9 +712,9 @@ export default function OpportunitiesPage() {
 
       {/* Active Skills Strip */}
       {profile && (
-        <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-slate-400 font-medium">Your Active Skills:</span>
+            <span className="text-[var(--text-muted)] font-medium">Your Active Skills:</span>
             {profile.skills.map((skill) => (
               <span
                 key={skill}
@@ -724,9 +724,9 @@ export default function OpportunitiesPage() {
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-3 text-slate-400">
+          <div className="flex items-center gap-3 text-[var(--text-muted)]">
             <span>
-              Availability: <strong className="text-slate-200">{profile.available_hours_per_week} hrs/week</strong>
+              Availability: <strong className="text-[var(--text-primary)]">{profile.available_hours_per_week} hrs/week</strong>
             </span>
             <span>
               Opt-In:{" "}
@@ -741,14 +741,14 @@ export default function OpportunitiesPage() {
       {/* ========================================================
           2. NAVIGATION TABS & FILTER BAR
       ======================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab("recommended")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "recommended"
                 ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -759,7 +759,7 @@ export default function OpportunitiesPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "explore"
                 ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
@@ -770,7 +770,7 @@ export default function OpportunitiesPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "experience"
                 ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
             }`}
           >
             <GraduationCap className="w-3.5 h-3.5" />
@@ -781,7 +781,7 @@ export default function OpportunitiesPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "applied"
                 ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
             }`}
           >
             <FileCheck2 className="w-3.5 h-3.5" />
@@ -792,7 +792,7 @@ export default function OpportunitiesPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "saved"
                 ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
             }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
@@ -804,7 +804,7 @@ export default function OpportunitiesPage() {
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === "admin"
                   ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-                  : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                  : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -816,19 +816,19 @@ export default function OpportunitiesPage() {
         {activeTab === "explore" && (
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search skills or title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] w-44"
+                className="pl-8 pr-3 py-1 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] w-44"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="px-2 py-1 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             >
               <option value="all">All Categories</option>
               <option value="research">Research</option>
@@ -852,10 +852,10 @@ export default function OpportunitiesPage() {
         </div>
       ) : activeTab === "recommended" ? (
         recommendations.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
-            <Compass className="w-8 h-8 text-slate-500 mx-auto" />
-            <div className="text-sm font-semibold text-slate-300">No Recommendations Available</div>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
+          <div className="p-8 text-center rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
+            <Compass className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+            <div className="text-sm font-semibold text-[var(--text-secondary)]">No Recommendations Available</div>
+            <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
               Make sure opt-in matching is enabled in your preferences and add skills to receive smart recommendations.
             </p>
           </div>
@@ -869,13 +869,13 @@ export default function OpportunitiesPage() {
                 rec.match_score >= 85
                   ? "bg-[var(--nav-selected-bg)] text-[var(--nav-selected-text)] border-[var(--border-color)]"
                   : rec.match_score >= 70
-                  ? "bg-sky-950/80 text-sky-300 border-sky-600/60"
-                  : "bg-slate-800 text-slate-300 border-slate-700";
+                  ? "bg-[var(--accent-badge-bg)] text-[var(--accent-badge-text)] border-[var(--border-color)]"
+                  : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] border-[var(--border-color)]";
 
               return (
                 <Card
                   key={opp.id}
-                  className="p-5 bg-slate-900/80 border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-4"
+                  className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] hover:border-[var(--action-primary)] transition-all flex flex-col justify-between gap-4"
                 >
                   <div className="space-y-3">
                     {/* Top Row: Score & Category */}
@@ -886,7 +886,7 @@ export default function OpportunitiesPage() {
                         >
                           {rec.match_score}% Match
                         </span>
-                        <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] border border-[var(--border-color)]">
                           {opp.category}
                         </span>
                         {rec.eligibility && (
@@ -910,7 +910,7 @@ export default function OpportunitiesPage() {
                         className={`p-1.5 rounded-lg transition-colors ${
                           isSaved
                             ? "bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)]"
-                            : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700"
+                            : "bg-[var(--surface-secondary)]/80 text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
                         }`}
                         title={isSaved ? "Saved" : "Save opportunity"}
                       >
@@ -920,10 +920,10 @@ export default function OpportunitiesPage() {
 
                     {/* Title & Organization */}
                     <div>
-                      <h3 className="text-sm sm:text-base font-bold text-slate-100 hover:text-[var(--action-primary)] transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] hover:text-[var(--action-primary)] transition-colors">
                         {opp.title}
                       </h3>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {opp.organization} {opp.mentor_name && `· Mentor: ${opp.mentor_name}`}
                       </p>
                     </div>
@@ -956,7 +956,7 @@ export default function OpportunitiesPage() {
 
                     {/* Skills Breakdown */}
                     <div className="space-y-1.5">
-                      <div className="text-[11px] text-slate-400 font-medium">Required Skills:</div>
+                      <div className="text-[11px] text-[var(--text-muted)] font-medium">Required Skills:</div>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {opp.required_skills.map((skill) => {
                           const isMatched = rec.matched_skills.some(
@@ -968,7 +968,7 @@ export default function OpportunitiesPage() {
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border ${
                                 isMatched
                                   ? "bg-[var(--surface-secondary)] text-[var(--text-primary)] border-[var(--border-color)] font-semibold"
-                                  : "bg-slate-800/60 text-slate-400 border-slate-700"
+                                  : "bg-[var(--surface-secondary)]/60 text-[var(--text-muted)] border-[var(--border-color)]"
                               }`}
                             >
                               {isMatched && <Check className="w-3 h-3 text-[var(--action-primary)]" />}
@@ -980,21 +980,21 @@ export default function OpportunitiesPage() {
                     </div>
 
                     {/* Transparent Explanation */}
-                    <div className="text-[11px] text-slate-400 bg-slate-950/40 p-2 rounded border border-slate-800/60">
-                      <strong className="text-slate-300">Recommendation Reason:</strong>{" "}
+                    <div className="text-[11px] text-[var(--text-muted)] bg-[var(--surface-secondary)] p-2 rounded border border-[var(--border-color)]">
+                      <strong className="text-[var(--text-secondary)]">Recommendation Reason:</strong>{" "}
                       {rec.recommendation_reason}
                     </div>
                   </div>
 
                   {/* Footer Meta & Action */}
-                  <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                  <div className="pt-3 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                         {opp.time_commitment_hrs_week}h/week
                       </span>
                       <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                        <MapPin className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                         {opp.location}
                       </span>
                     </div>
@@ -1021,7 +1021,7 @@ export default function OpportunitiesPage() {
                           target="_blank"
                           rel="noreferrer"
                           aria-label={`Official portal for ${opp.title}`}
-                          className="p-1 text-slate-400 hover:text-[var(--action-primary)] transition-colors"
+                          className="p-1 text-[var(--text-muted)] hover:text-[var(--action-primary)] transition-colors"
                           title="View Official Portal"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -1036,10 +1036,10 @@ export default function OpportunitiesPage() {
         )
       ) : activeTab === "explore" ? (
         filteredExplore.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
-            <Compass className="w-8 h-8 text-slate-500 mx-auto" />
-            <div className="text-sm font-semibold text-slate-300">No Opportunities Found</div>
-            <p className="text-xs text-slate-400">Try adjusting your keyword search or category filter.</p>
+          <div className="p-8 text-center rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
+            <Compass className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+            <div className="text-sm font-semibold text-[var(--text-secondary)]">No Opportunities Found</div>
+            <p className="text-xs text-[var(--text-muted)]">Try adjusting your keyword search or category filter.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1049,11 +1049,11 @@ export default function OpportunitiesPage() {
               return (
                 <Card
                   key={opp.id}
-                  className="p-5 bg-slate-900/80 border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-4"
+                  className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] hover:border-[var(--action-primary)] transition-all flex flex-col justify-between gap-4"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                      <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] border border-[var(--border-color)]">
                         {opp.category}
                       </span>
                       <button
@@ -1062,7 +1062,7 @@ export default function OpportunitiesPage() {
                         className={`p-1.5 rounded-lg transition-colors ${
                           isSaved
                             ? "bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)]"
-                            : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700"
+                            : "bg-[var(--surface-secondary)]/80 text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
                         }`}
                       >
                         <Bookmark className="w-3.5 h-3.5" fill={isSaved ? "currentColor" : "none"} />
@@ -1071,18 +1071,18 @@ export default function OpportunitiesPage() {
 
                     <div>
                       <h3 className="text-sm sm:text-base font-bold text-slate-100">{opp.title}</h3>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {opp.organization} {opp.mentor_name && `· Mentor: ${opp.mentor_name}`}
                       </p>
                     </div>
 
-                    <p className="text-xs text-slate-300 line-clamp-2">{opp.description}</p>
+                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{opp.description}</p>
 
                     <div className="flex flex-wrap items-center gap-1.5">
                       {opp.required_skills.map((skill) => (
                         <span
                           key={skill}
-                          className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700"
+                          className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] border border-[var(--border-color)]"
                         >
                           {skill}
                         </span>
@@ -1090,9 +1090,9 @@ export default function OpportunitiesPage() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-muted)]">
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                       {opp.time_commitment_hrs_week}h/week · {opp.location}
                     </span>
 
@@ -1118,7 +1118,7 @@ export default function OpportunitiesPage() {
                           target="_blank"
                           rel="noreferrer"
                           aria-label={`Official portal for ${opp.title}`}
-                          className="p-1 text-slate-400 hover:text-[var(--action-primary)] transition-colors"
+                          className="p-1 text-[var(--text-muted)] hover:text-[var(--action-primary)] transition-colors"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -1132,40 +1132,40 @@ export default function OpportunitiesPage() {
         )
       ) : activeTab === "applied" ? (
         appliedList.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
-            <FileCheck2 className="w-8 h-8 text-slate-500 mx-auto" />
-            <div className="text-sm font-semibold text-slate-300">No Applications Submitted</div>
-            <p className="text-xs text-slate-400">
+          <div className="p-8 text-center rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
+            <FileCheck2 className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+            <div className="text-sm font-semibold text-[var(--text-secondary)]">No Applications Submitted</div>
+            <p className="text-xs text-[var(--text-muted)]">
               Browse recommendations or explore campus opportunities and click &quot;Apply Now&quot; to submit your interest.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {appliedList.map((app) => (
-              <Card key={app.id} className="p-5 bg-slate-900/80 border-slate-800 flex flex-col justify-between gap-4">
+              <Card key={app.id} className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] flex flex-col justify-between gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-bold uppercase">
                       {app.status}
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-[var(--text-muted)]">
                       Applied {new Date(app.applied_at).toLocaleDateString()}
                     </span>
                   </div>
 
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-slate-100">{app.opportunity_title}</h3>
-                    <p className="text-xs text-slate-400">{app.organization}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{app.organization}</p>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-1">
-                    <div className="text-[11px] font-medium text-slate-400">Your Statement of Interest:</div>
-                    <p className="italic text-slate-300 leading-relaxed">&ldquo;{app.statement_of_interest}&rdquo;</p>
+                  <div className="p-2.5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs text-[var(--text-secondary)] space-y-1">
+                    <div className="text-[11px] font-medium text-[var(--text-muted)]">Your Statement of Interest:</div>
+                    <p className="italic text-[var(--text-secondary)] leading-relaxed">&ldquo;{app.statement_of_interest}&rdquo;</p>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                  <span>Committed: <strong className="text-slate-200">{app.available_hours_per_week} hrs/week</strong></span>
+                <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+                  <span>Committed: <strong className="text-[var(--text-primary)]">{app.available_hours_per_week} hrs/week</strong></span>
                   <span className="text-emerald-400 font-medium flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Pending Faculty Review
@@ -1191,11 +1191,11 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* 1. Institutional Records (Locked / Read-Only) */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-slate-200">Institutional Academic Record (TIET)</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Institutional Academic Record (TIET)</h3>
               </div>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/60 border border-emerald-800/60 text-emerald-300">
                 <Lock className="w-3 h-3 text-emerald-400" />
@@ -1203,26 +1203,26 @@ export default function OpportunitiesPage() {
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-                <div className="text-[11px] text-slate-400">Program &amp; Degree</div>
-                <div className="font-semibold text-slate-200">
+              <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
+                <div className="text-[11px] text-[var(--text-muted)]">Program &amp; Degree</div>
+                <div className="font-semibold text-[var(--text-primary)]">
                   {experienceProfile?.education?.[0]?.program || "B.Tech"} - {experienceProfile?.education?.[0]?.branch || "Computer Engineering"}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-                <div className="text-[11px] text-slate-400">Current Semester</div>
-                <div className="font-semibold text-slate-200">
+              <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
+                <div className="text-[11px] text-[var(--text-muted)]">Current Semester</div>
+                <div className="font-semibold text-[var(--text-primary)]">
                   Semester {experienceProfile?.education?.[0]?.semester || 5}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-                <div className="text-[11px] text-slate-400">Graduation Year</div>
-                <div className="font-semibold text-slate-200">
+              <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
+                <div className="text-[11px] text-[var(--text-muted)]">Graduation Year</div>
+                <div className="font-semibold text-[var(--text-primary)]">
                   Class of {experienceProfile?.education?.[0]?.graduation_year || 2026}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-                <div className="text-[11px] text-slate-400">Institutional CGPA</div>
+              <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
+                <div className="text-[11px] text-[var(--text-muted)]">Institutional CGPA</div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-base font-bold text-[var(--action-primary)]">
                     {experienceProfile?.education?.[0]?.cgpa_verified
@@ -1231,11 +1231,11 @@ export default function OpportunitiesPage() {
                       ? experienceProfile.cgpa_verified.toFixed(2)
                       : "8.52"}
                   </span>
-                  <span className="text-[10px] text-slate-400">/ 10.00</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">/ 10.00</span>
                 </div>
               </div>
             </div>
-            <div className="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/50 flex items-start gap-2 text-[11px] text-slate-400">
+            <div className="p-2.5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] flex items-start gap-2 text-[11px] text-[var(--text-muted)]">
               <Info className="w-3.5 h-3.5 text-[var(--action-primary)] shrink-0 mt-0.5" />
               <span>
                 Official CGPA and branch records are synchronized directly from institute records. Students cannot manually alter verified academic metrics.
@@ -1244,26 +1244,26 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 2. Resume Section */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[var(--action-primary)]" />
-                <h3 className="text-sm font-bold text-slate-200">Official Resume</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Official Resume</h3>
               </div>
-              <span className="text-[11px] text-slate-400">PDF up to 10MB</span>
+              <span className="text-[11px] text-[var(--text-muted)]">PDF up to 10MB</span>
             </div>
 
             {experienceProfile?.resume_file_name || experienceProfile?.resume_filename ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--action-primary)] flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <div className="font-semibold text-xs text-slate-200">
+                    <div className="font-semibold text-xs text-[var(--text-primary)]">
                       {experienceProfile.resume_file_name || experienceProfile.resume_filename}
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-[var(--text-muted)]">
                       Uploaded {experienceProfile.resume_updated_at || experienceProfile.resume_uploaded_at ? new Date(experienceProfile.resume_updated_at || experienceProfile.resume_uploaded_at!).toLocaleDateString() : "Recently"}
                     </div>
                   </div>
@@ -1274,12 +1274,12 @@ export default function OpportunitiesPage() {
                     href="/api/opportunities/profile/experience/resume"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--surface-secondary)] hover:bg-slate-700 text-[var(--text-primary)] border border-[var(--border-color)] transition-colors"
                   >
                     <Download className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                     Download / Preview
                   </a>
-                  <label className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer transition-colors">
+                  <label className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--surface-secondary)] hover:bg-slate-700 text-[var(--text-primary)] border border-[var(--border-color)] cursor-pointer transition-colors">
                     <Upload className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                     Replace
                     <input
@@ -1302,10 +1302,10 @@ export default function OpportunitiesPage() {
                 </div>
               </div>
             ) : (
-              <div className="p-6 border-2 border-dashed border-slate-800 rounded-xl text-center space-y-2 hover:border-slate-700 transition-colors">
-                <Upload className="w-8 h-8 text-slate-500 mx-auto" />
-                <div className="text-xs font-semibold text-slate-300">No Resume Uploaded</div>
-                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+              <div className="p-6 border-2 border-dashed border-[var(--border-color)] rounded-xl text-center space-y-2 hover:border-[var(--border-color)] transition-colors">
+                <Upload className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+                <div className="text-xs font-semibold text-[var(--text-secondary)]">No Resume Uploaded</div>
+                <p className="text-[11px] text-[var(--text-muted)] max-w-sm mx-auto">
                   Upload your latest resume in PDF format (under 10MB) to share with faculty mentors and recruiters.
                 </p>
                 <div className="pt-1">
@@ -1326,13 +1326,13 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 3. Skills */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[var(--action-primary)]" />
-                <h3 className="text-sm font-bold text-slate-200">Technical Skills</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Technical Skills</h3>
               </div>
-              <span className="text-[11px] text-slate-400">{experienceProfile?.skills?.length || 0} skills</span>
+              <span className="text-[11px] text-[var(--text-muted)]">{experienceProfile?.skills?.length || 0} skills</span>
             </div>
 
             <div className="flex gap-2">
@@ -1342,7 +1342,7 @@ export default function OpportunitiesPage() {
                 value={expSkillInput}
                 onChange={(e) => setExpSkillInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddExpSkill())}
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
               <Button size="sm" onClick={handleAddExpSkill} leftIcon={<Plus className="w-3.5 h-3.5" />}>
                 Add Skill
@@ -1369,11 +1369,11 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 4. Projects Showcase */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-[var(--action-primary)]" />
-                <h3 className="text-sm font-bold text-slate-200">Projects Showcase</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Projects Showcase</h3>
               </div>
               <Button
                 size="sm"
@@ -1387,7 +1387,7 @@ export default function OpportunitiesPage() {
             </div>
 
             {(!experienceProfile?.projects || experienceProfile.projects.length === 0) ? (
-              <div className="p-6 text-center text-xs text-slate-400 rounded-xl bg-slate-950/40 border border-slate-800/60">
+              <div className="p-6 text-center text-xs text-[var(--text-muted)] rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                 No projects added yet. Showcase your capstone, hackathon, or open-source projects.
               </div>
             ) : (
@@ -1395,7 +1395,7 @@ export default function OpportunitiesPage() {
                 {experienceProfile.projects.map((proj) => (
                   <div
                     key={proj.id}
-                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between gap-3"
+                    className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex flex-col justify-between gap-3"
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
@@ -1403,18 +1403,18 @@ export default function OpportunitiesPage() {
                         <button
                           onClick={() => handleDeleteProject(proj.id)}
                           aria-label={`Delete project ${proj.title}`}
-                          className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                          className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                       <div className="text-[11px] text-[var(--action-primary)] font-medium">Role: {proj.role}</div>
-                      <p className="text-xs text-slate-300 leading-relaxed">{proj.description}</p>
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{proj.description}</p>
                       <div className="flex flex-wrap gap-1 pt-1">
                         {proj.technologies.map((t) => (
                           <span
                             key={t}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700"
+                            className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] border border-[var(--border-color)]"
                           >
                             {t}
                           </span>
@@ -1422,7 +1422,7 @@ export default function OpportunitiesPage() {
                       </div>
                     </div>
                     {proj.link && (
-                      <div className="pt-2 border-t border-slate-800/60">
+                      <div className="pt-2 border-t border-[var(--border-color)]/60">
                         <a
                           href={proj.link}
                           target="_blank"
@@ -1441,11 +1441,11 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 5. Work Experience & Internships */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-[var(--action-primary)]" />
-                <h3 className="text-sm font-bold text-slate-200">Work Experience &amp; Internships</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Work Experience &amp; Internships</h3>
               </div>
               <Button
                 size="sm"
@@ -1459,7 +1459,7 @@ export default function OpportunitiesPage() {
             </div>
 
             {(!experienceProfile?.work_experience || experienceProfile.work_experience.length === 0) ? (
-              <div className="p-6 text-center text-xs text-slate-400 rounded-xl bg-slate-950/40 border border-slate-800/60">
+              <div className="p-6 text-center text-xs text-[var(--text-muted)] rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                 No work experience or internships added yet.
               </div>
             ) : (
@@ -1467,22 +1467,22 @@ export default function OpportunitiesPage() {
                 {experienceProfile.work_experience.map((work) => (
                   <div
                     key={work.id}
-                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-start justify-between gap-4"
+                    className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex items-start justify-between gap-4"
                   >
                     <div className="space-y-1 text-xs">
                       <div className="font-bold text-slate-100">{work.role}</div>
-                      <div className="text-slate-400 font-medium">
+                      <div className="text-[var(--text-muted)] font-medium">
                         {work.company} {work.location && `· ${work.location}`}
                       </div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="text-[11px] text-[var(--text-muted)]">
                         {work.start_date} – {work.is_current ? "Present" : work.end_date || "Completed"}
                       </div>
-                      <p className="text-slate-300 pt-1 leading-relaxed">{work.description}</p>
+                      <p className="text-[var(--text-secondary)] pt-1 leading-relaxed">{work.description}</p>
                     </div>
                     <button
                       onClick={() => handleDeleteWork(work.id)}
                       aria-label={`Delete experience ${work.role}`}
-                      className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1493,11 +1493,11 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 6. Certifications */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-[var(--action-primary)]" />
-                <h3 className="text-sm font-bold text-slate-200">Certifications &amp; Licenses</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Certifications &amp; Licenses</h3>
               </div>
               <Button
                 size="sm"
@@ -1511,7 +1511,7 @@ export default function OpportunitiesPage() {
             </div>
 
             {(!experienceProfile?.certifications || experienceProfile.certifications.length === 0) ? (
-              <div className="p-6 text-center text-xs text-slate-400 rounded-xl bg-slate-950/40 border border-slate-800/60">
+              <div className="p-6 text-center text-xs text-[var(--text-muted)] rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                 No certifications added yet. Add industry certifications from AWS, Google, Coursera, etc.
               </div>
             ) : (
@@ -1519,12 +1519,12 @@ export default function OpportunitiesPage() {
                 {experienceProfile.certifications.map((cert) => (
                   <div
                     key={cert.id}
-                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-start justify-between gap-3"
+                    className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex items-start justify-between gap-3"
                   >
                     <div className="space-y-1 text-xs">
                       <div className="font-bold text-slate-100">{cert.title}</div>
-                      <div className="text-slate-400 font-medium">{cert.issuer}</div>
-                      <div className="text-[11px] text-slate-500">Issued: {cert.issue_date}</div>
+                      <div className="text-[var(--text-muted)] font-medium">{cert.issuer}</div>
+                      <div className="text-[11px] text-[var(--text-muted)]">Issued: {cert.issue_date}</div>
                       {cert.credential_url && (
                         <a
                           href={cert.credential_url}
@@ -1540,7 +1540,7 @@ export default function OpportunitiesPage() {
                     <button
                       onClick={() => handleDeleteCert(cert.id)}
                       aria-label={`Delete certification ${cert.title}`}
-                      className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1551,13 +1551,13 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 7. Achievements & Extracurricular Activities */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-[var(--action-primary)]" />
-                <h3 className="text-sm font-bold text-slate-200">Achievements &amp; Extracurricular Activities</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Achievements &amp; Extracurricular Activities</h3>
               </div>
-              <span className="text-[11px] text-slate-400">{experienceProfile?.achievements?.length || 0} items</span>
+              <span className="text-[11px] text-[var(--text-muted)]">{experienceProfile?.achievements?.length || 0} items</span>
             </div>
 
             <div className="flex gap-2">
@@ -1567,7 +1567,7 @@ export default function OpportunitiesPage() {
                 value={achievementInput}
                 onChange={(e) => setAchievementInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddAchievement())}
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
               <Button size="sm" onClick={handleAddAchievement} leftIcon={<Plus className="w-3.5 h-3.5" />}>
                 Add
@@ -1578,7 +1578,7 @@ export default function OpportunitiesPage() {
               {(experienceProfile?.achievements || []).map((ach, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300"
+                  className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs text-[var(--text-secondary)]"
                 >
                   <span className="flex items-center gap-2">
                     <CheckCircle className="w-3.5 h-3.5 text-[var(--action-primary)] shrink-0" />
@@ -1587,7 +1587,7 @@ export default function OpportunitiesPage() {
                   <button
                     onClick={() => handleRemoveAchievement(ach)}
                     aria-label={`Remove achievement ${ach}`}
-                    className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                    className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1597,10 +1597,10 @@ export default function OpportunitiesPage() {
           </Card>
 
           {/* 8. Preferred Opportunity Types & Candidate Discovery */}
-          <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-5">
+          <Card className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-5">
             <div className="space-y-2">
-              <h3 className="text-sm font-bold text-slate-200">Preferred Opportunity Types</h3>
-              <p className="text-[11px] text-slate-400">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">Preferred Opportunity Types</h3>
+              <p className="text-[11px] text-[var(--text-muted)]">
                 Select the types of campus opportunities you are actively interested in.
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -1619,7 +1619,7 @@ export default function OpportunitiesPage() {
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                         isSelected
                           ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] border-[var(--action-primary)] font-bold"
-                          : "bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800"
+                          : "bg-slate-950 border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)]"
                       }`}
                     >
                       {type}
@@ -1630,10 +1630,10 @@ export default function OpportunitiesPage() {
             </div>
 
             {/* Candidate Discovery Opt-In */}
-            <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+            <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
               <div className="space-y-0.5">
-                <div className="text-xs font-bold text-slate-200">Candidate Discovery by Creators</div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-xs font-bold text-[var(--text-primary)]">Candidate Discovery by Creators</div>
+                <div className="text-[11px] text-[var(--text-muted)]">
                   Allow professors and opportunity managers to discover your profile and send invitations.
                 </div>
               </div>
@@ -1642,27 +1642,27 @@ export default function OpportunitiesPage() {
                 checked={experienceProfile?.discovery_opt_in ?? true}
                 onChange={(e) => handleSaveExpProfile({ discovery_opt_in: e.target.checked })}
                 aria-label="Allow candidate discovery by creators"
-                className="w-4 h-4 rounded text-[var(--action-primary)] focus:ring-[var(--focus-ring)] bg-slate-900 border-slate-700 cursor-pointer"
+                className="w-4 h-4 rounded text-[var(--action-primary)] focus:ring-[var(--focus-ring)] bg-[var(--surface-card)] border-[var(--border-color)] cursor-pointer"
               />
             </div>
           </Card>
         </div>
       ) : activeTab === "saved" ? (
         savedOpportunities.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
-            <Bookmark className="w-8 h-8 text-slate-500 mx-auto" />
-            <div className="text-sm font-semibold text-slate-300">No Saved Opportunities</div>
-            <p className="text-xs text-slate-400">Click the bookmark icon on any opportunity to save it for later.</p>
+          <div className="p-8 text-center rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
+            <Bookmark className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+            <div className="text-sm font-semibold text-[var(--text-secondary)]">No Saved Opportunities</div>
+            <p className="text-xs text-[var(--text-muted)]">Click the bookmark icon on any opportunity to save it for later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {savedOpportunities.map((opp) => {
               const isApplied = appliedOppIds.has(opp.id);
               return (
-                <Card key={opp.id} className="p-5 bg-slate-900/80 border-slate-800 flex flex-col justify-between gap-4">
+                <Card key={opp.id} className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] flex flex-col justify-between gap-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                      <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] border border-[var(--border-color)]">
                         {opp.category}
                       </span>
                       <button
@@ -1675,16 +1675,16 @@ export default function OpportunitiesPage() {
                     </div>
                     <div>
                       <h3 className="text-sm sm:text-base font-bold text-slate-100">{opp.title}</h3>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {opp.organization} {opp.mentor_name && `· Mentor: ${opp.mentor_name}`}
                       </p>
                     </div>
-                    <p className="text-xs text-slate-300">{opp.description}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{opp.description}</p>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-muted)]">
                     <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      <MapPin className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                       {opp.location}
                     </span>
 
@@ -1710,7 +1710,7 @@ export default function OpportunitiesPage() {
                           target="_blank"
                           rel="noreferrer"
                           aria-label={`Official portal for ${opp.title}`}
-                          className="p-1 text-slate-400 hover:text-[var(--action-primary)] transition-colors"
+                          className="p-1 text-[var(--text-muted)] hover:text-[var(--action-primary)] transition-colors"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -1725,13 +1725,13 @@ export default function OpportunitiesPage() {
       ) : activeTab === "admin" && isAdmin ? (
         <div className="space-y-6">
           {/* Admin Header & Action */}
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
                 Administrator Opportunity Control Center
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 Manage campus opportunities, set mandatory criteria, preview live student matching, and invite candidates.
               </p>
             </div>
@@ -1768,7 +1768,7 @@ export default function OpportunitiesPage() {
           {/* Admin Opportunities List */}
           <div className="grid grid-cols-1 gap-4">
             {allOpportunities.map((opp) => (
-              <Card key={opp.id} className="p-5 bg-slate-900/90 border-slate-800 space-y-4">
+              <Card key={opp.id} className="p-5 bg-[var(--surface-card)] border-[var(--border-color)] space-y-4">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1779,13 +1779,13 @@ export default function OpportunitiesPage() {
                             ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800"
                             : opp.status === "draft"
                             ? "bg-amber-950/80 text-amber-300 border border-amber-800"
-                            : "bg-slate-800 text-slate-400 border border-slate-700"
+                            : "bg-[var(--surface-secondary)] text-[var(--text-muted)] border border-[var(--border-color)]"
                         }`}
                       >
                         {opp.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[var(--text-muted)]">
                       {opp.organization} · Category: <span className="capitalize">{opp.category}</span> · Role: <span className="capitalize">{opp.role_type}</span> · Stipend: {opp.stipend || "Unpaid"}
                     </p>
                   </div>
@@ -1853,7 +1853,7 @@ export default function OpportunitiesPage() {
                         size="sm"
                         variant="secondary"
                         onClick={() => handleOppStatusChange(opp.id, "archive")}
-                        className="text-xs text-slate-400 hover:text-rose-400"
+                        className="text-xs text-[var(--text-muted)] hover:text-rose-400"
                       >
                         Archive
                       </Button>
@@ -1862,37 +1862,37 @@ export default function OpportunitiesPage() {
                 </div>
 
                 {/* Criteria strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-[11px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[11px]">
                   <div>
-                    <span className="text-slate-400 block">Min Verified CGPA</span>
+                    <span className="text-[var(--text-muted)] block">Min Verified CGPA</span>
                     <span className="font-semibold text-[var(--action-primary)]">
                       {opp.criteria?.min_cgpa ? `${opp.criteria.min_cgpa.toFixed(2)}` : "None"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Allowed Branches</span>
-                    <span className="font-semibold text-slate-200">
+                    <span className="text-[var(--text-muted)] block">Allowed Branches</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
                       {opp.criteria?.allowed_branches?.join(", ") || "All Branches"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Max Backlogs</span>
-                    <span className="font-semibold text-slate-200">
+                    <span className="text-[var(--text-muted)] block">Max Backlogs</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
                       {opp.criteria?.max_active_backlogs ?? 0}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Min Attendance</span>
-                    <span className="font-semibold text-slate-200">
+                    <span className="text-[var(--text-muted)] block">Min Attendance</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
                       {opp.criteria?.min_attendance_percentage ? `${opp.criteria.min_attendance_percentage}%` : "75%"}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="text-slate-400 text-[11px]">Required Skills:</span>
+                  <span className="text-[var(--text-muted)] text-[11px]">Required Skills:</span>
                   {(opp.required_skills || []).map((s) => (
-                    <span key={s} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px] font-mono">
+                    <span key={s} className="px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] text-[11px] font-mono">
                       {s}
                     </span>
                   ))}
@@ -1917,10 +1917,10 @@ export default function OpportunitiesPage() {
           title={editingOppId ? "Edit Opportunity" : "Create Opportunity with Live Matching"}
           size="lg"
         >
-          <div className="space-y-4 text-xs text-slate-300 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="space-y-4 text-xs text-[var(--text-secondary)] max-h-[75vh] overflow-y-auto pr-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                   Opportunity Title *
                 </label>
                 <input
@@ -1928,12 +1928,12 @@ export default function OpportunitiesPage() {
                   placeholder="e.g. LLM Systems Research Fellow"
                   value={oppTitle}
                   onChange={(e) => setOppTitle(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                   Organization / Lab *
                 </label>
                 <input
@@ -1941,18 +1941,18 @@ export default function OpportunitiesPage() {
                   placeholder="e.g. TIET Center for AI and Data Science"
                   value={oppOrg}
                   onChange={(e) => setOppOrg(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Category</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Category</label>
                 <select
                   value={oppCategory}
                   onChange={(e) => setOppCategory(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                 >
                   <option value="project">Project</option>
                   <option value="research">Research</option>
@@ -1962,11 +1962,11 @@ export default function OpportunitiesPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Role Type</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Role Type</label>
                 <select
                   value={oppRoleType}
                   onChange={(e) => setOppRoleType(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                 >
                   <option value="internship">Internship</option>
                   <option value="research_assistant">Research Assistant</option>
@@ -1976,29 +1976,29 @@ export default function OpportunitiesPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Stipend</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Stipend</label>
                 <input
                   type="text"
                   placeholder="₹15,000 / month"
                   value={oppStipend}
                   onChange={(e) => setOppStipend(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Deadline</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Deadline</label>
                 <input
                   type="date"
                   value={oppDeadline}
                   onChange={(e) => setOppDeadline(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                  className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                 Required Skills (comma separated)
               </label>
               <input
@@ -2006,12 +2006,12 @@ export default function OpportunitiesPage() {
                 placeholder="Python, PyTorch, Next.js, FastAPI"
                 value={oppSkills}
                 onChange={(e) => setOppSkills(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono"
+                className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100 font-mono"
               />
             </div>
 
             {/* Mandatory Criteria Section */}
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-[var(--border-color)] space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--action-primary)]">
                 <ShieldCheck className="w-4 h-4" />
                 Mandatory Eligibility Criteria (Rule-Engine Enforced)
@@ -2019,7 +2019,7 @@ export default function OpportunitiesPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Min Verified CGPA</label>
+                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Min Verified CGPA</label>
                   <input
                     type="number"
                     step="0.1"
@@ -2027,48 +2027,48 @@ export default function OpportunitiesPage() {
                     max="10"
                     value={oppMinCgpa ?? ""}
                     onChange={(e) => setOppMinCgpa(e.target.value ? Number(e.target.value) : undefined)}
-                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Allowed Branches</label>
+                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Allowed Branches</label>
                   <input
                     type="text"
                     placeholder="COE, CSE, ENC"
                     value={oppBranches}
                     onChange={(e) => setOppBranches(e.target.value)}
-                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 uppercase"
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100 uppercase"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Max Active Backlogs</label>
+                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Max Active Backlogs</label>
                   <input
                     type="number"
                     min="0"
                     value={oppMaxBacklogs}
                     onChange={(e) => setOppMaxBacklogs(Number(e.target.value))}
-                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Min Attendance %</label>
+                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Min Attendance %</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     value={oppMinAttendance}
                     onChange={(e) => setOppMinAttendance(Number(e.target.value))}
-                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                    className="w-full text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                 Description &amp; Deliverables
               </label>
               <textarea
@@ -2076,7 +2076,7 @@ export default function OpportunitiesPage() {
                 placeholder="Describe project responsibilities, expected timeline, and learning outcomes..."
                 value={oppDesc}
                 onChange={(e) => setOppDesc(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                className="w-full text-xs p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
               />
             </div>
 
@@ -2088,7 +2088,7 @@ export default function OpportunitiesPage() {
                     <Sparkles className="w-4 h-4 text-[var(--action-primary)]" />
                     Live Matching Preview (Pre-Publication Simulation)
                   </h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
                     Evaluates criteria against verified student pool before saving.
                   </p>
                 </div>
@@ -2123,9 +2123,9 @@ export default function OpportunitiesPage() {
                       {previewData.incomplete_profile_count ?? 0}
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Total Scanned</div>
-                    <div className="text-lg font-bold text-slate-200">
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)]">
+                    <div className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Total Scanned</div>
+                    <div className="text-lg font-bold text-[var(--text-primary)]">
                       {previewData.total_opted_in_students}
                     </div>
                   </div>
@@ -2134,7 +2134,7 @@ export default function OpportunitiesPage() {
             </div>
 
             {/* Modal Actions */}
-            <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+            <div className="pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -2176,12 +2176,12 @@ export default function OpportunitiesPage() {
           title={`Candidate Discovery: ${selectedOppForCandidates.title}`}
           size="lg"
         >
-          <div className="space-y-4 text-xs text-slate-300 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="space-y-4 text-xs text-[var(--text-secondary)] max-h-[75vh] overflow-y-auto pr-1">
             {/* Criteria context summary */}
-            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between text-[11px]">
+            <div className="p-3 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] flex items-center justify-between text-[11px]">
               <div>
-                <span className="text-slate-400">Required Skills: </span>
-                <span className="text-slate-200 font-mono">
+                <span className="text-[var(--text-muted)]">Required Skills: </span>
+                <span className="text-[var(--text-primary)] font-mono">
                   {(selectedOppForCandidates.required_skills || []).join(", ")}
                 </span>
               </div>
@@ -2205,7 +2205,7 @@ export default function OpportunitiesPage() {
                   setCandidateSearch(e.target.value);
                   handleFilterCandidates(undefined, undefined, e.target.value);
                 }}
-                className="text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                className="text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
               />
               <select
                 value={candidateFilterStatus}
@@ -2213,7 +2213,7 @@ export default function OpportunitiesPage() {
                   setCandidateFilterStatus(e.target.value);
                   handleFilterCandidates(e.target.value, undefined, undefined);
                 }}
-                className="text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                className="text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
               >
                 <option value="all">All Statuses</option>
                 <option value="ELIGIBLE">Eligible Only</option>
@@ -2226,7 +2226,7 @@ export default function OpportunitiesPage() {
                   setCandidateFilterBranch(e.target.value);
                   handleFilterCandidates(undefined, e.target.value, undefined);
                 }}
-                className="text-xs p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100"
+                className="text-xs p-2 rounded-lg bg-slate-900 border border-[var(--border-color)] text-slate-100"
               >
                 <option value="all">All Branches</option>
                 <option value="COE">COE</option>
@@ -2238,9 +2238,9 @@ export default function OpportunitiesPage() {
 
             {/* Candidates list */}
             {loadingCandidates ? (
-              <div className="py-8 text-center text-slate-400">Loading candidate pool...</div>
+              <div className="py-8 text-center text-[var(--text-muted)]">Loading candidate pool...</div>
             ) : candidatesList.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 rounded-xl bg-slate-950/40 border border-slate-800">
+              <div className="py-8 text-center text-[var(--text-muted)] rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                 No candidates match the specified filter criteria.
               </div>
             ) : (
@@ -2252,14 +2252,14 @@ export default function OpportunitiesPage() {
                   return (
                     <div
                       key={cand.student_id}
-                      className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      className="p-3.5 rounded-xl bg-slate-900 border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-100 text-xs">
                             {cand.student_name}
                           </span>
-                          <span className="font-mono text-[10px] text-slate-400">
+                          <span className="font-mono text-[10px] text-[var(--text-muted)]">
                             ({cand.student_roll_no})
                           </span>
                           <span
@@ -2274,14 +2274,14 @@ export default function OpportunitiesPage() {
                             {cand.eligibility?.status || "PENDING"}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-[var(--text-muted)]">
                           Branch: {cand.student_branch} · Verified CGPA:{" "}
                           <strong className="text-[var(--action-primary)]">{cand.verified_cgpa?.toFixed(2) || "N/A"}</strong> · Match:{" "}
                           <strong className="text-[var(--action-primary)]">{cand.match_score}%</strong>
                         </p>
                         <div className="flex flex-wrap gap-1 pt-0.5">
                           {(cand.skills || []).map((sk: string) => (
-                            <span key={sk} className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">
+                            <span key={sk} className="px-1.5 py-0.2 rounded bg-[var(--surface-secondary)] text-[10px] text-[var(--text-secondary)] font-mono">
                               {sk}
                             </span>
                           ))}
@@ -2324,29 +2324,29 @@ export default function OpportunitiesPage() {
           title={`Apply: ${selectedOppToApply.title}`}
           size="md"
         >
-          <div className="space-y-4 text-xs text-slate-300">
+          <div className="space-y-4 text-xs text-[var(--text-secondary)]">
             {/* Opportunity Context Header */}
             <div className="p-3 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
               <div className="font-semibold text-slate-100">{selectedOppToApply.organization}</div>
-              <p className="text-slate-400">
+              <p className="text-[var(--text-muted)]">
                 {selectedOppToApply.location} · {selectedOppToApply.time_commitment_hrs_week} hours/week requirement
               </p>
             </div>
 
             {/* Candidate Pre-filled Profile */}
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
-              <div className="font-semibold text-slate-200">Candidate Information</div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400">
-                <div>Student: <strong className="text-slate-200">Arjun Mehta</strong></div>
-                <div>Roll No: <strong className="text-slate-200">102203099</strong></div>
-                <div>Branch: <strong className="text-slate-200">COE (Semester 5)</strong></div>
-                <div>Campus: <strong className="text-slate-200">Thapar Institute (TIET)</strong></div>
+            <div className="p-3 rounded-lg bg-slate-950 border border-[var(--border-color)] space-y-1.5">
+              <div className="font-semibold text-[var(--text-primary)]">Candidate Information</div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-[var(--text-muted)]">
+                <div>Student: <strong className="text-[var(--text-primary)]">Arjun Mehta</strong></div>
+                <div>Roll No: <strong className="text-[var(--text-primary)]">102203099</strong></div>
+                <div>Branch: <strong className="text-[var(--text-primary)]">COE (Semester 5)</strong></div>
+                <div>Campus: <strong className="text-[var(--text-primary)]">Thapar Institute (TIET)</strong></div>
               </div>
             </div>
 
             {/* Statement of Interest */}
             <div className="space-y-1.5">
-              <label htmlFor="apply-statement" className="font-semibold text-slate-200">
+              <label htmlFor="apply-statement" className="font-semibold text-[var(--text-primary)]">
                 Statement of Interest &amp; Relevant Experience
               </label>
               <textarea
@@ -2355,14 +2355,14 @@ export default function OpportunitiesPage() {
                 value={statementInput}
                 onChange={(e) => setStatementInput(e.target.value)}
                 placeholder="Describe your motivation and any relevant projects or coursework..."
-                className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
+                className="w-full p-2.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
               />
             </div>
 
             {/* Weekly Commitment Input */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label htmlFor="apply-hrs" className="font-semibold text-slate-200">
+                <label htmlFor="apply-hrs" className="font-semibold text-[var(--text-primary)]">
                   Weekly Available Hours
                 </label>
                 <span className="font-mono text-[var(--action-primary)] font-bold">{commitmentInput} hrs/wk</span>
@@ -2375,11 +2375,11 @@ export default function OpportunitiesPage() {
                 step={1}
                 value={commitmentInput}
                 onChange={(e) => setCommitmentInput(Number(e.target.value))}
-                className="w-full accent-[var(--action-primary)] bg-slate-800 h-1.5 rounded-lg cursor-pointer"
+                className="w-full accent-[var(--action-primary)] bg-[var(--surface-secondary)] h-1.5 rounded-lg cursor-pointer"
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+            <div className="pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setApplyModalOpen(false)}>
                 Cancel
               </Button>
@@ -2406,12 +2406,12 @@ export default function OpportunitiesPage() {
         title="Matching Preferences & Skills"
         size="md"
       >
-        <div className="space-y-5 text-xs text-slate-300">
+        <div className="space-y-5 text-xs text-[var(--text-secondary)]">
           {/* Opt-in toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-[var(--border-color)]">
             <div>
-              <div className="font-semibold text-slate-200">Opt-In for Opportunity Matching</div>
-              <div className="text-[11px] text-slate-400">
+              <div className="font-semibold text-[var(--text-primary)]">Opt-In for Opportunity Matching</div>
+              <div className="text-[11px] text-[var(--text-muted)]">
                 Allow algorithm to match your skills with campus research and projects
               </div>
             </div>
@@ -2420,14 +2420,14 @@ export default function OpportunitiesPage() {
               checked={editOptIn}
               onChange={(e) => setEditOptIn(e.target.checked)}
               aria-label="Opt-in for opportunity matching"
-              className="w-4 h-4 rounded text-[var(--action-primary)] focus:ring-[var(--focus-ring)] bg-slate-900 border-slate-700"
+              className="w-4 h-4 rounded text-[var(--action-primary)] focus:ring-[var(--focus-ring)] bg-[var(--surface-card)] border-[var(--border-color)]"
             />
           </div>
 
           {/* Availability hours slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label htmlFor="avail-hours-slider" className="font-semibold text-slate-200">Available Time Commitment</label>
+              <label htmlFor="avail-hours-slider" className="font-semibold text-[var(--text-primary)]">Available Time Commitment</label>
               <span className="font-mono text-[var(--action-primary)] font-bold">{editHours} hours / week</span>
             </div>
             <input
@@ -2439,9 +2439,9 @@ export default function OpportunitiesPage() {
               value={editHours}
               onChange={(e) => setEditHours(Number(e.target.value))}
               aria-label="Available time commitment in hours per week"
-              className="w-full accent-[var(--action-primary)] bg-slate-800 h-1.5 rounded-lg cursor-pointer"
+              className="w-full accent-[var(--action-primary)] bg-[var(--surface-secondary)] h-1.5 rounded-lg cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500">
+            <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
               <span>Light (2 hrs)</span>
               <span>Balanced (10 hrs)</span>
               <span>Intensive (25 hrs)</span>
@@ -2450,7 +2450,7 @@ export default function OpportunitiesPage() {
 
           {/* Add Skill Tags */}
           <div className="space-y-2">
-            <label htmlFor="skill-input-box" className="font-semibold text-slate-200">Your Technical Skills & Strengths</label>
+            <label htmlFor="skill-input-box" className="font-semibold text-[var(--text-primary)]">Your Technical Skills & Strengths</label>
             <div className="flex gap-2">
               <input
                 id="skill-input-box"
@@ -2460,7 +2460,7 @@ export default function OpportunitiesPage() {
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSkill())}
                 aria-label="New skill name to add"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
               <Button size="sm" variant="secondary" onClick={handleAddSkill}>
                 Add
@@ -2486,7 +2486,7 @@ export default function OpportunitiesPage() {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <div className="pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setEditModalOpen(false)}>
               Cancel
             </Button>
@@ -2506,58 +2506,58 @@ export default function OpportunitiesPage() {
         title="Add Project"
         size="md"
       >
-        <div className="space-y-4 text-xs text-slate-300">
+        <div className="space-y-4 text-xs text-[var(--text-secondary)]">
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Project Title *</label>
+            <label className="font-semibold text-[var(--text-primary)]">Project Title *</label>
             <input
               type="text"
               placeholder="e.g. Distributed Task Queue"
               value={projTitle}
               onChange={(e) => setProjTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Your Role</label>
+            <label className="font-semibold text-[var(--text-primary)]">Your Role</label>
             <input
               type="text"
               placeholder="e.g. Backend Lead, Full Stack Developer"
               value={projRole}
               onChange={(e) => setProjRole(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Technologies (comma-separated)</label>
+            <label className="font-semibold text-[var(--text-primary)]">Technologies (comma-separated)</label>
             <input
               type="text"
               placeholder="e.g. Python, Redis, Docker, FastAPI"
               value={projTech}
               onChange={(e) => setProjTech(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Project or Repository URL (optional)</label>
+            <label className="font-semibold text-[var(--text-primary)]">Project or Repository URL (optional)</label>
             <input
               type="url"
               placeholder="https://github.com/username/project"
               value={projLink}
               onChange={(e) => setProjLink(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Description</label>
+            <label className="font-semibold text-[var(--text-primary)]">Description</label>
             <textarea
               rows={3}
               placeholder="What did you build, what challenges did you solve, and what was the impact?"
               value={projDesc}
               onChange={(e) => setProjDesc(e.target.value)}
-              className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
+              className="w-full p-2.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
             />
           </div>
-          <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <div className="pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAddProjectOpen(false)}>
               Cancel
             </Button>
@@ -2577,72 +2577,72 @@ export default function OpportunitiesPage() {
         title="Add Work Experience / Internship"
         size="md"
       >
-        <div className="space-y-4 text-xs text-slate-300">
+        <div className="space-y-4 text-xs text-[var(--text-secondary)]">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-200">Role / Position *</label>
+              <label className="font-semibold text-[var(--text-primary)]">Role / Position *</label>
               <input
                 type="text"
                 placeholder="e.g. Machine Learning Intern"
                 value={workRole}
                 onChange={(e) => setWorkRole(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-200">Company / Organization *</label>
+              <label className="font-semibold text-[var(--text-primary)]">Company / Organization *</label>
               <input
                 type="text"
                 placeholder="e.g. TIET Research Lab, Microsoft"
                 value={workCompany}
                 onChange={(e) => setWorkCompany(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Location</label>
+            <label className="font-semibold text-[var(--text-primary)]">Location</label>
             <input
               type="text"
               placeholder="e.g. Patiala, Punjab or Remote"
               value={workLocation}
               onChange={(e) => setWorkLocation(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-200">Start Date</label>
+              <label className="font-semibold text-[var(--text-primary)]">Start Date</label>
               <input
                 type="text"
                 placeholder="YYYY-MM (e.g. 2024-06)"
                 value={workStart}
                 onChange={(e) => setWorkStart(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-200">End Date (leave blank if current)</label>
+              <label className="font-semibold text-[var(--text-primary)]">End Date (leave blank if current)</label>
               <input
                 type="text"
                 placeholder="YYYY-MM or Present"
                 value={workEnd}
                 onChange={(e) => setWorkEnd(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Description</label>
+            <label className="font-semibold text-[var(--text-primary)]">Description</label>
             <textarea
               rows={3}
               placeholder="Describe your responsibilities, tools used, and deliverables achieved..."
               value={workDesc}
               onChange={(e) => setWorkDesc(e.target.value)}
-              className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
+              className="w-full p-2.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
             />
           </div>
-          <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <div className="pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAddWorkOpen(false)}>
               Cancel
             </Button>
@@ -2662,48 +2662,48 @@ export default function OpportunitiesPage() {
         title="Add Certification"
         size="md"
       >
-        <div className="space-y-4 text-xs text-slate-300">
+        <div className="space-y-4 text-xs text-[var(--text-secondary)]">
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Certification Name *</label>
+            <label className="font-semibold text-[var(--text-primary)]">Certification Name *</label>
             <input
               type="text"
               placeholder="e.g. AWS Certified Cloud Practitioner"
               value={certTitle}
               onChange={(e) => setCertTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Issuing Organization *</label>
+            <label className="font-semibold text-[var(--text-primary)]">Issuing Organization *</label>
             <input
               type="text"
               placeholder="e.g. Amazon Web Services, Google Cloud, DeepLearning.AI"
               value={certIssuer}
               onChange={(e) => setCertIssuer(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Issue Date</label>
+            <label className="font-semibold text-[var(--text-primary)]">Issue Date</label>
             <input
               type="text"
               placeholder="YYYY-MM (e.g. 2024-03)"
               value={certDate}
               onChange={(e) => setCertDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-200">Credential URL (optional)</label>
+            <label className="font-semibold text-[var(--text-primary)]">Credential URL (optional)</label>
             <input
               type="url"
               placeholder="https://www.credly.com/badges/..."
               value={certUrl}
               onChange={(e) => setCertUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
-          <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <div className="pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAddCertOpen(false)}>
               Cancel
             </Button>

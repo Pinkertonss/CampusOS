@@ -242,10 +242,10 @@ export default function LostAndFoundPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-color)]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Campus Lost & Found
             </h1>
             <Badge variant="primary" size="sm" className="font-mono text-xs">
@@ -282,7 +282,7 @@ export default function LostAndFoundPage() {
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "all"
                 ? "bg-[var(--surface-card)] text-[var(--text-primary)] font-semibold shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-[var(--text-secondary)] hover:text-slate-900"
             }`}
           >
             All Reports
@@ -293,7 +293,7 @@ export default function LostAndFoundPage() {
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "lost"
                 ? "bg-[var(--surface-card)] text-rose-700 dark:text-rose-400 font-semibold shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-[var(--text-secondary)] hover:text-slate-900"
             }`}
           >
             🔍 Lost Items
@@ -304,7 +304,7 @@ export default function LostAndFoundPage() {
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "found"
                 ? "bg-[var(--surface-card)] text-emerald-700 dark:text-emerald-400 font-semibold shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-[var(--text-secondary)] hover:text-slate-900"
             }`}
           >
             📦 Found Items
@@ -315,7 +315,7 @@ export default function LostAndFoundPage() {
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "mine"
                 ? "bg-[var(--surface-card)] text-[var(--text-primary)] font-semibold shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                : "text-[var(--text-secondary)] hover:text-slate-900"
             }`}
           >
             My Reports
@@ -331,14 +331,14 @@ export default function LostAndFoundPage() {
               placeholder="Search keyword or place..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+              className="w-full text-xs pl-9 pr-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-white dark:bg-slate-800 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
             />
           </div>
 
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+            className="text-xs px-2.5 py-1.5 rounded-xl border border-[var(--border-color)] bg-white dark:bg-slate-800 text-[var(--text-secondary)]"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat.value} value={cat.value}>
@@ -350,7 +350,7 @@ export default function LostAndFoundPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+            className="text-xs px-2.5 py-1.5 rounded-xl border border-[var(--border-color)] bg-white dark:bg-slate-800 text-[var(--text-secondary)]"
           >
             <option value="open">Open Reports</option>
             <option value="resolved">Resolved</option>
@@ -367,9 +367,9 @@ export default function LostAndFoundPage() {
           Loading reports...
         </div>
       ) : reports.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 space-y-2">
+        <div className="py-16 text-center border border-dashed border-[var(--border-color)] rounded-2xl p-8 space-y-2">
           <FileQuestion className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">
             No matching reports found
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
@@ -387,7 +387,7 @@ export default function LostAndFoundPage() {
               <div
                 key={item.id}
                 onClick={() => handleOpenDetail(item)}
-                className="group relative cursor-pointer flex flex-col justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-[var(--action-primary)] hover:shadow-xs transition-all space-y-3"
+                className="group relative cursor-pointer flex flex-col justify-between p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--surface-card)] hover:border-[var(--action-primary)] hover:shadow-xs transition-all space-y-3"
               >
                 <div>
                   {/* Image or Category placeholder */}
@@ -436,7 +436,7 @@ export default function LostAndFoundPage() {
 
                   {/* Title & Metadata */}
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-[var(--action-primary)] transition">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--action-primary)] transition">
                       {item.title}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
@@ -767,7 +767,7 @@ export default function LostAndFoundPage() {
                   {loadingClaims ? (
                     <div className="py-4 text-center text-xs text-slate-400">Loading claims...</div>
                   ) : itemClaims.length === 0 ? (
-                    <div className="py-4 text-center text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
+                    <div className="py-4 text-center text-xs text-slate-400 bg-[var(--surface-secondary)] rounded-xl">
                       No claims received yet.
                     </div>
                   ) : (
@@ -775,10 +775,10 @@ export default function LostAndFoundPage() {
                       {itemClaims.map((claim) => (
                         <div
                           key={claim.id}
-                          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs space-y-2"
+                          className="p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-secondary)] text-xs space-y-2"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-900 dark:text-white">
+                            <span className="font-bold text-[var(--text-primary)]">
                               Claimant: {claim.claimant_email || "Student"}
                             </span>
                             <span
@@ -794,11 +794,11 @@ export default function LostAndFoundPage() {
                             </span>
                           </div>
 
-                          <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                          <div className="p-2.5 rounded-lg bg-[var(--surface-card)] border border-[var(--border-color)]">
                             <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
                               Private Identifying Proof
                             </span>
-                            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                               {claim.distinguishing_proof}
                             </p>
                           </div>
@@ -828,8 +828,8 @@ export default function LostAndFoundPage() {
 
                   {/* Resolution control */}
                   {selectedItem.status === "open" && (
-                    <div className="mt-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
-                      <label className="block text-xs font-bold text-slate-900 dark:text-white">
+                    <div className="mt-4 p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-2">
+                      <label className="block text-xs font-bold text-[var(--text-primary)]">
                         Mark Item as Resolved
                       </label>
                       <input
@@ -837,7 +837,7 @@ export default function LostAndFoundPage() {
                         placeholder="Resolution notes (e.g. Handed over at Library Desk)"
                         value={resolutionNotes}
                         onChange={(e) => setResolutionNotes(e.target.value)}
-                        className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                        className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-[var(--surface-card)]"
                       />
                       <div className="flex justify-end">
                         <Button

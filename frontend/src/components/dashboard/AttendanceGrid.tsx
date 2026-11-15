@@ -69,7 +69,7 @@ export function ProgressRing({
           className="transition-all duration-500 ease-out"
         />
       </svg>
-      <div className="absolute text-[11px] font-bold text-slate-800 dark:text-slate-100 font-mono">
+      <div className="absolute text-[11px] font-bold text-[var(--text-primary)] font-mono">
         {Math.round(percentage)}%
       </div>
     </div>
@@ -109,9 +109,9 @@ export default function AttendanceGrid({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
             Attendance Overview
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--surface-secondary)] text-[var(--text-secondary)] font-mono">
               75% TIET Rule
             </span>
           </h2>
@@ -147,7 +147,7 @@ export default function AttendanceGrid({
                       </span>
                       <span className="text-[11px] text-slate-400">· {course.credits} cr</span>
                     </div>
-                    <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 line-clamp-1 mt-0.5">
+                    <h3 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-1 mt-0.5">
                       {course.name}
                     </h3>
                   </div>
@@ -163,7 +163,7 @@ export default function AttendanceGrid({
 
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      Attended: <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{course.attended}/{course.total_held}</span> classes
+                      Attended: <span className="font-semibold text-[var(--text-primary)] font-mono">{course.attended}/{course.total_held}</span> classes
                     </div>
 
                     {isSafe ? (

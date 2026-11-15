@@ -327,7 +327,7 @@ export default function CampusCopilotPage() {
 
         {/* Tab Controls (Administrator Only) */}
         {isAdmin && (
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg">
+          <div className="flex items-center gap-2 bg-[var(--surface-secondary)] p-1 rounded-lg">
             <button
               type="button"
               onClick={() => setActiveTab("chat")}
@@ -384,7 +384,7 @@ export default function CampusCopilotPage() {
                             key={idx}
                             type="button"
                             onClick={() => handleSendMessage(q)}
-                            className="text-left text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] transition line-clamp-2 hover:border-[var(--action-primary)]"
+                            className="text-left text-xs p-3 rounded-xl bg-[var(--surface-secondary)] hover:bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] transition line-clamp-2 hover:border-[var(--action-primary)]"
                           >
                             <span className="font-medium text-[var(--action-primary)] mr-1.5">Q:</span>
                             {q}
@@ -409,7 +409,7 @@ export default function CampusCopilotPage() {
                           ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] rounded-br-sm"
                           : msg.isDeclined
                           ? "bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-slate-900 dark:text-slate-100 rounded-bl-sm"
-                          : "bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200/70 dark:border-slate-700/70 rounded-bl-sm shadow-xs"
+                          : "bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-bl-sm shadow-xs"
                       }`}
                     >
                       {/* Declined State Header */}
@@ -425,7 +425,7 @@ export default function CampusCopilotPage() {
 
                       {/* Source Citation Chips */}
                       {msg.sender === "copilot" && msg.citations && msg.citations.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
+                        <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-1.5">
                           <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
                             <BookOpen className="w-3 h-3 text-[var(--action-primary)]" />
                             Authoritative Sources Cited:
@@ -461,7 +461,7 @@ export default function CampusCopilotPage() {
                         <div
                           className={`mt-3 p-3 rounded-xl space-y-2 border ${
                             msg.actionableSuggestion.is_historical || msg.actionableSuggestion.is_expired
-                              ? "bg-slate-100/90 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                              ? "bg-slate-100/90 dark:bg-slate-800/60 border-[var(--border-color)] text-slate-800 dark:text-slate-200"
                               : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200"
                           }`}
                         >
@@ -537,7 +537,7 @@ export default function CampusCopilotPage() {
                 {/* Real-time Streaming Response Card */}
                 {isLoading && (
                   <div className="flex flex-col items-start">
-                    <div className="max-w-[80%] rounded-2xl rounded-bl-sm p-4 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-xs">
+                    <div className="max-w-[80%] rounded-2xl rounded-bl-sm p-4 text-sm bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-xs">
                       {streamingDeclined && (
                         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-rose-200 text-rose-700 font-semibold text-xs">
                           <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -551,7 +551,7 @@ export default function CampusCopilotPage() {
                       </div>
 
                       {streamingCitations.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1">
+                        <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-1">
                           <span className="text-[11px] font-semibold text-slate-500 uppercase">
                             Sources Identified:
                           </span>
@@ -575,7 +575,7 @@ export default function CampusCopilotPage() {
               </div>
 
               {/* Chat Input Bar */}
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 rounded-b-xl">
+              <div className="p-4 border-t border-[var(--border-color)] bg-[var(--surface-secondary)] rounded-b-xl">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -589,7 +589,7 @@ export default function CampusCopilotPage() {
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask a question about Thapar academic policies, curfews, or fees..."
                     disabled={isLoading}
-                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] dark:text-white placeholder-slate-400 disabled:opacity-60"
+                    className="flex-1 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] dark:text-white placeholder-slate-400 disabled:opacity-60"
                   />
                   <Button
                     type="submit"
@@ -614,7 +614,7 @@ export default function CampusCopilotPage() {
             <div className="lg:col-span-1 space-y-4">
               <Card className="h-full border-[var(--border-color)] shadow-md flex flex-col justify-between">
                 <div>
-                  <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border-color)] pb-3">
                     <div className="flex items-center gap-2">
                       <BookOpen className="w-4 h-4 text-[var(--action-primary)]" />
                       <CardTitle className="text-sm font-semibold">Source Inspector</CardTitle>
@@ -678,14 +678,14 @@ export default function CampusCopilotPage() {
                       <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">
                         Exact Retrieved Chunk Excerpt
                       </span>
-                      <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-mono whitespace-pre-line max-h-[320px] overflow-y-auto">
+                      <div className="p-3 rounded-lg bg-[var(--surface-secondary)] border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-mono whitespace-pre-line max-h-[320px] overflow-y-auto">
                         {selectedCitation.snippet || selectedCitation.excerpt}
                       </div>
                     </div>
                   </CardContent>
                 </div>
 
-                <CardFooter className="border-t border-slate-100 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/40 flex justify-end">
+                <CardFooter className="border-t border-[var(--border-color)] p-3 bg-[var(--surface-secondary)] flex justify-end">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -731,7 +731,7 @@ export default function CampusCopilotPage() {
                       placeholder="e.g. TIET Hostel Rules Winter 2024"
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--focus-ring)] focus:outline-none dark:text-white"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--focus-ring)] focus:outline-none dark:text-white"
                     />
                   </div>
 
@@ -743,7 +743,7 @@ export default function CampusCopilotPage() {
                     <select
                       value={uploadCategory}
                       onChange={(e) => setUploadCategory(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--focus-ring)] focus:outline-none dark:text-white"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--focus-ring)] focus:outline-none dark:text-white"
                     >
                       <option value="circular">General Campus Circular</option>
                       <option value="academic_ordinance">Academic Regulations &amp; Ordinance</option>
@@ -760,7 +760,7 @@ export default function CampusCopilotPage() {
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Document File (.pdf, .docx, .txt) *
                   </label>
-                  <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-[var(--action-primary)] rounded-xl p-6 text-center transition bg-slate-50/50 dark:bg-slate-900/30">
+                  <div className="border-2 border-dashed border-[var(--border-color)] hover:border-[var(--action-primary)] rounded-xl p-6 text-center transition bg-[var(--surface-secondary)]">
                     <input
                       type="file"
                       id="doc-upload"
@@ -846,7 +846,7 @@ export default function CampusCopilotPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-semibold border-b border-slate-200 dark:border-slate-700">
+                    <thead className="bg-[var(--surface-secondary)] text-slate-500 uppercase font-semibold border-b border-[var(--border-color)]">
                       <tr>
                         <th className="p-3">Document Title</th>
                         <th className="p-3">Category</th>
