@@ -110,39 +110,35 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Background ambient glow */}
-      <div className="absolute top-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -left-48 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[var(--page-bg)] text-[var(--text-primary)]">
       <div className="w-full max-w-md z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-sky-500 text-white shadow-lg shadow-teal-900/30 mb-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs mb-2">
             <GraduationCap className="w-8 h-8" />
           </div>
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">Create Account</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Create Account</h1>
             <Badge variant="primary" size="sm">
               TIET
             </Badge>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[var(--text-secondary)]">
             Join CampusOS to unify your timetable, grades, attendance, and campus copilot.
           </p>
         </div>
 
         {/* Main Card */}
-        <Card className="p-6 sm:p-8 bg-slate-900/90 border-slate-800 shadow-2xl backdrop-blur-md">
+        <Card className="p-6 sm:p-8 bg-[var(--surface-card)] border-[var(--border-color)] shadow-xl">
           {/* Persona Type Switcher */}
-          <div className="mb-5 flex rounded-lg bg-slate-950/80 p-1 border border-slate-800">
+          <div className="mb-5 flex rounded-lg bg-[var(--surface-secondary)] p-1 border border-[var(--border-color)]">
             <button
               type="button"
               onClick={() => setAccountType("student")}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 accountType === "student"
-                  ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               Student Account
@@ -152,8 +148,8 @@ export default function SignupPage() {
               onClick={() => setAccountType("admin")}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
                 accountType === "admin"
-                  ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -180,7 +176,7 @@ export default function SignupPage() {
                   placeholder={accountType === "admin" ? "e.g. Dr. Rajeshwar Singh (DOAA)" : "e.g. Arjun Mehta"}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -190,16 +186,16 @@ export default function SignupPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <label
                     htmlFor="admin-key"
-                    className="block text-xs font-medium text-teal-300"
+                    className="block text-xs font-medium text-[var(--action-primary)]"
                   >
                     Institutional Admin Authorization Key
                   </label>
-                  <span className="text-[10px] text-teal-400/80 font-mono">
+                  <span className="text-[10px] text-[var(--action-primary)]/80 font-mono">
                     Default: TIET-ADMIN-2026
                   </span>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--action-primary)]">
                     <KeyRound className="w-4 h-4" />
                   </div>
                   <input
@@ -209,7 +205,7 @@ export default function SignupPage() {
                     placeholder="TIET-ADMIN-2026"
                     value={adminSecretKey}
                     onChange={(e) => setAdminSecretKey(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-teal-700/80 rounded-lg text-sm text-teal-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] font-mono"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -236,7 +232,7 @@ export default function SignupPage() {
                   placeholder="student@thapar.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -259,7 +255,7 @@ export default function SignupPage() {
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
                 <button
                   type="button"
@@ -294,7 +290,7 @@ export default function SignupPage() {
                   placeholder="Repeat your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -305,7 +301,7 @@ export default function SignupPage() {
               fullWidth
               isLoading={submitting}
               rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="mt-2 bg-teal-600 hover:bg-teal-500"
+              className="mt-2 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Sign Up & Continue
             </Button>
@@ -355,7 +351,7 @@ export default function SignupPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-teal-400 hover:text-teal-300 font-medium underline-offset-4 hover:underline"
+              className="text-[var(--action-primary)] hover:opacity-80 font-medium underline-offset-4 hover:underline"
             >
               Sign in
             </Link>
@@ -363,7 +359,7 @@ export default function SignupPage() {
         </Card>
 
         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-teal-500/80" />
+          <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
           <span>Privacy first · Row-Level Security on all user tables</span>
         </div>
       </div>

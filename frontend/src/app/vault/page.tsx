@@ -419,7 +419,7 @@ export default function DigitalVaultPage() {
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             leftIcon={<UploadCloud className="w-4 h-4" />}
-            className="bg-teal-600 hover:bg-teal-500 text-white shadow-sm"
+            className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] shadow-xs"
           >
             Upload File
           </Button>
@@ -437,8 +437,8 @@ export default function DigitalVaultPage() {
             onClick={() => fileInputRef.current?.click()}
             className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-6 sm:p-8 transition-all flex flex-col items-center justify-center text-center ${
               isDragging
-                ? "border-teal-500 bg-teal-50/70 dark:bg-teal-950/40 ring-4 ring-teal-500/20"
-                : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-teal-500 hover:bg-teal-50/30 dark:hover:bg-teal-950/20"
+                ? "border-[var(--action-primary)] bg-[var(--surface-secondary)]"
+                : "border-[var(--border-color)] bg-[var(--surface-card)] hover:border-[var(--action-primary)] hover:bg-[var(--surface-secondary)]"
             }`}
           >
             <input
@@ -448,12 +448,12 @@ export default function DigitalVaultPage() {
               onChange={handleFileInputChange}
               accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,.gif,.docx,.doc,.pptx,.ppt,.txt,.md,.csv"
             />
-            <div className="w-12 h-12 rounded-2xl bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
               <UploadCloud className="w-6 h-6" />
             </div>
             <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">
               Drag and drop your file here, or{" "}
-              <span className="text-teal-600 dark:text-teal-400 underline underline-offset-2">
+              <span className="text-[var(--action-primary)] underline underline-offset-2">
                 browse
               </span>
             </h3>
@@ -463,7 +463,7 @@ export default function DigitalVaultPage() {
 
             {/* MANDATORY USER NOTICE */}
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1.5 font-medium">
-              <Lock className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <Lock className="w-3.5 h-3.5 text-[var(--action-primary)] shrink-0" />
               Files are private and visible only to you.
             </p>
           </div>
@@ -474,7 +474,7 @@ export default function DigitalVaultPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <HardDrive className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <HardDrive className="w-4 h-4 text-[var(--action-primary)]" />
                 <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   Vault Storage
                 </span>
@@ -504,7 +504,7 @@ export default function DigitalVaultPage() {
                       ? "bg-rose-500"
                       : usedPercent > 60
                       ? "bg-amber-500"
-                      : "bg-teal-600 dark:bg-teal-400"
+                      : "bg-[var(--action-primary)]"
                   }`}
                   style={{ width: `${Math.max(3, usedPercent)}%` }}
                 />
@@ -514,7 +514,7 @@ export default function DigitalVaultPage() {
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>{items.length} document{items.length === 1 ? "" : "s"} indexed</span>
-            <span className="flex items-center gap-1 text-teal-600 dark:text-teal-400 font-medium">
+            <span className="flex items-center gap-1 text-[var(--action-primary)] font-medium">
               <ShieldCheck className="w-3.5 h-3.5" /> Scoped RLS
             </span>
           </div>
@@ -534,7 +534,7 @@ export default function DigitalVaultPage() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition shrink-0 ${
                   isActive
-                    ? "bg-teal-600 text-white shadow-sm font-semibold"
+                    ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs font-semibold"
                     : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 }`}
               >
@@ -555,7 +555,7 @@ export default function DigitalVaultPage() {
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-8 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition"
+              className="w-full pl-8 pr-8 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
             />
             {searchQuery && (
               <button
@@ -576,7 +576,7 @@ export default function DigitalVaultPage() {
               title="Grid View"
               className={`p-1.5 rounded-lg text-xs transition ${
                 viewMode === "grid"
-                  ? "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 font-medium"
+                  ? "bg-[var(--nav-selected-bg)] text-[var(--nav-selected-text)] font-semibold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               }`}
             >
@@ -588,7 +588,7 @@ export default function DigitalVaultPage() {
               title="List View"
               className={`p-1.5 rounded-lg text-xs transition ${
                 viewMode === "list"
-                  ? "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 font-medium"
+                  ? "bg-[var(--nav-selected-bg)] text-[var(--nav-selected-text)] font-semibold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               }`}
             >
@@ -608,7 +608,7 @@ export default function DigitalVaultPage() {
       ) : items.length === 0 ? (
         <Card className="p-12">
           <EmptyState
-            icon={<FolderLock className="w-12 h-12 text-teal-600 dark:text-teal-400" />}
+            icon={<FolderLock className="w-12 h-12 text-[var(--action-primary)]" />}
             title={searchQuery ? "No matching documents" : "Your Vault is Empty"}
             description={
               searchQuery
@@ -660,7 +660,7 @@ export default function DigitalVaultPage() {
                   </div>
 
                   <h3
-                    className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-2 mb-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors"
+                    className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-2 mb-1 group-hover:text-[var(--action-primary)] transition-colors"
                     title={item.title}
                   >
                     {item.title}
@@ -687,7 +687,7 @@ export default function DigitalVaultPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenPreview(item)}
-                        className="h-8 px-2 text-xs text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400"
+                        className="h-8 px-2 text-xs text-slate-600 dark:text-slate-300 hover:text-[var(--action-primary)]"
                         title="Preview Document"
                         leftIcon={<Eye className="w-3.5 h-3.5" />}
                       >
@@ -698,7 +698,7 @@ export default function DigitalVaultPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDownload(item)}
-                      className="h-8 px-2 text-xs text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400"
+                      className="h-8 px-2 text-xs text-slate-600 dark:text-slate-300 hover:text-[var(--action-primary)]"
                       title="Download File"
                       leftIcon={<Download className="w-3.5 h-3.5" />}
                     >
@@ -782,7 +782,7 @@ export default function DigitalVaultPage() {
                               onClick={() => handleOpenPreview(item)}
                               aria-label={`Preview ${item.title}`}
                               title="Preview"
-                              className="p-1.5 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                              className="p-1.5 text-slate-500 hover:text-[var(--action-primary)] rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
@@ -791,7 +791,7 @@ export default function DigitalVaultPage() {
                             onClick={() => handleDownload(item)}
                             aria-label={`Download ${item.title}`}
                             title="Download"
-                            className="p-1.5 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                            className="p-1.5 text-slate-500 hover:text-[var(--action-primary)] rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                           >
                             <Download className="w-4 h-4" />
                           </button>
@@ -853,7 +853,7 @@ export default function DigitalVaultPage() {
               size="sm"
               onClick={handleConfirmUpload}
               isLoading={isUploading}
-              className="bg-teal-600 hover:bg-teal-500 text-white"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
               leftIcon={<UploadCloud className="w-4 h-4" />}
             >
               Upload Document
@@ -864,7 +864,7 @@ export default function DigitalVaultPage() {
         <div className="space-y-4 py-2">
           {stagedFile && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
-              <div className="w-10 h-10 rounded-lg bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center shrink-0">
                 <FileCheck className="w-5 h-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -887,7 +887,7 @@ export default function DigitalVaultPage() {
               value={uploadTitle}
               onChange={(e) => setUploadTitle(e.target.value)}
               placeholder="e.g. Operating Systems MST Answer Key"
-              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
             />
           </div>
 
@@ -898,7 +898,7 @@ export default function DigitalVaultPage() {
             <select
               value={uploadCategory}
               onChange={(e) => setUploadCategory(e.target.value as VaultCategory)}
-              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
             >
               <option value="notes">Notes (Lecture slides, summaries, notes)</option>
               <option value="certificate">Certificates (Hackathons, courses, sports)</option>
@@ -907,8 +907,8 @@ export default function DigitalVaultPage() {
             </select>
           </div>
 
-          <div className="p-3 rounded-xl bg-teal-50/50 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-900/40 text-teal-900 dark:text-teal-200 text-xs flex items-start gap-2">
-            <Lock className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs flex items-start gap-2">
+            <Lock className="w-4 h-4 text-[var(--action-primary)] shrink-0 mt-0.5" />
             <span>
               <strong>Private & Scoped:</strong> Files are saved to your authenticated user folder in the storage bucket. No other student can view or search them.
             </span>
@@ -942,7 +942,7 @@ export default function DigitalVaultPage() {
         footer={
           <div className="flex items-center justify-between w-full">
             <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <Lock className="w-3.5 h-3.5 text-[var(--action-primary)]" />
               Files are private and visible only to you.
             </span>
             <div className="flex items-center gap-2">
@@ -961,7 +961,7 @@ export default function DigitalVaultPage() {
                   variant="primary"
                   size="sm"
                   onClick={() => handleDownload(previewItem)}
-                  className="bg-teal-600 hover:bg-teal-500 text-white"
+                  className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
                   leftIcon={<Download className="w-3.5 h-3.5" />}
                 >
                   Download
@@ -974,7 +974,7 @@ export default function DigitalVaultPage() {
         <div className="py-2">
           {isLoadingPreview ? (
             <div className="h-[450px] flex flex-col items-center justify-center gap-3">
-              <RefreshCw className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
+              <RefreshCw className="w-8 h-8 text-[var(--action-primary)] animate-spin" />
               <p className="text-xs text-slate-500 dark:text-slate-400">Loading secure preview...</p>
             </div>
           ) : previewUrl ? (
@@ -1049,7 +1049,7 @@ export default function DigitalVaultPage() {
               size="sm"
               onClick={handleConfirmRename}
               isLoading={isRenaming}
-              className="bg-teal-600 hover:bg-teal-500 text-white"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Save Changes
             </Button>
@@ -1065,7 +1065,7 @@ export default function DigitalVaultPage() {
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
             />
           </div>
 
@@ -1076,7 +1076,7 @@ export default function DigitalVaultPage() {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
             >
               <option value="notes">Notes</option>
               <option value="certificate">Certificates</option>

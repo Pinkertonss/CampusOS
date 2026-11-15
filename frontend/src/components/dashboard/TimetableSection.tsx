@@ -59,7 +59,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
             onClick={() => setViewMode("today")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               viewMode === "today"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -70,7 +70,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
             onClick={() => setViewMode("weekly")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               viewMode === "weekly"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -95,7 +95,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
                 onClick={() => setSelectedDay(day)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 ${
                   isSelected
-                    ? "bg-teal-600 text-white shadow-sm"
+                    ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                     : "bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
                 }`}
               >
@@ -110,7 +110,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
       {displaySlots.length === 0 ? (
         <EmptyState
           compact
-          icon={<Calendar className="w-8 h-8 text-teal-500" />}
+          icon={<Calendar className="w-8 h-8 text-[var(--action-primary)]" />}
           title={`No classes on ${viewMode === "today" ? currentWeekdayName : selectedDay}`}
           description="Enjoy your self-study time or catch up on lab assignments!"
         />
@@ -126,7 +126,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Time box */}
-                  <div className="w-16 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200/60 dark:border-teal-800/60 text-teal-700 dark:text-teal-300 font-mono text-xs font-bold flex flex-col items-center justify-center shrink-0">
+                  <div className="w-16 h-12 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--action-primary)] font-mono text-xs font-bold flex flex-col items-center justify-center shrink-0">
                     <span>{slot.start_time}</span>
                     <span className="text-[10px] text-slate-400 font-normal">
                       {slot.end_time}
@@ -135,7 +135,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-teal-600 dark:text-teal-400">
+                      <span className="font-mono text-xs font-bold text-[var(--action-primary)]">
                         {slot.course_code}
                       </span>
                       <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
@@ -145,7 +145,7 @@ export default function TimetableSection({ slots }: TimetableSectionProps) {
 
                     <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
                       <span className="flex items-center gap-1 font-medium">
-                        <MapPin className="w-3.5 h-3.5 text-teal-500" />
+                        <MapPin className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                         {slot.venue}
                       </span>
                       <span>·</span>

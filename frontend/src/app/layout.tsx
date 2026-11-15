@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full dark" suppressHydrationWarning>
-      <body className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-teal-500/20 selection:text-teal-700 dark:selection:text-teal-300">
+      <body className="min-h-full bg-[var(--page-bg)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-badge-bg)] selection:text-[var(--text-primary)]">
         <ThemeProvider>
           <AuthProvider>
             <SupportProvider>

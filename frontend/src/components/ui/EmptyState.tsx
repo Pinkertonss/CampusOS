@@ -41,7 +41,7 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         {...props}
       >
         {icon && (
-          <div className="w-14 h-14 rounded-2xl bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 border border-teal-200/60 dark:border-teal-800/60 flex items-center justify-center mb-4 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center justify-center mb-4 shadow-xs">
             {React.isValidElement(icon) ? (
               React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
                 className: `w-7 h-7 ${(icon as React.ReactElement<{ className?: string }>).props.className || ""}`,
@@ -52,12 +52,12 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           </div>
         )}
 
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+        <h3 className="text-base font-semibold text-[var(--text-primary)] tracking-tight">
           {title}
         </h3>
 
         {description && (
-          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
+          <p className="mt-1.5 text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
             {description}
           </p>
         )}

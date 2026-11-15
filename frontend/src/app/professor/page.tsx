@@ -631,7 +631,7 @@ export default function ProfessorDashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400">
+            <span className="p-1.5 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)]">
               <Users className="w-5 h-5" />
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -659,7 +659,7 @@ export default function ProfessorDashboardPage() {
                 setSelectedAssessmentId("");
                 setSelectedAssignmentId("");
               }}
-              className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-teal-500"
+              className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-[var(--focus-ring)]"
             >
               {offerings.map((off) => (
                 <option key={off.id} value={off.id}>
@@ -676,7 +676,7 @@ export default function ProfessorDashboardPage() {
         <div
           className={`p-4 rounded-xl flex items-center justify-between text-sm ${
             actionMessage.type === "success"
-              ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-900/60"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-900/60"
               : "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-900/60"
           }`}
         >
@@ -698,7 +698,7 @@ export default function ProfessorDashboardPage() {
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
               {currentOffering.enrolled_count}
             </div>
-            <span className="text-[11px] text-teal-600 dark:text-teal-400 font-medium">Active Section Roster</span>
+            <span className="text-[11px] text-[var(--action-primary)] font-medium">Active Section Roster</span>
           </Card>
           <Card className="p-4 border-slate-200/80 dark:border-slate-800">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Attendance Policy</span>
@@ -741,7 +741,7 @@ export default function ProfessorDashboardPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-2 py-3 px-4 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 isActive
-                  ? "border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400"
+                  ? "border-[var(--action-primary)] text-[var(--action-primary)] font-bold"
                   : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -764,7 +764,7 @@ export default function ProfessorDashboardPage() {
                   placeholder="Search name, roll no..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                  className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--focus-ring)]"
                 />
               </div>
 
@@ -846,7 +846,7 @@ export default function ProfessorDashboardPage() {
                                 st.attendance_percentage == null
                                   ? "text-slate-500"
                                   : st.attendance_percentage >= 75
-                                  ? "text-teal-600 dark:text-teal-400"
+                                  ? "text-emerald-700 dark:text-emerald-400"
                                   : "text-rose-600 dark:text-rose-400"
                               }`}
                             >
@@ -883,7 +883,7 @@ export default function ProfessorDashboardPage() {
                               </span>
                             )}
                             {!st.needs_attendance_support && !st.needs_academic_support && (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                                 On Track
                               </span>
                             )}
@@ -947,7 +947,7 @@ export default function ProfessorDashboardPage() {
                     onClick={() => setSelectedSessionId(s.id)}
                     className={`w-full text-left p-3 rounded-lg border transition-all cursor-pointer ${
                       selectedSessionId === s.id
-                        ? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30 text-teal-900 dark:text-teal-200"
+                        ? "border-[var(--action-primary)] bg-[var(--nav-selected-bg)] text-[var(--text-primary)]"
                         : "border-slate-100 dark:border-slate-800 hover:border-slate-200 text-slate-800 dark:text-slate-200"
                     }`}
                   >
@@ -985,7 +985,7 @@ export default function ProfessorDashboardPage() {
                             handleToggleCancelSession(s);
                           }}
                           className={`hover:underline font-medium text-[10px] ${
-                            s.is_cancelled ? "text-teal-600" : "text-amber-600"
+                            s.is_cancelled ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"
                           }`}
                         >
                           {s.is_cancelled ? "Reopen" : "Cancel"}
@@ -1091,12 +1091,12 @@ export default function ProfessorDashboardPage() {
                                     className={`px-2.5 py-1 text-xs font-semibold rounded-md uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                                       currentStatus === stOption
                                         ? stOption === "present"
-                                          ? "bg-teal-600 text-white shadow-sm"
+                                          ? "bg-emerald-700 text-white shadow-xs"
                                           : stOption === "absent"
-                                          ? "bg-rose-600 text-white shadow-sm"
+                                          ? "bg-rose-700 text-white shadow-xs"
                                           : stOption === "late"
-                                          ? "bg-amber-500 text-white shadow-sm"
-                                          : "bg-indigo-600 text-white shadow-sm"
+                                          ? "bg-amber-600 text-white shadow-xs"
+                                          : "bg-slate-700 text-white shadow-xs"
                                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
                                     }`}
                                   >
@@ -1142,7 +1142,7 @@ export default function ProfessorDashboardPage() {
                   onClick={() => setSelectedAssessmentId(asm.id)}
                   className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                     selectedAssessmentId === asm.id
-                      ? "border-teal-500 bg-teal-50/40 dark:bg-teal-950/30"
+                      ? "border-[var(--action-primary)] bg-[var(--nav-selected-bg)]"
                       : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                   }`}
                 >
@@ -1162,7 +1162,7 @@ export default function ProfessorDashboardPage() {
                         e.stopPropagation();
                         handleToggleAssessmentPublish(asm);
                       }}
-                      className="text-xs flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-600"
+                      className="text-xs flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300 hover:text-[var(--action-primary)]"
                     >
                       {asm.is_published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       {asm.is_published ? "Unpublish" : "Publish"}
@@ -1173,7 +1173,7 @@ export default function ProfessorDashboardPage() {
                         e.stopPropagation();
                         handleToggleAnswerKeyRelease(asm);
                       }}
-                      className="text-xs flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-600 ml-auto"
+                      className="text-xs flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300 hover:text-[var(--action-primary)] ml-auto"
                     >
                       <Key className="w-3.5 h-3.5" />
                       {asm.answer_key_released ? "Conceal Key" : "Release Key"}
@@ -1251,7 +1251,7 @@ export default function ProfessorDashboardPage() {
                   onClick={() => setSelectedAssignmentId(asg.id)}
                   className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                     selectedAssignmentId === asg.id
-                      ? "border-teal-500 bg-teal-50/40 dark:bg-teal-950/30"
+                      ? "border-[var(--action-primary)] bg-[var(--nav-selected-bg)]"
                       : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                   }`}
                 >
@@ -1269,7 +1269,7 @@ export default function ProfessorDashboardPage() {
                         e.stopPropagation();
                         handleToggleModelAnswerRelease(asg);
                       }}
-                      className="text-xs flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-600"
+                      className="text-xs flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300 hover:text-[var(--action-primary)]"
                     >
                       <FileCheck className="w-3.5 h-3.5" />
                       {asg.model_answer_released ? "Conceal Answer" : "Release Model Answer"}
@@ -1410,7 +1410,7 @@ export default function ProfessorDashboardPage() {
 
       {/* MODAL: New Session */}
       {showNewSessionModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-sm w-full space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Attendance Session</h3>
             <div>
@@ -1481,7 +1481,7 @@ export default function ProfessorDashboardPage() {
 
       {/* MODAL: New Assessment */}
       {showNewAssessmentModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">New Assessment</h3>
             <div>
@@ -1551,7 +1551,7 @@ export default function ProfessorDashboardPage() {
 
       {/* MODAL: New Assignment */}
       {showNewAssignmentModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">New Assignment</h3>
             <div>
@@ -1598,7 +1598,7 @@ export default function ProfessorDashboardPage() {
 
       {/* MODAL: Grading Drawer */}
       {gradingSubmission && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-sm w-full space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Grade Submission — {gradingSubmission.student_name}
@@ -1637,7 +1637,7 @@ export default function ProfessorDashboardPage() {
 
       {/* MODAL: Enroll Student Directory */}
       {showEnrollModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-950/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 max-w-md w-full space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Enroll Eligible Student</h3>
             <div className="space-y-2">

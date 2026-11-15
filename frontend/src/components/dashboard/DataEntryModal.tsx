@@ -203,7 +203,7 @@ export default function DataEntryModal({
       size="lg"
       title={
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center">
             <Plus className="w-4 h-4" />
           </div>
           <div>
@@ -225,7 +225,7 @@ export default function DataEntryModal({
             onClick={() => setActiveTab("course")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "course"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -236,7 +236,7 @@ export default function DataEntryModal({
             onClick={() => setActiveTab("attendance")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "attendance"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -247,7 +247,7 @@ export default function DataEntryModal({
             onClick={() => setActiveTab("assessment")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "assessment"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -258,7 +258,7 @@ export default function DataEntryModal({
             onClick={() => setActiveTab("csv")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
               activeTab === "csv"
-                ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -280,7 +280,7 @@ export default function DataEntryModal({
                   placeholder="e.g. UCS503"
                   value={courseCode}
                   onChange={(e) => setCourseCode(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono uppercase text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono uppercase text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
                 />
               </div>
 
@@ -296,7 +296,7 @@ export default function DataEntryModal({
                   required
                   value={credits}
                   onChange={(e) => setCredits(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
                 />
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function DataEntryModal({
                 placeholder="e.g. Design & Analysis of Algorithms"
                 value={courseName}
                 onChange={(e) => setCourseName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
 
@@ -338,7 +338,7 @@ export default function DataEntryModal({
               variant="primary"
               fullWidth
               isLoading={submitting}
-              className="bg-teal-600 hover:bg-teal-500"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Add Course to Dashboard
             </Button>
@@ -404,7 +404,7 @@ export default function DataEntryModal({
 
             <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-400">
               Computed Attendance:{" "}
-              <strong className="text-teal-600 dark:text-teal-400 font-mono">
+              <strong className="text-[var(--action-primary)] font-mono">
                 {attTotal > 0 ? Math.round((attAttended / attTotal) * 100) : 100}%
               </strong>{" "}
               {attTotal > 0 && Math.round((attAttended / attTotal) * 100) >= 75 ? (
@@ -419,7 +419,7 @@ export default function DataEntryModal({
               variant="primary"
               fullWidth
               isLoading={submitting}
-              className="bg-teal-600 hover:bg-teal-500"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Update Attendance Record
             </Button>
@@ -439,7 +439,7 @@ export default function DataEntryModal({
                 placeholder="e.g. UCS503 Assignment 4 or Lab Exam"
                 value={taskTitle}
                 onChange={(e) => setTaskTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
 
@@ -495,7 +495,7 @@ export default function DataEntryModal({
               variant="primary"
               fullWidth
               isLoading={submitting}
-              className="bg-teal-600 hover:bg-teal-500"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Add Deadline
             </Button>
@@ -513,7 +513,7 @@ export default function DataEntryModal({
                     name="csvType"
                     checked={csvType === "attendance"}
                     onChange={() => setCsvType("attendance")}
-                    className="accent-teal-500"
+                    className="accent-[var(--action-primary)]"
                   />
                   <span>Attendance Records</span>
                 </label>
@@ -523,7 +523,7 @@ export default function DataEntryModal({
                     name="csvType"
                     checked={csvType === "courses"}
                     onChange={() => setCsvType("courses")}
-                    className="accent-teal-500"
+                    className="accent-[var(--action-primary)]"
                   />
                   <span>Courses Catalog</span>
                 </label>
@@ -532,7 +532,7 @@ export default function DataEntryModal({
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
-                className="text-xs text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 font-medium"
+                className="text-xs text-[var(--action-primary)] hover:underline flex items-center gap-1 font-medium"
               >
                 <Download className="w-3.5 h-3.5" />
                 Template CSV
@@ -541,7 +541,7 @@ export default function DataEntryModal({
 
             {/* Drop / Select File Box */}
             <div className="p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center space-y-2">
-              <FileSpreadsheet className="w-8 h-8 text-teal-500 mx-auto" />
+              <FileSpreadsheet className="w-8 h-8 text-[var(--action-primary)] mx-auto" />
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 {selectedFile ? (
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -559,7 +559,7 @@ export default function DataEntryModal({
                     setSelectedFile(e.target.files[0]);
                   }
                 }}
-                className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 dark:file:bg-teal-950/60 dark:file:text-teal-300 cursor-pointer"
+                className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[var(--surface-secondary)] file:text-[var(--action-primary)] cursor-pointer"
               />
             </div>
 
@@ -569,7 +569,7 @@ export default function DataEntryModal({
               fullWidth
               isLoading={submitting}
               leftIcon={<Upload className="w-4 h-4" />}
-              className="bg-teal-600 hover:bg-teal-500"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Import CSV Records
             </Button>

@@ -142,7 +142,7 @@ export default function AttendanceGrid({
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs font-bold text-teal-600 dark:text-teal-400">
+                      <span className="font-mono text-xs font-bold text-[var(--action-primary)]">
                         {course.code}
                       </span>
                       <span className="text-[11px] text-slate-400">· {course.credits} cr</span>
@@ -186,7 +186,7 @@ export default function AttendanceGrid({
                 <button
                   type="button"
                   onClick={() => onOpenWhatIf && onOpenWhatIf(course.code)}
-                  className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-500 font-medium inline-flex items-center gap-1 transition"
+                  className="text-xs text-[var(--action-primary)] hover:text-[var(--action-primary)] font-medium inline-flex items-center gap-1 transition"
                 >
                   <Sparkles className="w-3 h-3" />
                   What-If Sim

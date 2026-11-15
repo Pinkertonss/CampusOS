@@ -133,36 +133,36 @@ export default function PersonalAssistant() {
             setIsMinimized(false);
           }}
           aria-label="Open Personal Assistant"
-          className="fixed bottom-6 right-6 z-40 p-3.5 rounded-full bg-gradient-to-tr from-teal-600 via-teal-500 to-sky-500 text-white shadow-xl shadow-teal-950/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center group focus:outline-none focus:ring-4 focus:ring-teal-500/30"
+          className="fixed bottom-6 right-6 z-40 p-3.5 rounded-full bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] border border-[var(--border-color)] shadow-md transition-all flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] cursor-pointer"
         >
-          <Bot className="w-6 h-6 animate-pulse" />
+          <Bot className="w-6 h-6" />
           <span className="sr-only">Personal Assistant</span>
           {/* Subtle indicator dot */}
-          <span className="absolute top-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white dark:border-slate-900 rounded-full" />
+          <span className="absolute top-0 right-0 w-3 h-3 bg-emerald-600 border-2 border-[var(--surface-card)] rounded-full" />
         </button>
       )}
 
       {/* Assistant Chat Panel */}
       {isOpen && (
         <div
-          className={`fixed right-4 sm:right-6 bottom-4 sm:bottom-6 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-200 ${
+          className={`fixed right-4 sm:right-6 bottom-4 sm:bottom-6 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-2xl shadow-xl flex flex-col overflow-hidden transition-all duration-150 ${
             isMinimized ? "h-14" : "h-[540px] max-h-[85vh]"
           }`}
         >
           {/* Header */}
-          <div className="px-4 py-3 bg-gradient-to-r from-teal-600 via-teal-700 to-sky-700 text-white flex items-center justify-between shrink-0">
+          <div className="px-4 py-3 bg-[var(--surface-secondary)] border-b border-[var(--border-color)] text-[var(--text-primary)] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-lg bg-[var(--action-primary)] text-[var(--action-primary-text)] flex items-center justify-center">
+                <Bot className="w-4 h-4" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5 font-bold text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-[var(--text-primary)]">
                   <span>Personal Assistant</span>
-                  <Badge variant="primary" size="sm" className="bg-teal-400/20 text-teal-100 text-[9px] px-1 py-0">
+                  <Badge variant="primary" size="sm" className="text-[9px] px-1 py-0">
                     Gemini
                   </Badge>
                 </div>
-                <p className="text-[10px] text-teal-100/80">Study & Concept Companion</p>
+                <p className="text-[10px] text-[var(--text-secondary)]">Study & Concept Companion</p>
               </div>
             </div>
 
@@ -171,7 +171,7 @@ export default function PersonalAssistant() {
                 type="button"
                 onClick={handleClearHistory}
                 title="Clear conversation"
-                className="p-1.5 rounded-lg text-teal-100/70 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -179,7 +179,7 @@ export default function PersonalAssistant() {
                 type="button"
                 onClick={() => setIsMinimized(!isMinimized)}
                 title={isMinimized ? "Maximize" : "Minimize"}
-                className="p-1.5 rounded-lg text-teal-100/70 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition cursor-pointer"
               >
                 {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
               </button>
@@ -187,7 +187,7 @@ export default function PersonalAssistant() {
                 type="button"
                 onClick={() => setIsOpen(false)}
                 title="Close"
-                className="p-1.5 rounded-lg text-teal-100/70 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -197,7 +197,7 @@ export default function PersonalAssistant() {
           {!isMinimized && (
             <>
               {/* Trust Boundary Notice */}
-              <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200/60 dark:border-amber-800/40 text-[10px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5 shrink-0">
+              <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/40 text-[10px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5 shrink-0">
                 <HelpCircle className="w-3 h-3 shrink-0" />
                 <span>
                   Study companion only. Use <strong>Campus Guide</strong> for official campus rules.
@@ -205,7 +205,7 @@ export default function PersonalAssistant() {
               </div>
 
               {/* Messages list */}
-              <div className="flex-1 p-3.5 overflow-y-auto space-y-3 text-xs bg-slate-50/50 dark:bg-slate-950/50">
+              <div className="flex-1 p-3.5 overflow-y-auto space-y-3 text-xs bg-[var(--page-bg)]">
                 {messages.map((m) => (
                   <div
                     key={m.id}
@@ -214,22 +214,22 @@ export default function PersonalAssistant() {
                     }`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs whitespace-pre-wrap leading-relaxed shadow-sm ${
+                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs whitespace-pre-wrap leading-relaxed shadow-xs ${
                         m.role === "user"
-                          ? "bg-teal-600 text-white rounded-br-sm"
-                          : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-sm"
+                          ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] rounded-br-sm"
+                          : "bg-[var(--surface-card)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-bl-sm"
                       }`}
                     >
                       {m.content}
                     </div>
-                    <span className="text-[9px] text-slate-400 mt-1 px-1">
+                    <span className="text-[9px] text-[var(--text-muted)] mt-1 px-1">
                       {m.timestamp}
                     </span>
                   </div>
                 ))}
                 {loading && (
-                  <div className="flex items-center gap-2 text-slate-400 text-xs py-1">
-                    <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                  <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs py-1">
+                    <Loader2 className="w-4 h-4 animate-spin text-[var(--action-primary)]" />
                     <span>Gemini is thinking...</span>
                   </div>
                 )}
@@ -237,25 +237,25 @@ export default function PersonalAssistant() {
               </div>
 
               {/* Suggested quick pills */}
-              <div className="px-3 py-1.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto text-[10px]">
+              <div className="px-3 py-1.5 border-t border-[var(--border-color)] bg-[var(--surface-secondary)] flex items-center gap-1.5 overflow-x-auto text-[10px]">
                 <button
                   type="button"
                   onClick={() => setInput("Explain Dijkstra's algorithm simply")}
-                  className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 transition"
+                  className="px-2 py-1 rounded-full bg-[var(--surface-card)] hover:bg-[var(--nav-selected-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] shrink-0 transition cursor-pointer"
                 >
                   💡 Dijkstra&apos;s algorithm
                 </button>
                 <button
                   type="button"
                   onClick={() => setInput("calc: (8.4 * 20 + 9.0 * 22) / 42")}
-                  className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 transition"
+                  className="px-2 py-1 rounded-full bg-[var(--surface-card)] hover:bg-[var(--nav-selected-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] shrink-0 transition cursor-pointer"
                 >
                   🧮 Safe GPA Math
                 </button>
                 <button
                   type="button"
                   onClick={() => setInput("Draft an email requesting a deadline extension")}
-                  className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 transition"
+                  className="px-2 py-1 rounded-full bg-[var(--surface-card)] hover:bg-[var(--nav-selected-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] shrink-0 transition cursor-pointer"
                 >
                   ✉️ Draft Email
                 </button>
@@ -264,21 +264,21 @@ export default function PersonalAssistant() {
               {/* Input bar */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-2"
+                className="p-3 border-t border-[var(--border-color)] bg-[var(--surface-card)] flex items-center gap-2"
               >
                 <input
                   type="text"
                   placeholder="Ask a question or type calc: 25 * 4..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  className="flex-1 text-xs px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="flex-1 text-xs px-3.5 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
                   disabled={loading}
                 />
                 <button
                   type="submit"
                   disabled={!input.trim() || loading}
                   aria-label="Send message"
-                  className="p-2 rounded-xl bg-teal-600 text-white disabled:opacity-50 hover:bg-teal-700 transition"
+                  className="p-2 rounded-xl bg-[var(--action-primary)] text-[var(--action-primary-text)] disabled:opacity-50 hover:bg-[var(--action-primary-hover)] transition cursor-pointer"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>

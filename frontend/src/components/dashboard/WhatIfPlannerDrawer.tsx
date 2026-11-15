@@ -134,7 +134,7 @@ export default function WhatIfPlannerDrawer({
       size="xl"
       title={
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
@@ -158,7 +158,7 @@ export default function WhatIfPlannerDrawer({
             <select
               value={selectedCourseCode}
               onChange={(e) => setSelectedCourseCode(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
             >
               {courses.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -174,7 +174,7 @@ export default function WhatIfPlannerDrawer({
               onClick={() => setActiveTab("attendance")}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
                 activeTab === "attendance"
-                  ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                  ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -185,7 +185,7 @@ export default function WhatIfPlannerDrawer({
               onClick={() => setActiveTab("grades")}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
                 activeTab === "grades"
-                  ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                  ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -256,19 +256,19 @@ export default function WhatIfPlannerDrawer({
 
             {/* Before vs After Comparison Card */}
             {attResult && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40 border border-teal-800/40 shadow-md space-y-4">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface-secondary)] border border-[var(--border-color)] shadow-xs space-y-4">
+                <div className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                   Live Attendance Projection
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
                   {/* BEFORE */}
-                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
-                    <div className="text-[11px] text-slate-400 font-medium">Current Status</div>
-                    <div className="text-2xl font-bold text-slate-100 font-mono">
+                  <div className="p-3.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-1">
+                    <div className="text-[11px] text-[var(--text-secondary)] font-medium">Current Status</div>
+                    <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                       {attResult.current_percent}%
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-[var(--text-secondary)]">
                       {attResult.current_attended}/{attResult.current_total_held} classes held
                     </div>
                     <Badge
@@ -286,20 +286,20 @@ export default function WhatIfPlannerDrawer({
                   </div>
 
                   {/* ARROW */}
-                  <div className="flex items-center justify-center text-teal-400">
+                  <div className="flex items-center justify-center text-[var(--action-primary)]">
                     <ArrowRight className="w-6 h-6 hidden sm:block" />
-                    <span className="sm:hidden text-xs text-teal-400 font-semibold">
+                    <span className="sm:hidden text-xs text-[var(--action-primary)] font-semibold">
                       Becomes ↓
                     </span>
                   </div>
 
                   {/* AFTER (PROJECTED) */}
-                  <div className="p-3.5 rounded-xl bg-teal-950/40 border border-teal-700/60 space-y-1">
-                    <div className="text-[11px] text-teal-300 font-medium">Projected Outcome</div>
-                    <div className="text-2xl font-bold text-teal-300 font-mono">
+                  <div className="p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
+                    <div className="text-[11px] text-[var(--action-primary)] font-medium">Projected Outcome</div>
+                    <div className="text-2xl font-bold text-[var(--action-primary)] font-mono">
                       {attResult.projected_percent}%
                     </div>
-                    <div className="text-xs text-teal-200/80">
+                    <div className="text-xs text-[var(--text-secondary)]">
                       {attResult.projected_attended}/{attResult.projected_total_held} classes
                     </div>
                     <Badge
@@ -318,7 +318,7 @@ export default function WhatIfPlannerDrawer({
                 </div>
 
                 {/* Plain-English Advice */}
-                <div className="p-3 rounded-xl bg-teal-900/30 border border-teal-800/60 text-xs text-teal-200">
+                <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]">
                   {attResult.message}
                 </div>
               </div>
@@ -333,7 +333,7 @@ export default function WhatIfPlannerDrawer({
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Target className="w-4 h-4 text-teal-500" />
+                  <Target className="w-4 h-4 text-[var(--action-primary)]" />
                   Target Final Score / Grade:
                 </label>
                 <div className="flex items-center gap-2">
@@ -393,7 +393,7 @@ export default function WhatIfPlannerDrawer({
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 px-3.5 py-3 items-center">
-                    <span className="font-medium text-teal-600 dark:text-teal-400">
+                    <span className="font-medium text-[var(--action-primary)]">
                       End Semester Examination (Pending)
                     </span>
                     <span className="text-slate-400">
@@ -406,9 +406,9 @@ export default function WhatIfPlannerDrawer({
                         max="100"
                         value={endSemHypoScore}
                         onChange={(e) => setEndSemHypoScore(Number(e.target.value))}
-                        className="w-24 sm:w-32 accent-teal-500 cursor-pointer"
+                        className="w-24 sm:w-32 accent-[var(--action-primary)] cursor-pointer"
                       />
-                      <span className="font-mono font-bold text-xs text-teal-500 w-10">
+                      <span className="font-mono font-bold text-xs text-[var(--action-primary)] w-10">
                         {endSemHypoScore}%
                       </span>
                     </div>
@@ -419,32 +419,32 @@ export default function WhatIfPlannerDrawer({
 
             {/* Grade Result Card */}
             {gradeResult && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/40 border border-sky-800/40 shadow-md space-y-4">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface-secondary)] border border-[var(--border-color)] shadow-xs space-y-4">
+                <div className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                   Live Grade Projection
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
-                    <div className="text-[11px] text-slate-400 font-medium">Completed Score</div>
-                    <div className="text-2xl font-bold text-slate-100 font-mono">
+                  <div className="p-3.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-1">
+                    <div className="text-[11px] text-[var(--text-secondary)] font-medium">Completed Score</div>
+                    <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                       {gradeResult.current_weighted_score}%
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-[var(--text-secondary)]">
                       across {gradeResult.completed_weight}% completed weight
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center text-sky-400">
+                  <div className="flex items-center justify-center text-[var(--action-primary)]">
                     <ArrowRight className="w-6 h-6 hidden sm:block" />
-                    <span className="sm:hidden text-xs text-sky-400 font-semibold">
+                    <span className="sm:hidden text-xs text-[var(--action-primary)] font-semibold">
                       Projects to ↓
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-sky-950/40 border border-sky-700/60 space-y-1">
-                    <div className="text-[11px] text-sky-300 font-medium">Projected Final Grade</div>
-                    <div className="text-2xl font-bold text-sky-300 font-mono">
+                  <div className="p-3.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-1">
+                    <div className="text-[11px] text-[var(--text-primary)] font-medium">Projected Final Grade</div>
+                    <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                       {gradeResult.projected_total_score}%
                     </div>
                     <Badge variant="primary" size="sm">

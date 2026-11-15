@@ -19,26 +19,26 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 const variantStyles: Record<BadgeVariant, string> = {
   default:
-    "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-  success:
-    "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60",
-  warning:
-    "bg-amber-50 text-amber-800 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60",
-  danger:
-    "bg-red-50 text-red-700 border-red-200/80 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800/60",
-  info:
-    "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/60",
+    "bg-[var(--surface-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]",
   primary:
-    "bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/60",
+    "bg-[var(--accent-badge-bg)] text-[var(--accent-badge-text)] border-[var(--accent-badge-border)]",
+  success:
+    "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60",
+  warning:
+    "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60",
+  danger:
+    "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60",
+  info:
+    "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
 };
 
 const dotStyles: Record<BadgeVariant, string> = {
-  default: "bg-slate-500 dark:bg-slate-400",
-  success: "bg-emerald-500 dark:bg-emerald-400",
-  warning: "bg-amber-500 dark:bg-amber-400",
-  danger: "bg-red-500 dark:bg-red-400",
-  info: "bg-sky-500 dark:bg-sky-400",
-  primary: "bg-teal-500 dark:bg-teal-400",
+  default: "bg-[var(--text-muted)]",
+  primary: "bg-[var(--action-primary)]",
+  success: "bg-emerald-600 dark:bg-emerald-400",
+  warning: "bg-amber-600 dark:bg-amber-400",
+  danger: "bg-rose-600 dark:bg-rose-400",
+  info: "bg-slate-600 dark:bg-slate-400",
 };
 
 const sizeStyles: Record<BadgeSize, string> = {

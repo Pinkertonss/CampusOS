@@ -648,20 +648,20 @@ export default function OpportunitiesPage() {
       {/* ========================================================
           1. HEADER & SKILLS BAR
       ======================================================== */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-teal-950/60 via-slate-900 to-sky-950/40 border border-teal-800/40 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[var(--surface-card)] border border-[var(--border-color)] shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)] flex items-center justify-center">
               <Compass className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Campus Opportunity Engine
             </h1>
             <Badge variant="primary" size="sm" dot>
               AI Matched
             </Badge>
           </div>
-          <p className="text-xs sm:text-sm text-slate-300">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
             Research positions, hackathons, and projects matched against your skills and academic schedule.
           </p>
         </div>
@@ -702,7 +702,7 @@ export default function OpportunitiesPage() {
             variant="secondary"
             size="sm"
             onClick={() => setEditModalOpen(true)}
-            leftIcon={<Sliders className="w-3.5 h-3.5 text-teal-400" />}
+            leftIcon={<Sliders className="w-3.5 h-3.5 text-[var(--action-primary)]" />}
             className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs"
           >
             Matching Preferences
@@ -718,7 +718,7 @@ export default function OpportunitiesPage() {
             {profile.skills.map((skill) => (
               <span
                 key={skill}
-                className="px-2 py-0.5 rounded-md bg-teal-950/60 border border-teal-800/50 text-teal-300 font-mono text-[11px]"
+                className="px-2 py-0.5 rounded-md bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono text-[11px]"
               >
                 {skill}
               </span>
@@ -730,7 +730,7 @@ export default function OpportunitiesPage() {
             </span>
             <span>
               Opt-In:{" "}
-              <strong className={profile.opt_in_matching ? "text-teal-400" : "text-amber-400"}>
+              <strong className={profile.opt_in_matching ? "text-[var(--action-primary)]" : "text-amber-400"}>
                 {profile.opt_in_matching ? "Active" : "Paused"}
               </strong>
             </span>
@@ -747,7 +747,7 @@ export default function OpportunitiesPage() {
             onClick={() => setActiveTab("recommended")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "recommended"
-                ? "bg-teal-500 text-slate-950 shadow-sm"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                 : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
             }`}
           >
@@ -758,7 +758,7 @@ export default function OpportunitiesPage() {
             onClick={() => setActiveTab("explore")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "explore"
-                ? "bg-teal-500 text-slate-950 shadow-sm"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                 : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
             }`}
           >
@@ -769,7 +769,7 @@ export default function OpportunitiesPage() {
             onClick={() => setActiveTab("experience")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "experience"
-                ? "bg-teal-500 text-slate-950 shadow-sm"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                 : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
             }`}
           >
@@ -780,7 +780,7 @@ export default function OpportunitiesPage() {
             onClick={() => setActiveTab("applied")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "applied"
-                ? "bg-teal-500 text-slate-950 shadow-sm"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                 : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
             }`}
           >
@@ -791,7 +791,7 @@ export default function OpportunitiesPage() {
             onClick={() => setActiveTab("saved")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "saved"
-                ? "bg-teal-500 text-slate-950 shadow-sm"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                 : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
             }`}
           >
@@ -803,7 +803,7 @@ export default function OpportunitiesPage() {
               onClick={() => setActiveTab("admin")}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === "admin"
-                  ? "bg-teal-500 text-slate-950 shadow-sm"
+                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                   : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
               }`}
             >
@@ -822,13 +822,13 @@ export default function OpportunitiesPage() {
                 placeholder="Search skills or title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 w-44"
+                className="pl-8 pr-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] w-44"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             >
               <option value="all">All Categories</option>
               <option value="research">Research</option>
@@ -867,7 +867,7 @@ export default function OpportunitiesPage() {
               const isApplied = appliedOppIds.has(opp.id);
               const scoreColor =
                 rec.match_score >= 85
-                  ? "bg-teal-950/80 text-teal-300 border-teal-600/60"
+                  ? "bg-[var(--nav-selected-bg)] text-[var(--nav-selected-text)] border-[var(--border-color)]"
                   : rec.match_score >= 70
                   ? "bg-sky-950/80 text-sky-300 border-sky-600/60"
                   : "bg-slate-800 text-slate-300 border-slate-700";
@@ -909,7 +909,7 @@ export default function OpportunitiesPage() {
                         aria-label={isSaved ? "Remove from saved" : "Save opportunity"}
                         className={`p-1.5 rounded-lg transition-colors ${
                           isSaved
-                            ? "bg-teal-500/20 text-teal-400 border border-teal-500/40"
+                            ? "bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)]"
                             : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700"
                         }`}
                         title={isSaved ? "Saved" : "Save opportunity"}
@@ -920,7 +920,7 @@ export default function OpportunitiesPage() {
 
                     {/* Title & Organization */}
                     <div>
-                      <h3 className="text-sm sm:text-base font-bold text-slate-100 hover:text-teal-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-100 hover:text-[var(--action-primary)] transition-colors">
                         {opp.title}
                       </h3>
                       <p className="text-xs text-slate-400">
@@ -938,8 +938,8 @@ export default function OpportunitiesPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-teal-400 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--action-primary)] font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                         <span>Fits your weekly academic timetable</span>
                       </div>
                     )}
@@ -967,11 +967,11 @@ export default function OpportunitiesPage() {
                               key={skill}
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border ${
                                 isMatched
-                                  ? "bg-teal-950/60 text-teal-300 border-teal-700/60 font-semibold"
+                                  ? "bg-[var(--surface-secondary)] text-[var(--text-primary)] border-[var(--border-color)] font-semibold"
                                   : "bg-slate-800/60 text-slate-400 border-slate-700"
                               }`}
                             >
-                              {isMatched && <Check className="w-3 h-3 text-teal-400" />}
+                              {isMatched && <Check className="w-3 h-3 text-[var(--action-primary)]" />}
                               {skill}
                             </span>
                           );
@@ -1009,7 +1009,7 @@ export default function OpportunitiesPage() {
                         <Button
                           size="sm"
                           onClick={() => handleOpenApplyModal(opp)}
-                          className="text-xs px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                          className="text-xs px-3 py-1 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold"
                         >
                           Apply Now
                         </Button>
@@ -1021,7 +1021,7 @@ export default function OpportunitiesPage() {
                           target="_blank"
                           rel="noreferrer"
                           aria-label={`Official portal for ${opp.title}`}
-                          className="p-1 text-slate-400 hover:text-teal-300 transition-colors"
+                          className="p-1 text-slate-400 hover:text-[var(--action-primary)] transition-colors"
                           title="View Official Portal"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -1061,7 +1061,7 @@ export default function OpportunitiesPage() {
                         aria-label={isSaved ? "Remove from saved" : "Save opportunity"}
                         className={`p-1.5 rounded-lg transition-colors ${
                           isSaved
-                            ? "bg-teal-500/20 text-teal-400 border border-teal-500/40"
+                            ? "bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)]"
                             : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700"
                         }`}
                       >
@@ -1106,7 +1106,7 @@ export default function OpportunitiesPage() {
                         <Button
                           size="sm"
                           onClick={() => handleOpenApplyModal(opp)}
-                          className="text-xs px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                          className="text-xs px-3 py-1 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold"
                         >
                           Apply Now
                         </Button>
@@ -1118,7 +1118,7 @@ export default function OpportunitiesPage() {
                           target="_blank"
                           rel="noreferrer"
                           aria-label={`Official portal for ${opp.title}`}
-                          className="p-1 text-slate-400 hover:text-teal-300 transition-colors"
+                          className="p-1 text-slate-400 hover:text-[var(--action-primary)] transition-colors"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -1178,14 +1178,14 @@ export default function OpportunitiesPage() {
       ) : activeTab === "experience" ? (
         <div className="space-y-6">
           {/* Header Banner */}
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-teal-950/40 border border-slate-800 space-y-2">
+          <div className="p-6 rounded-2xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)] flex items-center justify-center">
                 <GraduationCap className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-slate-100">Student Experience &amp; Verified Credentials</h2>
+              <h2 className="text-lg font-bold text-[var(--text-primary)]">Student Experience &amp; Verified Credentials</h2>
             </div>
-            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] max-w-2xl leading-relaxed">
               Institutional academic records, verified CGPA, project showcase, work experience, and resume management for opportunity matching and candidate discovery.
             </p>
           </div>
@@ -1224,7 +1224,7 @@ export default function OpportunitiesPage() {
               <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
                 <div className="text-[11px] text-slate-400">Institutional CGPA</div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-base font-bold text-teal-300">
+                  <span className="font-mono text-base font-bold text-[var(--action-primary)]">
                     {experienceProfile?.education?.[0]?.cgpa_verified
                       ? experienceProfile.education[0].cgpa_verified.toFixed(2)
                       : experienceProfile?.cgpa_verified
@@ -1236,7 +1236,7 @@ export default function OpportunitiesPage() {
               </div>
             </div>
             <div className="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/50 flex items-start gap-2 text-[11px] text-slate-400">
-              <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
+              <Info className="w-3.5 h-3.5 text-[var(--action-primary)] shrink-0 mt-0.5" />
               <span>
                 Official CGPA and branch records are synchronized directly from institute records. Students cannot manually alter verified academic metrics.
               </span>
@@ -1247,7 +1247,7 @@ export default function OpportunitiesPage() {
           <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-teal-400" />
+                <FileText className="w-4 h-4 text-[var(--action-primary)]" />
                 <h3 className="text-sm font-bold text-slate-200">Official Resume</h3>
               </div>
               <span className="text-[11px] text-slate-400">PDF up to 10MB</span>
@@ -1256,7 +1256,7 @@ export default function OpportunitiesPage() {
             {experienceProfile?.resume_file_name || experienceProfile?.resume_filename ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-teal-950/60 border border-teal-800/50 text-teal-400 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--action-primary)] flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="space-y-0.5">
@@ -1276,11 +1276,11 @@ export default function OpportunitiesPage() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5 text-teal-400" />
+                    <Download className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                     Download / Preview
                   </a>
                   <label className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer transition-colors">
-                    <Upload className="w-3.5 h-3.5 text-teal-400" />
+                    <Upload className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                     Replace
                     <input
                       type="file"
@@ -1309,7 +1309,7 @@ export default function OpportunitiesPage() {
                   Upload your latest resume in PDF format (under 10MB) to share with faculty mentors and recruiters.
                 </p>
                 <div className="pt-1">
-                  <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-teal-500 hover:bg-teal-400 text-slate-950 cursor-pointer font-bold shadow transition-all">
+                  <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] cursor-pointer font-bold shadow transition-all">
                     <Upload className="w-3.5 h-3.5" />
                     {uploadingResume ? "Uploading..." : "Upload Resume PDF"}
                     <input
@@ -1329,7 +1329,7 @@ export default function OpportunitiesPage() {
           <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-teal-400" />
+                <Sparkles className="w-4 h-4 text-[var(--action-primary)]" />
                 <h3 className="text-sm font-bold text-slate-200">Technical Skills</h3>
               </div>
               <span className="text-[11px] text-slate-400">{experienceProfile?.skills?.length || 0} skills</span>
@@ -1342,7 +1342,7 @@ export default function OpportunitiesPage() {
                 value={expSkillInput}
                 onChange={(e) => setExpSkillInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddExpSkill())}
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
               <Button size="sm" onClick={handleAddExpSkill} leftIcon={<Plus className="w-3.5 h-3.5" />}>
                 Add Skill
@@ -1353,13 +1353,13 @@ export default function OpportunitiesPage() {
               {(experienceProfile?.skills || []).map((skill) => (
                 <span
                   key={skill}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-950/60 border border-teal-800/60 text-teal-300 font-mono text-xs"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono text-xs"
                 >
                   {skill}
                   <button
                     onClick={() => handleRemoveExpSkill(skill)}
                     aria-label={`Remove ${skill}`}
-                    className="text-teal-400 hover:text-red-400 transition-colors"
+                    className="text-[var(--action-primary)] hover:text-red-400 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1372,7 +1372,7 @@ export default function OpportunitiesPage() {
           <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-teal-400" />
+                <Briefcase className="w-4 h-4 text-[var(--action-primary)]" />
                 <h3 className="text-sm font-bold text-slate-200">Projects Showcase</h3>
               </div>
               <Button
@@ -1408,7 +1408,7 @@ export default function OpportunitiesPage() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <div className="text-[11px] text-teal-400 font-medium">Role: {proj.role}</div>
+                      <div className="text-[11px] text-[var(--action-primary)] font-medium">Role: {proj.role}</div>
                       <p className="text-xs text-slate-300 leading-relaxed">{proj.description}</p>
                       <div className="flex flex-wrap gap-1 pt-1">
                         {proj.technologies.map((t) => (
@@ -1427,7 +1427,7 @@ export default function OpportunitiesPage() {
                           href={proj.link}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-teal-400 hover:text-teal-300"
+                          className="inline-flex items-center gap-1 text-[11px] text-[var(--action-primary)] hover:text-[var(--action-primary)]"
                         >
                           <ExternalLink className="w-3 h-3" />
                           View Project Repository
@@ -1444,7 +1444,7 @@ export default function OpportunitiesPage() {
           <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-teal-400" />
+                <Briefcase className="w-4 h-4 text-[var(--action-primary)]" />
                 <h3 className="text-sm font-bold text-slate-200">Work Experience &amp; Internships</h3>
               </div>
               <Button
@@ -1496,7 +1496,7 @@ export default function OpportunitiesPage() {
           <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-teal-400" />
+                <Award className="w-4 h-4 text-[var(--action-primary)]" />
                 <h3 className="text-sm font-bold text-slate-200">Certifications &amp; Licenses</h3>
               </div>
               <Button
@@ -1530,7 +1530,7 @@ export default function OpportunitiesPage() {
                           href={cert.credential_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-teal-400 hover:text-teal-300 pt-1"
+                          className="inline-flex items-center gap-1 text-[11px] text-[var(--action-primary)] hover:text-[var(--action-primary)] pt-1"
                         >
                           <ExternalLink className="w-3 h-3" />
                           View Credential
@@ -1554,7 +1554,7 @@ export default function OpportunitiesPage() {
           <Card className="p-5 bg-slate-900/70 border-slate-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-teal-400" />
+                <Award className="w-4 h-4 text-[var(--action-primary)]" />
                 <h3 className="text-sm font-bold text-slate-200">Achievements &amp; Extracurricular Activities</h3>
               </div>
               <span className="text-[11px] text-slate-400">{experienceProfile?.achievements?.length || 0} items</span>
@@ -1567,7 +1567,7 @@ export default function OpportunitiesPage() {
                 value={achievementInput}
                 onChange={(e) => setAchievementInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddAchievement())}
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
               <Button size="sm" onClick={handleAddAchievement} leftIcon={<Plus className="w-3.5 h-3.5" />}>
                 Add
@@ -1581,7 +1581,7 @@ export default function OpportunitiesPage() {
                   className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300"
                 >
                   <span className="flex items-center gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 text-[var(--action-primary)] shrink-0" />
                     {ach}
                   </span>
                   <button
@@ -1618,7 +1618,7 @@ export default function OpportunitiesPage() {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                         isSelected
-                          ? "bg-teal-500 text-slate-950 border-teal-400 font-bold"
+                          ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] border-[var(--action-primary)] font-bold"
                           : "bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800"
                       }`}
                     >
@@ -1642,7 +1642,7 @@ export default function OpportunitiesPage() {
                 checked={experienceProfile?.discovery_opt_in ?? true}
                 onChange={(e) => handleSaveExpProfile({ discovery_opt_in: e.target.checked })}
                 aria-label="Allow candidate discovery by creators"
-                className="w-4 h-4 rounded text-teal-500 focus:ring-teal-400 bg-slate-900 border-slate-700 cursor-pointer"
+                className="w-4 h-4 rounded text-[var(--action-primary)] focus:ring-[var(--focus-ring)] bg-slate-900 border-slate-700 cursor-pointer"
               />
             </div>
           </Card>
@@ -1668,7 +1668,7 @@ export default function OpportunitiesPage() {
                       <button
                         onClick={() => handleToggleSave(opp.id)}
                         aria-label="Remove from saved"
-                        className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/40"
+                        className="p-1.5 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] border border-[var(--border-color)]"
                       >
                         <Bookmark className="w-3.5 h-3.5" fill="currentColor" />
                       </button>
@@ -1698,7 +1698,7 @@ export default function OpportunitiesPage() {
                         <Button
                           size="sm"
                           onClick={() => handleOpenApplyModal(opp)}
-                          className="text-xs px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                          className="text-xs px-3 py-1 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold"
                         >
                           Apply Now
                         </Button>
@@ -1710,7 +1710,7 @@ export default function OpportunitiesPage() {
                           target="_blank"
                           rel="noreferrer"
                           aria-label={`Official portal for ${opp.title}`}
-                          className="p-1 text-slate-400 hover:text-teal-300 transition-colors"
+                          className="p-1 text-slate-400 hover:text-[var(--action-primary)] transition-colors"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -1728,7 +1728,7 @@ export default function OpportunitiesPage() {
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-teal-400" />
+                <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
                 Administrator Opportunity Control Center
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -1865,7 +1865,7 @@ export default function OpportunitiesPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-[11px]">
                   <div>
                     <span className="text-slate-400 block">Min Verified CGPA</span>
-                    <span className="font-semibold text-teal-300">
+                    <span className="font-semibold text-[var(--action-primary)]">
                       {opp.criteria?.min_cgpa ? `${opp.criteria.min_cgpa.toFixed(2)}` : "None"}
                     </span>
                   </div>
@@ -2012,7 +2012,7 @@ export default function OpportunitiesPage() {
 
             {/* Mandatory Criteria Section */}
             <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-teal-300">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--action-primary)]">
                 <ShieldCheck className="w-4 h-4" />
                 Mandatory Eligibility Criteria (Rule-Engine Enforced)
               </div>
@@ -2081,11 +2081,11 @@ export default function OpportunitiesPage() {
             </div>
 
             {/* LIVE MATCHING PREVIEW PANEL */}
-            <div className="p-4 rounded-xl bg-teal-950/30 border border-teal-800/60 space-y-3">
+            <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-teal-400" />
+                  <h4 className="text-xs font-bold text-[var(--action-primary)] flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[var(--action-primary)]" />
                     Live Matching Preview (Pre-Publication Simulation)
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-0.5">
@@ -2097,14 +2097,14 @@ export default function OpportunitiesPage() {
                   variant="secondary"
                   onClick={handleLiveMatchingPreview}
                   disabled={previewLoading}
-                  className="text-xs border-teal-700 text-teal-300 hover:bg-teal-950"
+                  className="text-xs border-[var(--border-color)] text-[var(--action-primary)] hover:bg-[var(--surface-secondary)]"
                 >
                   {previewLoading ? "Simulating..." : "Run Matching Preview"}
                 </Button>
               </div>
 
               {previewData && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-teal-900/40 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--border-color)] text-center">
                   <div className="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-800/80">
                     <div className="text-[10px] uppercase font-bold text-emerald-300">Eligible</div>
                     <div className="text-lg font-bold text-emerald-200">
@@ -2276,8 +2276,8 @@ export default function OpportunitiesPage() {
                         </div>
                         <p className="text-[11px] text-slate-400">
                           Branch: {cand.student_branch} · Verified CGPA:{" "}
-                          <strong className="text-teal-300">{cand.verified_cgpa?.toFixed(2) || "N/A"}</strong> · Match:{" "}
-                          <strong className="text-teal-300">{cand.match_score}%</strong>
+                          <strong className="text-[var(--action-primary)]">{cand.verified_cgpa?.toFixed(2) || "N/A"}</strong> · Match:{" "}
+                          <strong className="text-[var(--action-primary)]">{cand.match_score}%</strong>
                         </p>
                         <div className="flex flex-wrap gap-1 pt-0.5">
                           {(cand.skills || []).map((sk: string) => (
@@ -2290,7 +2290,7 @@ export default function OpportunitiesPage() {
 
                       <div className="shrink-0 flex items-center gap-2">
                         {isInvited ? (
-                          <span className="px-2.5 py-1 rounded bg-teal-950 border border-teal-800 text-teal-300 font-semibold text-[11px] flex items-center gap-1">
+                          <span className="px-2.5 py-1 rounded bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] font-semibold text-[11px] flex items-center gap-1">
                             <Check className="w-3 h-3" /> Invited
                           </span>
                         ) : (
@@ -2326,7 +2326,7 @@ export default function OpportunitiesPage() {
         >
           <div className="space-y-4 text-xs text-slate-300">
             {/* Opportunity Context Header */}
-            <div className="p-3 rounded-lg bg-teal-950/40 border border-teal-800/40 space-y-1">
+            <div className="p-3 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
               <div className="font-semibold text-slate-100">{selectedOppToApply.organization}</div>
               <p className="text-slate-400">
                 {selectedOppToApply.location} · {selectedOppToApply.time_commitment_hrs_week} hours/week requirement
@@ -2355,7 +2355,7 @@ export default function OpportunitiesPage() {
                 value={statementInput}
                 onChange={(e) => setStatementInput(e.target.value)}
                 placeholder="Describe your motivation and any relevant projects or coursework..."
-                className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 leading-relaxed resize-none"
+                className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
               />
             </div>
 
@@ -2365,7 +2365,7 @@ export default function OpportunitiesPage() {
                 <label htmlFor="apply-hrs" className="font-semibold text-slate-200">
                   Weekly Available Hours
                 </label>
-                <span className="font-mono text-teal-400 font-bold">{commitmentInput} hrs/wk</span>
+                <span className="font-mono text-[var(--action-primary)] font-bold">{commitmentInput} hrs/wk</span>
               </div>
               <input
                 id="apply-hrs"
@@ -2375,7 +2375,7 @@ export default function OpportunitiesPage() {
                 step={1}
                 value={commitmentInput}
                 onChange={(e) => setCommitmentInput(Number(e.target.value))}
-                className="w-full accent-teal-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
+                className="w-full accent-[var(--action-primary)] bg-slate-800 h-1.5 rounded-lg cursor-pointer"
               />
             </div>
 
@@ -2388,7 +2388,7 @@ export default function OpportunitiesPage() {
                 onClick={handleConfirmApply}
                 isLoading={submittingApp}
                 leftIcon={<Send className="w-3.5 h-3.5" />}
-                className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold"
+                className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold"
               >
                 Submit Application
               </Button>
@@ -2420,7 +2420,7 @@ export default function OpportunitiesPage() {
               checked={editOptIn}
               onChange={(e) => setEditOptIn(e.target.checked)}
               aria-label="Opt-in for opportunity matching"
-              className="w-4 h-4 rounded text-teal-500 focus:ring-teal-400 bg-slate-900 border-slate-700"
+              className="w-4 h-4 rounded text-[var(--action-primary)] focus:ring-[var(--focus-ring)] bg-slate-900 border-slate-700"
             />
           </div>
 
@@ -2428,7 +2428,7 @@ export default function OpportunitiesPage() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label htmlFor="avail-hours-slider" className="font-semibold text-slate-200">Available Time Commitment</label>
-              <span className="font-mono text-teal-400 font-bold">{editHours} hours / week</span>
+              <span className="font-mono text-[var(--action-primary)] font-bold">{editHours} hours / week</span>
             </div>
             <input
               id="avail-hours-slider"
@@ -2439,7 +2439,7 @@ export default function OpportunitiesPage() {
               value={editHours}
               onChange={(e) => setEditHours(Number(e.target.value))}
               aria-label="Available time commitment in hours per week"
-              className="w-full accent-teal-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
+              className="w-full accent-[var(--action-primary)] bg-slate-800 h-1.5 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-500">
               <span>Light (2 hrs)</span>
@@ -2460,7 +2460,7 @@ export default function OpportunitiesPage() {
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSkill())}
                 aria-label="New skill name to add"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
               <Button size="sm" variant="secondary" onClick={handleAddSkill}>
                 Add
@@ -2471,13 +2471,13 @@ export default function OpportunitiesPage() {
               {editSkills.map((s) => (
                 <span
                   key={s}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-teal-950/60 border border-teal-800/60 text-teal-300 font-mono text-[11px]"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono text-[11px]"
                 >
                   {s}
                   <button
                     onClick={() => handleRemoveSkill(s)}
                     aria-label={`Remove skill ${s}`}
-                    className="text-teal-400 hover:text-red-400 transition-colors ml-0.5"
+                    className="text-[var(--action-primary)] hover:text-red-400 transition-colors ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -2514,7 +2514,7 @@ export default function OpportunitiesPage() {
               placeholder="e.g. Distributed Task Queue"
               value={projTitle}
               onChange={(e) => setProjTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2524,7 +2524,7 @@ export default function OpportunitiesPage() {
               placeholder="e.g. Backend Lead, Full Stack Developer"
               value={projRole}
               onChange={(e) => setProjRole(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2534,7 +2534,7 @@ export default function OpportunitiesPage() {
               placeholder="e.g. Python, Redis, Docker, FastAPI"
               value={projTech}
               onChange={(e) => setProjTech(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2544,7 +2544,7 @@ export default function OpportunitiesPage() {
               placeholder="https://github.com/username/project"
               value={projLink}
               onChange={(e) => setProjLink(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2554,14 +2554,14 @@ export default function OpportunitiesPage() {
               placeholder="What did you build, what challenges did you solve, and what was the impact?"
               value={projDesc}
               onChange={(e) => setProjDesc(e.target.value)}
-              className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 leading-relaxed resize-none"
+              className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
             />
           </div>
           <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAddProjectOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddProject} className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold">
+            <Button size="sm" onClick={handleAddProject} className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold">
               Save Project
             </Button>
           </div>
@@ -2586,7 +2586,7 @@ export default function OpportunitiesPage() {
                 placeholder="e.g. Machine Learning Intern"
                 value={workRole}
                 onChange={(e) => setWorkRole(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
             <div className="space-y-1.5">
@@ -2596,7 +2596,7 @@ export default function OpportunitiesPage() {
                 placeholder="e.g. TIET Research Lab, Microsoft"
                 value={workCompany}
                 onChange={(e) => setWorkCompany(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
           </div>
@@ -2607,7 +2607,7 @@ export default function OpportunitiesPage() {
               placeholder="e.g. Patiala, Punjab or Remote"
               value={workLocation}
               onChange={(e) => setWorkLocation(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -2618,7 +2618,7 @@ export default function OpportunitiesPage() {
                 placeholder="YYYY-MM (e.g. 2024-06)"
                 value={workStart}
                 onChange={(e) => setWorkStart(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
             <div className="space-y-1.5">
@@ -2628,7 +2628,7 @@ export default function OpportunitiesPage() {
                 placeholder="YYYY-MM or Present"
                 value={workEnd}
                 onChange={(e) => setWorkEnd(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
               />
             </div>
           </div>
@@ -2639,14 +2639,14 @@ export default function OpportunitiesPage() {
               placeholder="Describe your responsibilities, tools used, and deliverables achieved..."
               value={workDesc}
               onChange={(e) => setWorkDesc(e.target.value)}
-              className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 leading-relaxed resize-none"
+              className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)] leading-relaxed resize-none"
             />
           </div>
           <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAddWorkOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddWork} className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold">
+            <Button size="sm" onClick={handleAddWork} className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold">
               Save Experience
             </Button>
           </div>
@@ -2670,7 +2670,7 @@ export default function OpportunitiesPage() {
               placeholder="e.g. AWS Certified Cloud Practitioner"
               value={certTitle}
               onChange={(e) => setCertTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2680,7 +2680,7 @@ export default function OpportunitiesPage() {
               placeholder="e.g. Amazon Web Services, Google Cloud, DeepLearning.AI"
               value={certIssuer}
               onChange={(e) => setCertIssuer(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2690,7 +2690,7 @@ export default function OpportunitiesPage() {
               placeholder="YYYY-MM (e.g. 2024-03)"
               value={certDate}
               onChange={(e) => setCertDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="space-y-1.5">
@@ -2700,14 +2700,14 @@ export default function OpportunitiesPage() {
               placeholder="https://www.credly.com/badges/..."
               value={certUrl}
               onChange={(e) => setCertUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[var(--action-primary)] focus:ring-1 focus:ring-[var(--focus-ring)]"
             />
           </div>
           <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAddCertOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddCert} className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold">
+            <Button size="sm" onClick={handleAddCert} className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] font-semibold">
               Save Certification
             </Button>
           </div>

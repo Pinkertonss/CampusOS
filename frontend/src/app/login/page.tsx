@@ -87,41 +87,37 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Background ambient teal/blue glow */}
-      <div className="absolute top-1/4 -left-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[var(--page-bg)] text-[var(--text-primary)]">
       <div className="w-full max-w-md z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-sky-500 text-white shadow-lg shadow-teal-900/30 mb-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs mb-2">
             <GraduationCap className="w-8 h-8" />
           </div>
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">CampusOS</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">CampusOS</h1>
             <Badge variant="primary" size="sm">
               TIET Pilot
             </Badge>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[var(--text-secondary)]">
             One personalized platform fixing fragmented campus information.
           </p>
         </div>
 
         {/* Main Card */}
-        <Card className="p-6 sm:p-8 bg-slate-900/90 border-slate-800 shadow-2xl backdrop-blur-md">
+        <Card className="p-6 sm:p-8 bg-[var(--surface-card)] border-[var(--border-color)] shadow-xl">
           {/* Demo Quick Sign-in Banner for Hackathon Evaluators */}
-          <div className="mb-6 p-3.5 rounded-xl bg-teal-950/60 border border-teal-800/60 flex flex-col gap-2.5">
+          <div className="mb-6 p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-teal-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Instant Demo Personas
+              <span className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--action-primary)]" /> Instant Demo Personas
               </span>
-              <span className="text-[10px] text-teal-400/80 bg-teal-900/60 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[10px] text-[var(--accent-badge-text)] bg-[var(--accent-badge-bg)] border border-[var(--accent-badge-border)] px-1.5 py-0.5 rounded font-mono">
                 Student &amp; Admin
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Explore with verified student attendance or institutional administrative governance without manual credentials.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
@@ -131,7 +127,7 @@ function LoginForm() {
                 isLoading={demoSubmitting}
                 onClick={handleDemoSignIn}
                 leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                className="bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs"
+                className="font-medium text-xs"
               >
                 Student (Arjun)
               </Button>
@@ -140,8 +136,8 @@ function LoginForm() {
                 size="sm"
                 isLoading={adminDemoSubmitting}
                 onClick={handleAdminDemoSignIn}
-                leftIcon={<ShieldCheck className="w-3.5 h-3.5 text-teal-400" />}
-                className="bg-slate-800 hover:bg-slate-700 text-white border-slate-700 font-medium text-xs"
+                leftIcon={<ShieldCheck className="w-3.5 h-3.5 text-[var(--action-primary)]" />}
+                className="font-medium text-xs"
               >
                 Admin (DOAA)
               </Button>
@@ -179,7 +175,7 @@ function LoginForm() {
                   placeholder="student@thapar.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
               </div>
             </div>
@@ -204,7 +200,7 @@ function LoginForm() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                  className="w-full pl-9 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)] transition"
                 />
                 <button
                   type="button"
@@ -227,7 +223,7 @@ function LoginForm() {
               fullWidth
               isLoading={submitting}
               rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="mt-2 bg-teal-600 hover:bg-teal-500"
+              className="mt-2 bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Sign In
             </Button>
@@ -269,7 +265,7 @@ function LoginForm() {
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"
-              className="text-teal-400 hover:text-teal-300 font-medium underline-offset-4 hover:underline"
+              className="text-[var(--action-primary)] hover:opacity-80 font-medium underline-offset-4 hover:underline"
             >
               Create account
             </Link>
@@ -278,7 +274,7 @@ function LoginForm() {
 
         {/* Security & Privacy Footer Note */}
         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-teal-500/80" />
+          <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
           <span>Privacy first · Row-Level Security · Explicit consent only</span>
         </div>
       </div>

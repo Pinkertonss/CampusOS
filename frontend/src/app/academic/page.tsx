@@ -216,7 +216,7 @@ export default function AcademicPlannerPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-base font-bold">
-                      <Sparkles className="w-5 h-5 text-teal-500" />
+                      <Sparkles className="w-5 h-5 text-[var(--action-primary)]" />
                       <span>Interactive What-If Simulation Engine</span>
                     </CardTitle>
                     <CardDescription>
@@ -229,7 +229,7 @@ export default function AcademicPlannerPage() {
                       onClick={() => setSimMode("grades")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         simMode === "grades"
-                          ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                          ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                       }`}
                     >
@@ -239,7 +239,7 @@ export default function AcademicPlannerPage() {
                       onClick={() => setSimMode("attendance")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         simMode === "attendance"
-                          ? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
+                          ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                       }`}
                     >
@@ -258,7 +258,7 @@ export default function AcademicPlannerPage() {
                   <select
                     value={selectedCourseCode}
                     onChange={(e) => setSelectedCourseCode(e.target.value)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)]"
                   >
                     {summary?.courses.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -275,7 +275,7 @@ export default function AcademicPlannerPage() {
                       {/* Target Grade Selector */}
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                          <Target className="w-4 h-4 text-teal-500" />
+                          <Target className="w-4 h-4 text-[var(--action-primary)]" />
                           Target Overall Score:
                         </label>
                         <select
@@ -296,10 +296,10 @@ export default function AcademicPlannerPage() {
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
                         <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                           <span className="flex items-center gap-1.5">
-                            <Sliders className="w-4 h-4 text-teal-500" />
+                            <Sliders className="w-4 h-4 text-[var(--action-primary)]" />
                             Simulated End-Sem Score:
                           </span>
-                          <span className="font-mono text-teal-600 dark:text-teal-400 font-bold">
+                          <span className="font-mono text-[var(--action-primary)] font-bold">
                             {endSemHypoScore}%
                           </span>
                         </div>
@@ -309,7 +309,7 @@ export default function AcademicPlannerPage() {
                           max="100"
                           value={endSemHypoScore}
                           onChange={(e) => setEndSemHypoScore(Number(e.target.value))}
-                          className="w-full accent-teal-500 cursor-pointer"
+                          className="w-full accent-[var(--action-primary)] cursor-pointer"
                         />
                         <div className="flex justify-between text-[10px] text-slate-400">
                           <span>0%</span>
@@ -343,32 +343,32 @@ export default function AcademicPlannerPage() {
 
                     {/* Grade Outcome Card */}
                     {gradeResult && (
-                      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/50 border border-sky-800/40 text-white space-y-4">
-                        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="p-5 rounded-2xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] space-y-4">
+                        <div className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                           Forecasted Academic Outcome
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
-                            <div className="text-[11px] text-slate-400 font-medium">Completed Score</div>
-                            <div className="text-2xl font-bold text-slate-100 font-mono">
+                          <div className="p-3.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-1">
+                            <div className="text-[11px] text-[var(--text-secondary)] font-medium">Completed Score</div>
+                            <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                               {gradeResult.current_weighted_score}%
                             </div>
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-[var(--text-secondary)]">
                               across {gradeResult.completed_weight}% completed weight
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-center text-sky-400">
+                          <div className="flex items-center justify-center text-[var(--action-primary)]">
                             <ArrowRight className="w-6 h-6 hidden sm:block" />
-                            <span className="sm:hidden text-xs text-sky-400 font-semibold">
+                            <span className="sm:hidden text-xs text-[var(--action-primary)] font-semibold">
                               Projects to ↓
                             </span>
                           </div>
 
-                          <div className="p-3.5 rounded-xl bg-sky-950/50 border border-sky-700/60 space-y-1">
-                            <div className="text-[11px] text-sky-300 font-medium">Projected Final Grade</div>
-                            <div className="text-2xl font-bold text-sky-300 font-mono">
+                          <div className="p-3.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-1">
+                            <div className="text-[11px] text-[var(--text-primary)] font-medium">Projected Final Grade</div>
+                            <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                               {gradeResult.projected_total_score}%
                             </div>
                             <Badge variant="primary" size="sm">
@@ -444,18 +444,18 @@ export default function AcademicPlannerPage() {
 
                     {/* Attendance Result Card */}
                     {attResult && (
-                      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/50 border border-teal-800/40 text-white space-y-4">
-                        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="p-5 rounded-2xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] space-y-4">
+                        <div className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                           Live Attendance Projection
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
-                            <div className="text-[11px] text-slate-400 font-medium">Current Status</div>
-                            <div className="text-2xl font-bold text-slate-100 font-mono">
+                          <div className="p-3.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border-color)] space-y-1">
+                            <div className="text-[11px] text-[var(--text-secondary)] font-medium">Current Status</div>
+                            <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                               {attResult.current_percent}%
                             </div>
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-[var(--text-secondary)]">
                               {attResult.current_attended}/{attResult.current_total_held} held
                             </div>
                             <Badge
@@ -472,19 +472,19 @@ export default function AcademicPlannerPage() {
                             </Badge>
                           </div>
 
-                          <div className="flex items-center justify-center text-teal-400">
+                          <div className="flex items-center justify-center text-[var(--action-primary)]">
                             <ArrowRight className="w-6 h-6 hidden sm:block" />
-                            <span className="sm:hidden text-xs text-teal-400 font-semibold">
+                            <span className="sm:hidden text-xs text-[var(--action-primary)] font-semibold">
                               Becomes ↓
                             </span>
                           </div>
 
-                          <div className="p-3.5 rounded-xl bg-teal-950/50 border border-teal-700/60 space-y-1">
-                            <div className="text-[11px] text-teal-300 font-medium">Projected Outcome</div>
-                            <div className="text-2xl font-bold text-teal-300 font-mono">
+                          <div className="p-3.5 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-1">
+                            <div className="text-[11px] text-[var(--action-primary)] font-medium">Projected Outcome</div>
+                            <div className="text-2xl font-bold text-[var(--action-primary)] font-mono">
                               {attResult.projected_percent}%
                             </div>
-                            <div className="text-xs text-teal-200/80">
+                            <div className="text-xs text-[var(--text-secondary)]">
                               {attResult.projected_attended}/{attResult.projected_total_held} total
                             </div>
                             <Badge
@@ -502,7 +502,7 @@ export default function AcademicPlannerPage() {
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-teal-900/30 border border-teal-800/60 text-xs text-teal-200">
+                        <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs text-[var(--text-primary)]">
                           {attResult.message}
                         </div>
                       </div>
@@ -530,7 +530,7 @@ export default function AcademicPlannerPage() {
             <Card
               header={
                 <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-teal-500" />
+                  <BookOpen className="w-4 h-4 text-[var(--action-primary)]" />
                   <span>Enrolled Courses &amp; Current Attendance Standing</span>
                 </CardTitle>
               }
@@ -552,7 +552,7 @@ export default function AcademicPlannerPage() {
                         onClick={() => setSelectedCourseCode(c.code)}
                         className={`cursor-pointer transition-colors ${
                           c.code === selectedCourseCode
-                            ? "bg-teal-500/10 font-medium"
+                            ? "bg-[var(--surface-secondary)] font-medium"
                             : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
                         }`}
                       >

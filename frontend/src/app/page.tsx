@@ -106,17 +106,17 @@ export default function DashboardPage() {
       {/* ========================================================
           1. WELCOME HEADER & QUICK ACTIONS
       ======================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-teal-950/60 via-slate-900 to-sky-950/40 border border-teal-800/40 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-[var(--surface-card)] border border-[var(--border-color)] shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Welcome back, {displayName}
             </h1>
             <Badge variant="primary" size="sm" dot>
               Active Session
             </Badge>
           </div>
-          <p className="text-xs sm:text-sm text-slate-300">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
             Thapar Institute · {branch} · Semester {semester} · Roll No: <span className="font-mono font-semibold">{rollNo}</span>
           </p>
         </div>
@@ -130,8 +130,7 @@ export default function DashboardPage() {
               setDataEntryTab("csv");
               setDataEntryOpen(true);
             }}
-            leftIcon={<FileSpreadsheet className="w-3.5 h-3.5 text-teal-400" />}
-            className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+            leftIcon={<FileSpreadsheet className="w-3.5 h-3.5 text-[var(--action-primary)]" />}
           >
             Import CSV
           </Button>
@@ -143,8 +142,7 @@ export default function DashboardPage() {
               setDataEntryTab("course");
               setDataEntryOpen(true);
             }}
-            leftIcon={<Plus className="w-3.5 h-3.5 text-teal-400" />}
-            className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+            leftIcon={<Plus className="w-3.5 h-3.5 text-[var(--action-primary)]" />}
           >
             Add Data
           </Button>
@@ -154,7 +152,6 @@ export default function DashboardPage() {
             size="sm"
             onClick={() => handleOpenWhatIfAttendance()}
             leftIcon={<Sliders className="w-3.5 h-3.5" />}
-            className="bg-teal-600 hover:bg-teal-500 shadow-md shadow-teal-950/40"
           >
             What-If Planner
           </Button>

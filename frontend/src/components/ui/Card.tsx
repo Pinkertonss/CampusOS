@@ -37,29 +37,28 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     ref
   ) => {
     const isHoverable = hover || hoverEffect;
-
     const hasStructuredHeader = header || title || description;
 
     return (
       <div
         ref={ref}
-        className={`bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200/80 dark:border-slate-700/70 shadow-sm transition-all duration-200 ${
+        className={`bg-[var(--surface-card)] text-[var(--text-primary)] rounded-xl border border-[var(--border-color)] shadow-xs transition-all duration-150 ${
           isHoverable
-            ? "hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-600"
+            ? "hover:border-[var(--text-muted)]/40 hover:shadow-sm"
             : ""
         } ${className}`}
         {...props}
       >
         {hasStructuredHeader && (
-          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/60">
+          <div className="px-5 py-4 border-b border-[var(--border-color)]">
             {header}
             {title && (
-              <h3 className="text-base font-semibold leading-none tracking-tight text-slate-900 dark:text-slate-100">
+              <h3 className="text-base font-semibold leading-none tracking-tight text-[var(--text-primary)]">
                 {title}
               </h3>
             )}
             {description && (
-              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
                 {description}
               </p>
             )}
@@ -69,7 +68,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         <div className={paddingStyles[padding]}>{children}</div>
 
         {footer && (
-          <div className="px-5 py-3.5 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700/60 rounded-b-xl flex items-center justify-between gap-3">
+          <div className="px-5 py-3.5 bg-[var(--surface-secondary)] border-t border-[var(--border-color)] rounded-b-xl flex items-center justify-between gap-3">
             {footer}
           </div>
         )}
@@ -86,7 +85,7 @@ export const CardHeader = React.forwardRef<
 >(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`px-5 py-4 border-b border-slate-100 dark:border-slate-700/60 flex flex-col gap-1.5 ${className}`}
+    className={`px-5 py-4 border-b border-[var(--border-color)] flex flex-col gap-1.5 ${className}`}
     {...props}
   />
 ));
@@ -98,7 +97,7 @@ export const CardTitle = React.forwardRef<
 >(({ className = "", ...props }, ref) => (
   <h3
     ref={ref}
-    className={`text-base font-semibold leading-none tracking-tight text-slate-900 dark:text-slate-100 ${className}`}
+    className={`text-base font-semibold leading-none tracking-tight text-[var(--text-primary)] ${className}`}
     {...props}
   />
 ));
@@ -110,7 +109,7 @@ export const CardDescription = React.forwardRef<
 >(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-sm text-slate-500 dark:text-slate-400 ${className}`}
+    className={`text-sm text-[var(--text-secondary)] ${className}`}
     {...props}
   />
 ));
@@ -130,7 +129,7 @@ export const CardFooter = React.forwardRef<
 >(({ className = "", ...props }, ref) => (
   <div
     ref={ref}
-    className={`px-5 py-3.5 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700/60 rounded-b-xl flex items-center gap-3 ${className}`}
+    className={`px-5 py-3.5 bg-[var(--surface-secondary)] border-t border-[var(--border-color)] rounded-b-xl flex items-center gap-3 ${className}`}
     {...props}
   />
 ));

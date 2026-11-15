@@ -100,15 +100,15 @@ export const Toast: React.FC<ToastProps> = ({ item, onDismiss }) => {
     <div
       role="status"
       aria-live="polite"
-      className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-slate-800 shadow-xl shadow-slate-900/10 text-slate-900 dark:text-slate-100 transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${border}`}
+      className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border bg-[var(--surface-card)] text-[var(--text-primary)] shadow-md transition-all duration-150 animate-in fade-in slide-in-from-bottom-2 ${border}`}
     >
       <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${iconColor}`} />
       <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-semibold leading-tight text-slate-900 dark:text-slate-100">
+        <h4 className="text-sm font-semibold leading-tight text-[var(--text-primary)]">
           {item.title}
         </h4>
         {item.description && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="mt-1 text-xs text-[var(--text-secondary)] leading-relaxed">
             {item.description}
           </p>
         )}
@@ -117,7 +117,7 @@ export const Toast: React.FC<ToastProps> = ({ item, onDismiss }) => {
         type="button"
         onClick={() => onDismiss(item.id)}
         aria-label="Dismiss notification"
-        className="shrink-0 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer -mr-1 -mt-1"
+        className="shrink-0 p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-secondary)] transition-colors cursor-pointer -mr-1 -mt-1"
       >
         <X className="w-4 h-4" />
       </button>

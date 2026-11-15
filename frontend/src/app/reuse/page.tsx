@@ -336,7 +336,7 @@ export default function CampusReusePage() {
           >
             Notifications
             {unreadCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.2 bg-teal-600 text-white text-[10px] font-bold rounded-full">
+              <span className="ml-1.5 px-1.5 py-0.2 bg-[var(--action-primary)] text-[var(--action-primary-text)] text-[10px] font-bold rounded-full">
                 {unreadCount}
               </span>
             )}
@@ -347,7 +347,7 @@ export default function CampusReusePage() {
             size="sm"
             onClick={() => setIsPostModalOpen(true)}
             leftIcon={<Plus className="w-4 h-4" />}
-            className="bg-teal-600 hover:bg-teal-500 text-white shadow-sm"
+            className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)] shadow-xs"
           >
             Post a Listing
           </Button>
@@ -360,7 +360,7 @@ export default function CampusReusePage() {
           onClick={() => setActiveTab("marketplace")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "marketplace"
-              ? "bg-teal-600 text-white shadow-sm"
+              ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
               : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
@@ -375,7 +375,7 @@ export default function CampusReusePage() {
           onClick={() => setActiveTab("my-listings")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "my-listings"
-              ? "bg-teal-600 text-white shadow-sm"
+              ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
               : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
@@ -392,7 +392,7 @@ export default function CampusReusePage() {
           onClick={() => setActiveTab("my-requests")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "my-requests"
-              ? "bg-teal-600 text-white shadow-sm"
+              ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
               : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
@@ -409,7 +409,7 @@ export default function CampusReusePage() {
           onClick={() => setActiveTab("impact")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "impact"
-              ? "bg-teal-600 text-white shadow-sm"
+              ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
               : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
@@ -453,7 +453,7 @@ export default function CampusReusePage() {
                 placeholder="Search calculator, book, coat..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-8 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+                className="w-full pl-8 pr-8 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
               />
               {searchQuery && (
                 <button
@@ -478,7 +478,7 @@ export default function CampusReusePage() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 ${
                     isActive
-                      ? "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800"
+                      ? "bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
                       : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -499,7 +499,7 @@ export default function CampusReusePage() {
           ) : listings.length === 0 ? (
             <Card className="p-10">
               <EmptyState
-                icon={<Repeat className="w-12 h-12 text-teal-600 dark:text-teal-400" />}
+                icon={<Repeat className="w-12 h-12 text-[var(--action-primary)]" />}
                 title={searchQuery ? "No items matching your search" : "No items listed yet"}
                 description="Be the first to list a textbook, Drafter, or Casio calculator for your fellow batchmates."
                 action={{
@@ -536,14 +536,14 @@ export default function CampusReusePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-32 w-full bg-gradient-to-tr from-teal-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800/60 p-4 flex flex-col justify-between border-b border-slate-100 dark:border-slate-800">
+                    <div className="h-32 w-full bg-[var(--surface-secondary)] p-4 flex flex-col justify-between border-b border-[var(--border-color)]">
                       <div className="flex items-center justify-between">
                         {getModeBadge(item.mode)}
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--surface-card)] text-[var(--text-secondary)] border border-[var(--border-color)]">
                           {getConditionLabel(item.condition)}
                         </span>
                       </div>
-                      <div className="text-[11px] text-teal-800 dark:text-teal-300 font-medium capitalize">
+                      <div className="text-[11px] text-[var(--text-primary)] font-medium capitalize">
                         {item.category}
                       </div>
                     </div>
@@ -553,7 +553,7 @@ export default function CampusReusePage() {
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
                       <h3
-                        className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition"
+                        className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-[var(--action-primary)] transition"
                         title={item.title}
                       >
                         {item.title}
@@ -576,7 +576,7 @@ export default function CampusReusePage() {
 
                   {/* Card Action */}
                   <div className="px-4 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">
+                    <span className="text-xs font-semibold text-[var(--action-primary)]">
                       {item.mode === "donate"
                         ? "Free Handover"
                         : item.mode === "borrow"
@@ -587,7 +587,7 @@ export default function CampusReusePage() {
                       variant="primary"
                       size="sm"
                       onClick={() => setSelectedListing(item)}
-                      className="bg-teal-600 hover:bg-teal-500 text-xs text-white"
+                      className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-xs text-[var(--action-primary-text)]"
                     >
                       View & Request
                     </Button>
@@ -621,7 +621,7 @@ export default function CampusReusePage() {
           {myListings.length === 0 ? (
             <Card className="p-10">
               <EmptyState
-                icon={<Package className="w-12 h-12 text-teal-600 dark:text-teal-400" />}
+                icon={<Package className="w-12 h-12 text-[var(--action-primary)]" />}
                 title="You haven't listed any items"
                 description="Put your old semester textbooks or calculator back into campus circulation."
                 action={{
@@ -716,7 +716,7 @@ export default function CampusReusePage() {
                                     variant="primary"
                                     size="sm"
                                     onClick={() => handleAcceptRequest(req.id)}
-                                    className="bg-teal-600 hover:bg-teal-500 text-white"
+                                    className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
                                     leftIcon={<Check className="w-3.5 h-3.5" />}
                                   >
                                     Accept
@@ -787,7 +787,7 @@ export default function CampusReusePage() {
           {myRequests.length === 0 ? (
             <Card className="p-10">
               <EmptyState
-                icon={<ArrowRightLeft className="w-12 h-12 text-teal-600 dark:text-teal-400" />}
+                icon={<ArrowRightLeft className="w-12 h-12 text-[var(--action-primary)]" />}
                 title="No active requests"
                 description="Browse the marketplace to find engineering calculators, lab gear, or course textbooks."
                 action={{
@@ -884,24 +884,24 @@ export default function CampusReusePage() {
       {activeTab === "impact" && impactData && (
         <div className="space-y-6">
           {/* SDG 12 Banner */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
             <div>
-              <div className="flex items-center gap-2 text-teal-300 text-xs font-semibold tracking-wider uppercase mb-1">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-1">
                 <Leaf className="w-4 h-4" />
                 <span>UN Sustainable Development Goal 12</span>
               </div>
-              <h2 className="text-xl font-bold tracking-tight">
+              <h2 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
                 Responsible Consumption & Production
               </h2>
-              <p className="text-xs text-teal-100/80 mt-1 max-w-xl leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-xl leading-relaxed">
                 CampusOS circular economy reduces student expenditure, prevents electronic and paper waste from entering Patiala landfills, and avoids carbon footprint of new manufacturing.
               </p>
             </div>
-            <div className="text-right shrink-0 bg-white/10 p-4 rounded-xl border border-white/10">
-              <div className="text-2xl font-extrabold text-white">
+            <div className="text-right shrink-0 bg-[var(--surface-secondary)] p-4 rounded-xl border border-[var(--border-color)]">
+              <div className="text-2xl font-extrabold text-[var(--text-primary)]">
                 {impactData.items_kept_in_use}
               </div>
-              <div className="text-xs text-teal-200">Items Kept in Circulation</div>
+              <div className="text-xs text-[var(--text-secondary)]">Items Kept in Circulation</div>
             </div>
           </div>
 
@@ -912,7 +912,7 @@ export default function CampusReusePage() {
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Total Completed Handouts
                 </span>
-                <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[var(--surface-secondary)] text-[var(--action-primary)] flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
               </div>
@@ -1004,21 +1004,21 @@ export default function CampusReusePage() {
                       </div>
                       <div className="w-full max-w-[50px] bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden flex flex-col justify-end h-full">
                         <div
-                          className="w-full bg-teal-600 hover:bg-teal-500 rounded-t-lg transition-all duration-500"
+                          className="w-full bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] rounded-t-lg transition-all duration-300"
                           style={{ height: `${heightPercent}%` }}
                         />
                       </div>
-                      <span className="text-[11px] text-slate-500 font-medium">{pt.month}</span>
+                      <span className="text-[11px] text-[var(--text-secondary)] font-medium">{pt.month}</span>
                     </div>
                   );
                 })}
               </div>
 
               {/* Legend & Summary */}
-              <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
+              <div className="flex flex-wrap items-center justify-between text-xs text-[var(--text-secondary)] pt-1">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-teal-600" /> Total Completed Cycles
+                    <span className="w-3 h-3 rounded bg-[var(--action-primary)]" /> Total Completed Cycles
                   </span>
                 </div>
                 <span>Refreshed in real-time from Supabase impact_events</span>
@@ -1057,7 +1057,7 @@ export default function CampusReusePage() {
               size="sm"
               onClick={handleCreateListing}
               isLoading={isSubmittingPost}
-              className="bg-teal-600 hover:bg-teal-500 text-white"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
             >
               Publish Listing
             </Button>
@@ -1074,7 +1074,7 @@ export default function CampusReusePage() {
               placeholder="e.g. Casio FX-991EX ClassWiz or CLRS Algorithms"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] focus:border-[var(--action-primary)]"
             />
           </div>
 
@@ -1223,7 +1223,7 @@ export default function CampusReusePage() {
                   variant="primary"
                   size="sm"
                   onClick={() => setIsRequestModalOpen(true)}
-                  className="bg-teal-600 hover:bg-teal-500 text-white"
+                  className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
                   leftIcon={<Send className="w-3.5 h-3.5" />}
                 >
                   Request Item
@@ -1272,14 +1272,14 @@ export default function CampusReusePage() {
               </div>
             ) : !selectedListing.owner_name.includes("You") ? (
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 shrink-0 text-teal-500" />
+                <ShieldCheck className="w-4 h-4 shrink-0 text-[var(--action-primary)]" />
                 <span>Hostel room & contact details are shielded until your exchange request is accepted by the owner.</span>
               </div>
             ) : null}
 
             {selectedListing.owner_name.includes("You") && (
-              <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-200 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-teal-600" />
+              <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-[var(--action-primary)]" />
                 <span>You are the owner of this listing. You cannot request your own item.</span>
               </div>
             )}
@@ -1305,7 +1305,7 @@ export default function CampusReusePage() {
               size="sm"
               onClick={handleSendRequest}
               isLoading={isSubmittingRequest}
-              className="bg-teal-600 hover:bg-teal-500 text-white"
+              className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-text)]"
               leftIcon={<Send className="w-3.5 h-3.5" />}
             >
               Send Request
