@@ -66,13 +66,75 @@ interface ChatMessage {
   timestamp: string;
 }
 
-const SAMPLE_QUESTIONS = [
-  "What is the minimum attendance requirement to appear in exams?",
-  "What time is the hostel curfew and turnstile entry?",
-  "When is the last date to pay tuition fees for even semester?",
-  "What is the penalty if my attendance is below 65%?",
-  "Can I apply for a minor degree in AI/ML?",
-  "What are the library operating hours during exam periods?",
+interface StarterQuestion {
+  question: string;
+  category: "Academic" | "Hostel" | "Finance" | "Library";
+  badge: string;
+}
+
+const QUESTION_CATEGORIES = ["All", "Academic", "Hostel", "Finance", "Library"] as const;
+
+const SAMPLE_QUESTIONS: StarterQuestion[] = [
+  {
+    question: "What is the minimum attendance requirement to appear in exams?",
+    category: "Academic",
+    badge: "Attendance",
+  },
+  {
+    question: "What is the penalty if my attendance is below 65%?",
+    category: "Academic",
+    badge: "Detention Rule",
+  },
+  {
+    question: "How is CGPA calculated and what is the 10-point grading scale?",
+    category: "Academic",
+    badge: "Grading System",
+  },
+  {
+    question: "How do I apply for a makeup exam if I missed an exam due to illness?",
+    category: "Academic",
+    badge: "Make-up Exam",
+  },
+  {
+    question: "Can I apply for a minor degree in AI/ML or Data Science?",
+    category: "Academic",
+    badge: "Minor Degree",
+  },
+  {
+    question: "When are the Mid Semester (MST) and End Semester (EST) exams held?",
+    category: "Academic",
+    badge: "Academic Dates",
+  },
+  {
+    question: "What time is the hostel curfew and turnstile entry?",
+    category: "Hostel",
+    badge: "Hostel Curfew",
+  },
+  {
+    question: "Are room heaters and high-wattage electrical appliances allowed in hostels?",
+    category: "Hostel",
+    badge: "Appliances",
+  },
+  {
+    question: "When is the last date to pay tuition fees for even semester?",
+    category: "Finance",
+    badge: "Fee Deadline",
+  },
+  {
+    question: "What is the late fee surcharge if tuition is not paid on time?",
+    category: "Finance",
+    badge: "Late Surcharge",
+  },
+  {
+    question: "What are the library operating hours during exam periods?",
+    category: "Library",
+    badge: "Library Hours",
+  },
+  {
+    question: "What is the book borrowing limit and late return fine at the library?",
+    category: "Library",
+    badge: "Borrowing Rules",
+  },
 ];
 
 let msgSequenceCounter = 0;
@@ -97,6 +159,7 @@ export default function CampusCopilotPage() {
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [selectedQuestionCategory, setSelectedQuestionCategory] = useState<string>("All");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [streamingCitations, setStreamingCitations] = useState<Citation[]>([]);
@@ -374,20 +437,52 @@ export default function CampusCopilotPage() {
                     />
 
                     {/* Starter Questions */}
-                    <div className="mt-8 space-y-2.5 max-w-2xl mx-auto">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block text-center">
-                        Suggested Starter Inquiries
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {SAMPLE_QUESTIONS.map((q, idx) => (
+                    <div className="mt-8 space-y-3.5 max-w-2xl mx-auto">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pb-1">
+                        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                          Suggested Campus Inquiries
+                        </span>
+                        {/* Category filter pills */}
+                        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                          {QUESTION_CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setSelectedQuestionCategory(cat)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition shrink-0 ${
+                                selectedQuestionCategory === cat
+                                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                                  : "bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {SAMPLE_QUESTIONS.filter(
+                          (q) => selectedQuestionCategory === "All" || q.category === selectedQuestionCategory
+                        ).map((q, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => handleSendMessage(q)}
-                            className="text-left text-xs p-3 rounded-xl bg-[var(--surface-secondary)] hover:bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] transition line-clamp-2 hover:border-[var(--action-primary)]"
+                            onClick={() => handleSendMessage(q.question)}
+                            className="text-left text-xs p-3.5 rounded-xl bg-[var(--surface-card)] hover:bg-[var(--surface-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] transition hover:border-[var(--action-primary)] flex flex-col justify-between gap-2 shadow-xs group"
                           >
-                            <span className="font-medium text-[var(--action-primary)] mr-1.5">Q:</span>
-                            {q}
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-[10px] font-mono uppercase font-semibold px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)]">
+                                {q.badge}
+                              </span>
+                              <span className="text-[11px] text-[var(--action-primary)] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                Ask →
+                              </span>
+                            </div>
+                            <p className="line-clamp-2 leading-relaxed">
+                              <span className="font-semibold text-[var(--action-primary)] mr-1">Q:</span>
+                              {q.question}
+                            </p>
                           </button>
                         ))}
                       </div>

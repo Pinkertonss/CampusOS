@@ -560,3 +560,36 @@ def test_rag_actionable_event_expiration_flagging():
     assert suggestion.is_historical is True
     assert "passed" in suggestion.reason.lower() or "historical" in suggestion.reason.lower()
 
+
+def test_copilot_answers_expanded_faq_queries():
+    """
+    Verifies that the expanded campus inquiries (hostel appliances, exam calendar,
+    grading scale, and makeup exams) return source-grounded answers with citations.
+    """
+    # 1. Hostel appliances
+    res_appliance = rag_engine.ask(CopilotQueryRequest(query="Are room heaters and high-wattage electrical appliances allowed in hostels?"))
+    assert res_appliance.answered is True
+    assert res_appliance.grounded is True
+    assert any("Hostel" in c.document_title for c in res_appliance.citations)
+    assert "5,000" in res_appliance.answer or "prohibited" in res_appliance.answer.lower()
+
+    # 2. Exam dates / academic calendar
+    res_calendar = rag_engine.ask(CopilotQueryRequest(query="When are the Mid Semester (MST) and End Semester (EST) exams held?"))
+    assert res_calendar.answered is True
+    assert res_calendar.grounded is True
+    assert any("Academic Calendar" in c.document_title for c in res_calendar.citations)
+    assert "March 10" in res_calendar.answer or "May 5" in res_calendar.answer
+
+    # 3. CGPA calculation & grading
+    res_cgpa = rag_engine.ask(CopilotQueryRequest(query="How is CGPA calculated and what is the 10-point grading scale?"))
+    assert res_cgpa.answered is True
+    assert res_cgpa.grounded is True
+    assert "10-point" in res_cgpa.answer or "SGPA" in res_cgpa.answer
+
+    # 4. Makeup exam
+    res_makeup = rag_engine.ask(CopilotQueryRequest(query="How do I apply for a makeup exam if I missed an exam due to illness?"))
+    assert res_makeup.answered is True
+    assert res_makeup.grounded is True
+    assert "Makeup Examination" in res_makeup.answer or "hospitalization" in res_makeup.answer.lower()
+
+
