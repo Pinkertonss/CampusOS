@@ -275,14 +275,14 @@ export default function LostAndFoundPage() {
       {/* Navigation Tabs & Filters */}
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         {/* Main Tabs */}
-        <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-xs font-semibold">
+        <div className="flex p-1 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "all"
-                ? "bg-[var(--surface-card)] text-[var(--text-primary)] font-semibold shadow-xs"
-                : "text-[var(--text-secondary)] hover:text-slate-900"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             All Reports
@@ -292,8 +292,8 @@ export default function LostAndFoundPage() {
             onClick={() => setActiveTab("lost")}
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "lost"
-                ? "bg-[var(--surface-card)] text-rose-700 dark:text-rose-400 font-semibold shadow-xs"
-                : "text-[var(--text-secondary)] hover:text-slate-900"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             🔍 Lost Items
@@ -303,8 +303,8 @@ export default function LostAndFoundPage() {
             onClick={() => setActiveTab("found")}
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "found"
-                ? "bg-[var(--surface-card)] text-emerald-700 dark:text-emerald-400 font-semibold shadow-xs"
-                : "text-[var(--text-secondary)] hover:text-slate-900"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             📦 Found Items
@@ -314,8 +314,8 @@ export default function LostAndFoundPage() {
             onClick={() => setActiveTab("mine")}
             className={`px-3 py-1.5 rounded-lg transition ${
               activeTab === "mine"
-                ? "bg-[var(--surface-card)] text-[var(--text-primary)] font-semibold shadow-xs"
-                : "text-[var(--text-secondary)] hover:text-slate-900"
+                ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             My Reports
@@ -325,20 +325,20 @@ export default function LostAndFoundPage() {
         {/* Search & Status Filters */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 sm:w-56">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               type="text"
               placeholder="Search keyword or place..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-9 pr-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-white dark:bg-slate-800 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+              className="w-full text-xs pl-9 pr-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
             />
           </div>
 
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="text-xs px-2.5 py-1.5 rounded-xl border border-[var(--border-color)] bg-white dark:bg-slate-800 text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat.value} value={cat.value}>
@@ -350,7 +350,7 @@ export default function LostAndFoundPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs px-2.5 py-1.5 rounded-xl border border-[var(--border-color)] bg-white dark:bg-slate-800 text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
           >
             <option value="open">Open Reports</option>
             <option value="resolved">Resolved</option>
@@ -515,7 +515,7 @@ export default function LostAndFoundPage() {
                     className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
                       createType === "lost"
                         ? "bg-rose-50 dark:bg-rose-950/40 border-rose-500 text-rose-700 dark:text-rose-300 shadow-xs"
-                        : "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)]"
+                        : "bg-[var(--surface-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                   >
                     🔍 I Lost Something
@@ -526,7 +526,7 @@ export default function LostAndFoundPage() {
                     className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
                       createType === "found"
                         ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-xs"
-                        : "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)]"
+                        : "bg-[var(--surface-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                   >
                     📦 I Found Something

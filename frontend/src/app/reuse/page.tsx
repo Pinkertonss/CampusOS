@@ -355,13 +355,13 @@ export default function CampusReusePage() {
       </div>
 
       {/* Main Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab("marketplace")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "marketplace"
               ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              : "text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
           }`}
         >
           <Repeat className="w-4 h-4" />
@@ -376,13 +376,13 @@ export default function CampusReusePage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "my-listings"
               ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              : "text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
           }`}
         >
           <Package className="w-4 h-4" />
           <span>My Listings</span>
           {myListings.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]">
               {myListings.length}
             </span>
           )}
@@ -393,13 +393,13 @@ export default function CampusReusePage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "my-requests"
               ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              : "text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
           }`}
         >
           <ArrowRightLeft className="w-4 h-4" />
           <span>My Requests</span>
           {myRequests.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]">
               {myRequests.length}
             </span>
           )}
@@ -410,7 +410,7 @@ export default function CampusReusePage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
             activeTab === "impact"
               ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
-              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              : "text-[var(--text-secondary)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
           }`}
         >
           <Leaf className="w-4 h-4 text-emerald-500" />
@@ -435,8 +435,8 @@ export default function CampusReusePage() {
                     onClick={() => setActiveMode(m.id)}
                     className={`px-3.5 py-2 rounded-xl text-xs font-medium transition shrink-0 ${
                       isActive
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-sm"
-                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-[var(--border-color)] hover:bg-slate-50"
+                        ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                        : "bg-[var(--surface-card)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                   >
                     {m.label}
@@ -478,8 +478,8 @@ export default function CampusReusePage() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 ${
                     isActive
-                      ? "bg-[var(--surface-secondary)] text-[var(--text-primary)] border border-[var(--border-color)]"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] font-semibold shadow-xs"
+                      : "bg-[var(--surface-card)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />

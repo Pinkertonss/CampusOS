@@ -589,7 +589,7 @@ export default function CampusCopilotPage() {
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask a question about Thapar academic policies, curfews, or fees..."
                     disabled={isLoading}
-                    className="flex-1 bg-[var(--surface-card)] border border-[var(--border-color)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--focus-ring)] dark:text-white placeholder-slate-400 disabled:opacity-60"
+                    className="flex-1 bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] placeholder-[var(--text-muted)] disabled:opacity-60 shadow-xs"
                   />
                   <Button
                     type="submit"
@@ -722,7 +722,7 @@ export default function CampusCopilotPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Document Title */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-xs font-semibold text-[var(--text-secondary)]">
                       Document Title *
                     </label>
                     <input
@@ -731,19 +731,19 @@ export default function CampusCopilotPage() {
                       placeholder="e.g. TIET Hostel Rules Winter 2024"
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
-                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--focus-ring)] focus:outline-none dark:text-white"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--focus-ring)] focus:outline-none placeholder-[var(--text-muted)]"
                     />
                   </div>
 
                   {/* Category */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-xs font-semibold text-[var(--text-secondary)]">
                       Source Category
                     </label>
                     <select
                       value={uploadCategory}
                       onChange={(e) => setUploadCategory(e.target.value)}
-                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--focus-ring)] focus:outline-none dark:text-white"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--focus-ring)] focus:outline-none"
                     >
                       <option value="circular">General Campus Circular</option>
                       <option value="academic_ordinance">Academic Regulations &amp; Ordinance</option>

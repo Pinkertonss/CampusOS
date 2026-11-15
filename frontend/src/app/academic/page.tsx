@@ -157,14 +157,14 @@ export default function AcademicPlannerPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Academic Dashboard &amp; What-If Planner
             </h1>
             <Badge variant="warning" size="md">
               75% TIET Rule
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             Simulate missed lectures, target exam scores, and forecast attendance safety margins.
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function AcademicPlannerPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-red-950/40 border border-red-800/60 flex items-center justify-between gap-4 text-red-200">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 flex items-center justify-between gap-4 text-rose-950 dark:text-rose-200">
           <div className="flex items-center gap-2 text-xs">
             <span className="font-bold">Academic Service Error:</span>
             <span>{error}</span>
@@ -224,13 +224,13 @@ export default function AcademicPlannerPage() {
                     </CardDescription>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                  <div className="flex items-center gap-2 bg-[var(--surface-secondary)] border border-[var(--border-color)] p-1 rounded-xl">
                     <button
                       onClick={() => setSimMode("grades")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         simMode === "grades"
-                          ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                          ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                       }`}
                     >
                       Grade Simulation
@@ -239,8 +239,8 @@ export default function AcademicPlannerPage() {
                       onClick={() => setSimMode("attendance")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         simMode === "attendance"
-                          ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                          ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                       }`}
                     >
                       Attendance Simulation

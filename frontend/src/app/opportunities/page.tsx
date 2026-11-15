@@ -730,7 +730,7 @@ export default function OpportunitiesPage() {
             </span>
             <span>
               Opt-In:{" "}
-              <strong className={profile.opt_in_matching ? "text-[var(--action-primary)]" : "text-amber-400"}>
+              <strong className={profile.opt_in_matching ? "text-[var(--action-primary)]" : "text-amber-800 dark:text-amber-300 font-semibold"}>
                 {profile.opt_in_matching ? "Active" : "Paused"}
               </strong>
             </span>
@@ -893,10 +893,10 @@ export default function OpportunitiesPage() {
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider border font-mono ${
                               rec.eligibility.status === "ELIGIBLE"
-                                ? "bg-emerald-950/80 text-emerald-300 border-emerald-600/60"
+                                ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700"
                                 : rec.eligibility.status === "NOT_ELIGIBLE"
-                                ? "bg-rose-950/80 text-rose-300 border-rose-600/60"
-                                : "bg-amber-950/80 text-amber-300 border-amber-600/60"
+                                ? "bg-rose-100 dark:bg-rose-950/80 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-700"
+                                : "bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700"
                             }`}
                           >
                             {rec.eligibility.status.replace("_", " ")}
@@ -930,10 +930,10 @@ export default function OpportunitiesPage() {
 
                     {/* Schedule Conflict / Fit Indicator */}
                     {rec.schedule_collision_warning ? (
-                      <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/60 flex items-start gap-2 text-xs text-amber-300">
-                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start gap-2 text-xs text-amber-950 dark:text-amber-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                         <div>
-                          <strong className="font-semibold">Schedule Warning:</strong>{" "}
+                          <strong className="font-semibold text-amber-950 dark:text-amber-100">Schedule Warning:</strong>{" "}
                           {rec.schedule_collision_warning}
                         </div>
                       </div>
@@ -946,10 +946,10 @@ export default function OpportunitiesPage() {
 
                     {/* Academic Advisory */}
                     {rec.academic_advisory && (
-                      <div className="p-2.5 rounded-lg bg-red-950/30 border border-red-900/50 flex items-start gap-2 text-xs text-red-300">
-                        <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 flex items-start gap-2 text-xs text-rose-950 dark:text-rose-200">
+                        <ShieldAlert className="w-4 h-4 text-rose-700 dark:text-rose-400 shrink-0 mt-0.5" />
                         <div>
-                          <strong className="font-semibold">Academic Advisory:</strong> {rec.academic_advisory}
+                          <strong className="font-semibold text-rose-950 dark:text-rose-100">Academic Advisory:</strong> {rec.academic_advisory}
                         </div>
                       </div>
                     )}
@@ -1772,13 +1772,13 @@ export default function OpportunitiesPage() {
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-100">{opp.title}</h3>
+                      <h3 className="text-base font-bold text-[var(--text-primary)]">{opp.title}</h3>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase font-mono tracking-wider ${
                           opp.status === "open"
-                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800"
+                            ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"
                             : opp.status === "draft"
-                            ? "bg-amber-950/80 text-amber-300 border border-amber-800"
+                            ? "bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800"
                             : "bg-[var(--surface-secondary)] text-[var(--text-muted)] border border-[var(--border-color)]"
                         }`}
                       >
@@ -1843,7 +1843,7 @@ export default function OpportunitiesPage() {
                         size="sm"
                         variant="secondary"
                         onClick={() => handleOppStatusChange(opp.id, "close")}
-                        className="text-xs text-amber-400 hover:text-amber-300"
+                        className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300"
                       >
                         Close
                       </Button>
@@ -2105,25 +2105,25 @@ export default function OpportunitiesPage() {
 
               {previewData && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--border-color)] text-center">
-                  <div className="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-800/80">
-                    <div className="text-[10px] uppercase font-bold text-emerald-300">Eligible</div>
-                    <div className="text-lg font-bold text-emerald-200">
+                  <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800">
+                    <div className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-300">Eligible</div>
+                    <div className="text-lg font-bold text-emerald-950 dark:text-emerald-200">
                       {previewData.total_eligible_candidates}
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-rose-950/60 border border-rose-800/80">
-                    <div className="text-[10px] uppercase font-bold text-rose-300">Not Eligible</div>
-                    <div className="text-lg font-bold text-rose-200">
+                  <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800">
+                    <div className="text-[10px] uppercase font-bold text-rose-800 dark:text-rose-300">Not Eligible</div>
+                    <div className="text-lg font-bold text-rose-950 dark:text-rose-200">
                       {previewData.not_eligible_count ?? 0}
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80">
-                    <div className="text-[10px] uppercase font-bold text-amber-300">Incomplete Profile</div>
-                    <div className="text-lg font-bold text-amber-200">
+                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800">
+                    <div className="text-[10px] uppercase font-bold text-amber-800 dark:text-amber-300">Incomplete Profile</div>
+                    <div className="text-lg font-bold text-amber-950 dark:text-amber-200">
                       {previewData.incomplete_profile_count ?? 0}
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-slate-900 border border-[var(--border-color)]">
+                  <div className="p-2.5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border-color)]">
                     <div className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Total Scanned</div>
                     <div className="text-lg font-bold text-[var(--text-primary)]">
                       {previewData.total_opted_in_students}
@@ -2265,10 +2265,10 @@ export default function OpportunitiesPage() {
                           <span
                             className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
                               isEligible
-                                ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"
                                 : cand.eligibility?.status === "INCOMPLETE_PROFILE"
-                                ? "bg-amber-950 text-amber-300 border border-amber-800"
-                                : "bg-rose-950 text-rose-300 border border-rose-800"
+                                ? "bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800"
+                                : "bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border border-rose-300 dark:border-rose-800"
                             }`}
                           >
                             {cand.eligibility?.status || "PENDING"}

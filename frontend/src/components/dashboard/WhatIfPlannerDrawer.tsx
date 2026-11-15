@@ -150,7 +150,7 @@ export default function WhatIfPlannerDrawer({
     >
       <div className="space-y-5">
         {/* Course Selector & Tab Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-[var(--text-secondary)]">
               Select Course:
@@ -174,7 +174,7 @@ export default function WhatIfPlannerDrawer({
               onClick={() => setActiveTab("attendance")}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
                 activeTab === "attendance"
-                  ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
+                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -185,7 +185,7 @@ export default function WhatIfPlannerDrawer({
               onClick={() => setActiveTab("grades")}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
                 activeTab === "grades"
-                  ? "bg-white dark:bg-slate-900 text-[var(--action-primary)] shadow-xs"
+                  ? "bg-[var(--action-primary)] text-[var(--action-primary-text)] shadow-xs"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -198,7 +198,7 @@ export default function WhatIfPlannerDrawer({
         {activeTab === "attendance" && (
           <div className="space-y-5">
             {/* Sliders Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)]">
               {/* Attend Next N Slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
@@ -330,7 +330,7 @@ export default function WhatIfPlannerDrawer({
         {activeTab === "grades" && (
           <div className="space-y-5">
             {/* Target and Hypothetical Input Table */}
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="p-4 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-color)] space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <label className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
                   <Target className="w-4 h-4 text-[var(--action-primary)]" />
